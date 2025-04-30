@@ -5,19 +5,23 @@ import com.ssafy.backend.auth.model.dto.request.SignUpDTO;
 import com.ssafy.backend.auth.model.dto.response.LoginResponseDTO;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.dto.BaseResponse;
+import com.ssafy.backend.common.security.CustomUserDetails;
 import com.ssafy.backend.common.security.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
@@ -42,9 +46,17 @@ public class AuthController {
                 .body(BaseResponse.success(201,"회원가입이 완료되었습니다"));
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<BaseResponse<String>> logout(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        ResponseCookie cookie = provider.expiredTokenCookie("");
+
+        return ResponseEntity.ok()
+                .header("Set-Cookie", cookie.toString())
+                .body(BaseResponse.success(200,"로그아웃이 완료되었습니다"));
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<BaseResponse<LoginResponseDTO>> login(HttpServletResponse response,
-                                                                @Valid @RequestBody LoginRequestDTO loginDTO) {
+    public ResponseEntity<BaseResponse<LoginResponseDTO>> login(@Valid @RequestBody LoginRequestDTO loginDTO) {
         LoginResponseDTO loginResponseDTO = authService.login(loginDTO);
         String jwt = provider.generateToken(loginResponseDTO.getId());
         ResponseCookie cookieValue = provider.generateTokenCookie(jwt);
