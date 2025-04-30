@@ -17,18 +17,18 @@ services:
     build:
       context: ./lightreborn/backend
       dockerfile: Dockerfile
-    args:
-      BUILD_MODE: development
-  restart: always
-  container_name: lightreborn-backend
-  env_file:
-    - .env
-  environment:
-    - SPRING_PROFILES_ACTIVE: server
-  ports:
-    - "8081:8080"
-  networks:
-    - backend-lightreborn
+      args:
+        BUILD_MODE: development
+    restart: always
+    container_name: lightreborn-backend
+    env_file:
+      - .env
+    environment:
+      - SPRING_PROFILES_ACTIVE: server
+    ports:
+      - "8081:8080"
+    networks:
+      - backend-lightreborn
 
   lightreborn-frontend:
     build:
