@@ -18,10 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -64,5 +61,15 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header("Set-Cookie", cookieValue.toString())
                 .body(BaseResponse.success(200, "로그인이 완료되었습니다", loginResponseDTO));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<BaseResponse<LoginResponseDTO>> getUserInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        String loginUser = userDetails.getUserId();
+
+        LoginResponseDTO info = authService.findUser(loginUser);
+
+        return ResponseEntity.ok()
+                .body(BaseResponse.success(200,"본인 정보 조회를 완료하였습니다", info));
     }
 }
