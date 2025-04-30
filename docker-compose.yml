@@ -1,17 +1,22 @@
 networks:
-  backend-tier:
+  backend-dearie:
     external: true
-    name: shared_backend
-  frontend-tier:
+    name: backend_dearie
+
+  backend-lightreborn:
     external: true
-    name: shared_frontend
+    name: backend_lightreborn
+
+  frontend-lightreborn:
+    external: true
+    name: frontend_lightreborn
 
 services:
   # lightreborn 서비스
   lightreborn-backend:
     build:
-    content: ./lightreborn/backend
-    dockerfile: Dockerfile
+      context: ./lightreborn/backend
+      dockerfile: Dockerfile
     args:
       BUILD_MODE: development
   restart: always
@@ -23,7 +28,7 @@ services:
   ports:
     - "8081:8080"
   networks:
-    - backend-tier
+    - backend-lightreborn
 
   lightreborn-frontend:
     build:
@@ -43,13 +48,13 @@ services:
     ports:
       - "3001:3000"
     networks:
-      - frontend-tier
-      - backend-tier
+      - frontend-lightreborn
+      - backend-lightreborn
 
   # dearie 서비스
   dearie-backend:
     build:
-      content: ./dearie/backend
+      context: ./dearie/backend
       dockerfile: Dockerfile
       args:
         BUILD_MODE: development
@@ -62,7 +67,7 @@ services:
     ports:
       - "8082:8080"
     networks:
-      - backend-tier
+      - backend-dearie
 
   # dearie-frontend:
   #   build:
