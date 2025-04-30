@@ -1,21 +1,23 @@
 package com.ssafy.backend.auth.controller;
 
+import com.ssafy.backend.auth.model.dto.request.LoginRequestDTO;
 import com.ssafy.backend.auth.model.dto.request.SignUpDTO;
+import com.ssafy.backend.auth.model.dto.response.LoginResponseDTO;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.dto.BaseResponse;
+import com.ssafy.backend.common.security.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/auth")
 @Tag(name = "Auth", description = "인증 관련 API (회원가입, 로그인 등)")
 public class AuthController {
+    private final JwtTokenProvider provider;
     private final AuthService authService;
 
     @Operation(summary = "회원가입 API", description = "신규 사용자를 등록합니다.")
@@ -37,5 +40,17 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(201,"회원가입이 완료되었습니다"));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<BaseResponse<LoginResponseDTO>> login(HttpServletResponse response,
+                                                                @Valid @RequestBody LoginRequestDTO loginDTO) {
+        LoginResponseDTO loginResponseDTO = authService.login(loginDTO);
+        String jwt = provider.generateToken(loginResponseDTO.getId());
+        ResponseCookie cookieValue = provider.generateTokenCookie(jwt);
+
+        return ResponseEntity.ok()
+                .header("Set-Cookie", cookieValue.toString())
+                .body(BaseResponse.success(200, "로그인이 완료되었습니다", loginResponseDTO));
     }
 }

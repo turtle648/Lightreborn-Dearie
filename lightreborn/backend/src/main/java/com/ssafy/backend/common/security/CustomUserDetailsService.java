@@ -16,16 +16,8 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String userIdString) throws UsernameNotFoundException {
-        Long userId;
-
-        try {
-            userId = Long.parseLong(userIdString);
-        } catch (NumberFormatException e) {
-            throw new UsernameNotFoundException("Invalid user ID format: " + userIdString);
-        }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
+        User user = userRepository.findByUserId(userIdString)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userIdString));
 
         return new CustomUserDetails(user);
     }
