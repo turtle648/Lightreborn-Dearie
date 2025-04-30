@@ -1,0 +1,12 @@
+# 빌드 아티팩트
+.next
+
+# 의존성 (이미 이미지 안에서 설치함)
+node_modules
+
+# Git
+.git
+.gitignore
+
+# 기타 무시할 파일들
+npm-debug.log
