@@ -4,8 +4,11 @@ import com.ssafy.backend.auth.entity.User;
 import com.ssafy.backend.auth.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,25 +22,54 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    private static final String SECRET_KEY = "your-256-bit-secret-your-256-bit-secret"; // ✅ 256-bit 키 사용 필수
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // ✅ 24시간
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
+
+    private static final int EXPIRATION_TIME = 60 * 60 * 24; // ✅ 24시간
 
     private final Key key;
     private final UserRepository userRepository;
 
-    public JwtTokenProvider(UserRepository userRepository) {
-        this.key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    public JwtTokenProvider(@Value("${jwt.secret-key}") String secretKey, UserRepository userRepository) {
+        this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
         this.userRepository = userRepository;
     }
 
-    // ✅ JWT 토큰 생성
     public String generateToken(String userId) {
         return Jwts.builder()
-                .setSubject(String.valueOf(userId))
+                .setSubject(userId)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME * 1000L))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public HttpServletResponse sendTokenAsCookie(HttpServletResponse response, String jwtToken) {
+        boolean isDev = activeProfile.equals("dev");
+
+        String cookieValue = "access_token=" + jwtToken
+                + "; Path=/"
+                + "; HttpOnly"
+                + "; Secure"
+                + "; Max-Age=" + EXPIRATION_TIME;
+
+        if(!isDev){
+            cookieValue += "; SameSite=None";
+        }
+
+        response.setHeader("Set-Cookie", cookieValue);
+        return response;
+    }
+
+    public String extractTokenFromCookie(HttpServletRequest request) {
+        if(request.getCookies() == null) return null;
+
+        for(Cookie cookie: request.getCookies()) {
+            if("access_token".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     // ✅ JWT 토큰 검증
@@ -50,7 +82,6 @@ public class JwtTokenProvider {
         }
     }
 
-
     public String getUserIdFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -62,11 +93,6 @@ public class JwtTokenProvider {
 
     // ✅ JWT에서 사용자 user 추출
     public User getUserFromToken(String token){
-        // 접두어 Bearer 제거
-        if (token.startsWith("Bearer ")){
-            token = token.substring(7);
-        }
-
         // JWT에서 userId 추출
         String userId = Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -79,16 +105,6 @@ public class JwtTokenProvider {
         // userId를 이용해 User 객체 조회
         return userRepository.findByUserId(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + userId));
-    }
-
-    public User getUserFromRequest(HttpServletRequest request) {
-        String accessToken = request.getHeader("Authorization");
-
-        if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-            throw new UsernameNotFoundException("No valid Authorization token found");
-        }
-
-        return getUserFromToken(accessToken);
     }
 
     // ✅ JWT에서 인증 정보 가져오기

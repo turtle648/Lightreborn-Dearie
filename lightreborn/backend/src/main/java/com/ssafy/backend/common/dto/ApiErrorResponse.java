@@ -1,5 +1,6 @@
-package com.ssafy.backend.common.exception;
+package com.ssafy.backend.common.dto;
 
+import com.ssafy.backend.common.exception.BaseErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

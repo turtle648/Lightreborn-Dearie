@@ -15,14 +15,11 @@ public class CustomUserDetails implements UserDetails {
     private Long id;
     @Getter
     private String userId;
-    @Getter
-    private String nickname;
     private List<GrantedAuthority> authorities;
 
     public CustomUserDetails(User user) {
         this.id = user.getId();
         this.userId = user.getUserId();
-        this.nickname = user.getNickName();
         this.authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
