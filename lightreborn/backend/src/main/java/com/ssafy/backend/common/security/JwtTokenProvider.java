@@ -58,6 +58,18 @@ public class JwtTokenProvider {
                 .build();
     }
 
+    public ResponseCookie expiredTokenCookie(String jwtToken) {
+        boolean isDev = activeProfile.equals("dev");
+
+        return ResponseCookie.from("access_token", jwtToken)
+                .httpOnly(true)
+                .secure(!isDev ? true : false)
+                .path("/")
+                .maxAge(0)
+                .sameSite(isDev ? "Lax" : "None")
+                .build();
+    }
+
     public String extractTokenFromCookie(HttpServletRequest request) {
         if(request.getCookies() == null) return null;
 
