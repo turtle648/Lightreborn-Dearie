@@ -1,5 +1,6 @@
 package com.ssafy.backend.common.exception;
 
+import com.ssafy.backend.common.dto.ErrorResponse;
 import lombok.Getter;
 
 import java.util.List;
