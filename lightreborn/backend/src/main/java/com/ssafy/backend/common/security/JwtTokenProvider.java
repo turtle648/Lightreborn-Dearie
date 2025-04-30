@@ -2,13 +2,15 @@ package com.ssafy.backend.common.security;
 
 import com.ssafy.backend.auth.entity.User;
 import com.ssafy.backend.auth.repository.UserRepository;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -44,21 +46,16 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public HttpServletResponse sendTokenAsCookie(HttpServletResponse response, String jwtToken) {
+    public ResponseCookie generateTokenCookie(String jwtToken) {
         boolean isDev = activeProfile.equals("dev");
 
-        String cookieValue = "access_token=" + jwtToken
-                + "; Path=/"
-                + "; HttpOnly"
-                + "; Secure"
-                + "; Max-Age=" + EXPIRATION_TIME;
-
-        if(!isDev){
-            cookieValue += "; SameSite=None";
-        }
-
-        response.setHeader("Set-Cookie", cookieValue);
-        return response;
+        return ResponseCookie.from("access_token", jwtToken)
+                .httpOnly(true)
+                .secure(!isDev ? true : false)
+                .path("/")
+                .maxAge(EXPIRATION_TIME)
+                .sameSite(isDev ? "Lax" : "None")
+                .build();
     }
 
     public String extractTokenFromCookie(HttpServletRequest request) {
