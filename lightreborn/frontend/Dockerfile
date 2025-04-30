@@ -4,9 +4,6 @@ FROM node:22
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# Docker Compose에서 넘긴 NODE_ENV를 받음
-ARG BUILD_MODE
-
 # package.json과 package-lock.json 복사
 COPY package*.json ./
 
@@ -19,12 +16,8 @@ COPY . .
 # 🧪 빌드시 사용할 환경변수 복사
 COPY .env .env
 
-# NODE_ENV에 따라 build 분기
-RUN if [ "$BUILD_MODE" = "development" ]; then \
-    npm run build --verbose && rm -f .env; \
-  else \
-    npm run build && rm -f .env; \
-  fi
+# 포트 노출
+EXPOSE 3000
 
 # 컨테이너 실행 시 Next.js 실행
 CMD ["npm", "run", "start"]
