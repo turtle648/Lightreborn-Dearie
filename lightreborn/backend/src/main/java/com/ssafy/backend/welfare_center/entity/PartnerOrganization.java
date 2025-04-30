@@ -1,5 +1,6 @@
-package com.ssafy.backend.dashboard.entity;
+package com.ssafy.backend.welfare_center.entity;
 
+import com.ssafy.backend.youth_population.entity.Hangjungs;
 import jakarta.persistence.*;
 import lombok.Getter;
 
