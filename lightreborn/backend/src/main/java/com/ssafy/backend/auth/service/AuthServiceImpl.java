@@ -1,8 +1,11 @@
 package com.ssafy.backend.auth.service;
 
 import com.ssafy.backend.auth.entity.User;
+<<<<<<< HEAD
 import com.ssafy.backend.auth.exception.AuthErrorCode;
 import com.ssafy.backend.auth.exception.AuthException;
+=======
+>>>>>>> 1fa5e312273458684ba746377c604a470ffdf01c
 import com.ssafy.backend.auth.model.dto.request.SignUpDTO;
 import com.ssafy.backend.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
