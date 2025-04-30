@@ -29,13 +29,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             log.info("요청 경로: {}", request.getRequestURI());
 
-            String path = request.getRequestURI();
-
-            if (path.startsWith("/api/admin/")) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-
             String token = resolveToken(request);
             log.info("[JwtAuthenticationFilter] token {}", token);
             if (token != null) {
@@ -72,7 +65,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        return (bearerToken != null && bearerToken.startsWith("Bearer ")) ? bearerToken.substring(7) : null;
+        return jwtTokenProvider.extractTokenFromCookie(request);
     }
 }

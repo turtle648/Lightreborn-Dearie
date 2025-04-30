@@ -1,12 +1,11 @@
 package com.ssafy.backend.auth.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.validator.constraints.UniqueElements;
-
 
 @Entity
 @Table(name = "users")
@@ -19,11 +18,13 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "login_id", nullable = false, length = 20, unique = true)
     private String userId;
-    private String nickName;
-    private String gender;
-    private String age;
-    @Column(nullable = false, columnDefinition = "int default 0")
-    private int role; // 사용자 0, 매장 관리자 1, 차단된 사용자 2
 
+    @Column(name = "password", nullable = false)
+    @JsonIgnore
+    private String password;
+
+    @Column(nullable = false)
+    private int role = 0; // 사용자 0, 관리자 1
 }
