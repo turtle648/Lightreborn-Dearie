@@ -44,8 +44,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<BaseResponse<String>> logout(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        ResponseCookie cookie = provider.expiredTokenCookie("");
+    public ResponseEntity<BaseResponse<String>> logout(@CookieValue(name = "access_token", required = false) String token) {
+        ResponseCookie cookie = provider.expiredTokenCookie(token);
 
         return ResponseEntity.ok()
                 .header("Set-Cookie", cookie.toString())
@@ -55,6 +55,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<BaseResponse<LoginResponseDTO>> login(@Valid @RequestBody LoginRequestDTO loginDTO) {
         LoginResponseDTO loginResponseDTO = authService.login(loginDTO);
+
         String jwt = provider.generateToken(loginResponseDTO.getId());
         ResponseCookie cookieValue = provider.generateTokenCookie(jwt);
 

@@ -10,6 +10,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,22 +20,26 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
 public class JwtTokenProvider {
-
     @Value("${spring.profiles.active:dev}")
     private String activeProfile;
 
-    private static final int EXPIRATION_TIME = 60 * 60 * 24; // ✅ 24시간
+    public static final int EXPIRATION_TIME = 60 * 60 * 24;
 
     private final Key key;
     private final UserRepository userRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
-    public JwtTokenProvider(@Value("${jwt.secret-key}") String secretKey, UserRepository userRepository) {
+    public JwtTokenProvider(@Value("${jwt.secret-key}") String secretKey,
+                            UserRepository userRepository,
+                            RedisTemplate<String, Object> redisTemplate) {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
         this.userRepository = userRepository;
+        this.redisTemplate = redisTemplate;
     }
 
     public String generateToken(String userId) {
@@ -61,6 +66,9 @@ public class JwtTokenProvider {
     public ResponseCookie expiredTokenCookie(String jwtToken) {
         boolean isDev = activeProfile.equals("dev");
 
+        long remainTime = getRemainingExpiration(jwtToken);
+        redisTemplate.opsForValue().set(jwtToken, "logout", remainTime, TimeUnit.MILLISECONDS);
+
         return ResponseCookie.from("access_token", jwtToken)
                 .httpOnly(true)
                 .secure(!isDev ? true : false)
@@ -85,10 +93,27 @@ public class JwtTokenProvider {
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            return true;
+
+            String status = String.valueOf(redisTemplate.opsForValue().get(token));
+            String userId = getUserIdFromToken(token);
+
+            log.info("[JwtTokenProvider] JWT 토큰 상태 검증: {} -> {}", userId, status);
+
+            return !"logout".equals(status);
         } catch (JwtException e) {
             return false;
         }
+    }
+
+    public long getRemainingExpiration(String token) {
+        Date expiration = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+
+        return expiration.getTime() - System.currentTimeMillis();
     }
 
     public String getUserIdFromToken(String token) {
