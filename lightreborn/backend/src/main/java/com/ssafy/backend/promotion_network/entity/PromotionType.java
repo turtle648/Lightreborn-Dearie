@@ -1,4 +1,4 @@
-package com.ssafy.backend.dashboard.entity;
+package com.ssafy.backend.promotion_network.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package com.ssafy.backend.dashboard.entity;
+package com.ssafy.backend.youth_population.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
