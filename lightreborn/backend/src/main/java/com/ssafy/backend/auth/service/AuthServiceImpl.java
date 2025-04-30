@@ -43,4 +43,10 @@ public class AuthServiceImpl implements AuthService{
 
         userRepository.save(user);
     }
+
+    @Override
+    public LoginResponseDTO findUser(String loginUser) {
+        User user = userRepository.findByUserId(loginUser).orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
+        return LoginResponseDTO.builder().id(user.getUserId()).build();
+    }
 }

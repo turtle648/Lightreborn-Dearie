@@ -7,4 +7,5 @@ import com.ssafy.backend.auth.model.dto.response.LoginResponseDTO;
 public interface AuthService {
     LoginResponseDTO login(LoginRequestDTO loginRequestDTO);
     void signup(SignUpDTO signUpDTO);
+    LoginResponseDTO findUser(String loginUser);
 }
