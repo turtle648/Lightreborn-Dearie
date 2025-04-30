@@ -95,7 +95,9 @@ public class JwtTokenProvider {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
 
             String status = String.valueOf(redisTemplate.opsForValue().get(token));
-            log.info("[JwtTokenProvider] JWT 토큰 상태 검증: {} -> {}", token, status);
+            String userId = getUserIdFromToken(token);
+
+            log.info("[JwtTokenProvider] JWT 토큰 상태 검증: {} -> {}", userId, status);
 
             return !"logout".equals(status);
         } catch (JwtException e) {
