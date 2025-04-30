@@ -1,0 +1,91 @@
+networks:
+  backend-dearie:
+    external: true
+    name: backend_dearie
+
+  backend-lightreborn:
+    external: true
+    name: backend_lightreborn
+
+  frontend-lightreborn:
+    external: true
+    name: frontend_lightreborn
+
+services:
+  # lightreborn 서비스
+  lightreborn-backend:
+    build:
+      context: ./lightreborn/backend
+      dockerfile: Dockerfile
+    args:
+      BUILD_MODE: development
+  restart: always
+  container_name: lightreborn-backend
+  env_file:
+    - .env
+  environment:
+    - SPRING_PROFILES_ACTIVE: server
+  ports:
+    - "8081:8080"
+  networks:
+    - backend-lightreborn
+
+  lightreborn-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODE: development
+    image: frontend
+    restart: always
+    container_name: frontend
+    environment:
+      NODE_ENV: production
+    env_file:
+      - .env
+    depends_on:
+      - lightreborn-backend
+    ports:
+      - "3001:3000"
+    networks:
+      - frontend-lightreborn
+      - backend-lightreborn
+
+  # dearie 서비스
+  dearie-backend:
+    build:
+      context: ./dearie/backend
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODE: development
+    restart: always
+    container_name: dearie-backend
+    env_file:
+      - .env
+    environment:
+      - SPRING_PROFILES_ACTIVE: server
+    ports:
+      - "8082:8080"
+    networks:
+      - backend-dearie
+
+  # dearie-frontend:
+  #   build:
+  #     context: ./dearie/frontend
+  #     dockerfile: Dockerfile
+  #     args:
+  #       BUILD_MODE: development
+  #   image: frontend
+  #   restart: always
+  #   container_name: frontend_dearie
+  #   environment:
+  #     NODE_ENV: production
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - dearie-backend
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - frontend-tier
+  #     - backend-tier
