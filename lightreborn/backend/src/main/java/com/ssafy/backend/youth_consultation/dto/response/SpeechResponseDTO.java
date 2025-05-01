@@ -7,4 +7,5 @@ import lombok.Getter;
 @Builder
 public class SpeechResponseDTO {
     String text;
+    String summary;
 }

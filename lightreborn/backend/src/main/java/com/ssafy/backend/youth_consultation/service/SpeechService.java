@@ -2,7 +2,8 @@ package com.ssafy.backend.youth_consultation.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ssafy.backend.youth_consultation.dto.response.SpeechResponseDTO;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +34,7 @@ public class SpeechService {
     @Value("${openai.ffmpeg.path:ffmpeg}")
     private String ffmpegCmd;
 
-    public SpeechResponseDTO transcribe(MultipartFile file) {
+    public String transcribe(MultipartFile file) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("파일이 비어 있습니다.");
         }
@@ -103,14 +104,55 @@ public class SpeechService {
 
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(resp.getBody());
-            return SpeechResponseDTO.builder().text(root.get("text").asText()).build();
-
+            return root.get("text").asText();
         } catch (IOException | InterruptedException e) {
             log.error("[오디오 처리 오류]", e);
             throw new RuntimeException("오디오 처리 실패: " + e.getMessage(), e);
         } finally {
             inputFile.delete();
             outputFile.delete();
+        }
+    }
+
+    public String summarizeText(String text) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode payload = mapper.createObjectNode();
+            payload.put("model", "gpt-3.5-turbo");
+            payload.put("temperature", 0.2);
+            payload.put("max_tokens", 1000);
+            ArrayNode messages = mapper.createArrayNode();
+
+            // 한국어 요약 전용 시스템 메시지
+            ObjectNode system = mapper.createObjectNode()
+                    .put("role", "system")
+                    .put("content", "당신은 한국어로 대화를 요약하는 전문 조수입니다. 핵심 정보를 빠짐없이 간결하고 자연스럽게 정리하세요.");
+            messages.add(system);
+
+            ObjectNode userMsg = mapper.createObjectNode()
+                    .put("role", "user")
+                    .put("content", "다음 대화 내용을 한국어로 누락 없이 요약해 주세요:\n" + text);
+            messages.add(userMsg);
+
+            payload.set("messages", messages);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(apiKey);
+
+            HttpEntity<String> request = new HttpEntity<>(mapper.writeValueAsString(payload), headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    "https://api.openai.com/v1/chat/completions",
+                    request,
+                    String.class
+            );
+
+            JsonNode root = mapper.readTree(response.getBody());
+            return root.path("choices").get(0).path("message").path("content").asText().trim();
+
+        } catch (Exception e) {
+            log.error("[요약 오류]", e);
+            return "";
         }
     }
 
