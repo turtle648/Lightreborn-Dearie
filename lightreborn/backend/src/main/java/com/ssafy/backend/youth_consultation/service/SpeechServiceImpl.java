@@ -171,48 +171,7 @@ public class SpeechServiceImpl implements SpeechService {
         }
     }
 
-    private String getGptAnswer(String systemPrompt, String userPrompt, String content) {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            ObjectNode payload = mapper.createObjectNode();
-            payload.put("model", "gpt-3.5-turbo");
-            payload.put("temperature", 0);
-            payload.put("max_tokens", 1000);
-            ArrayNode messages = mapper.createArrayNode();
-
-            ObjectNode system = mapper.createObjectNode()
-                    .put("role", "system")
-                    .put("content", systemPrompt);
-            messages.add(system);
-
-            ObjectNode userMsg = mapper.createObjectNode()
-                    .put("role", "user")
-                    .put("content", userPrompt + "\n" + content);
-            messages.add(userMsg);
-
-            payload.set("messages", messages);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(apiKey);
-
-            HttpEntity<String> request = new HttpEntity<>(mapper.writeValueAsString(payload), headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                    "https://api.openai.com/v1/chat/completions",
-                    request,
-                    String.class
-            );
-
-            JsonNode root = mapper.readTree(response.getBody());
-            return root.path("choices").get(0).path("message").path("content").asText().trim();
-
-        } catch (Exception e) {
-            log.error("[GPT 응답 오류]", e);
-            return "";
-        }
-    }
-
-    private String getGptAnswer(String systemPrompt, String userPrompt1, String assistant, String userPrompt2) {
+    private String getGptAnswer(String systemPrompt, String... userPrompts) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             ObjectNode payload = mapper.createObjectNode();
@@ -226,21 +185,13 @@ public class SpeechServiceImpl implements SpeechService {
                     .put("content", systemPrompt);
             messages.add(system);
 
-            ObjectNode userMsg1 = mapper.createObjectNode()
-                    .put("role", "user")
-                    .put("content", userPrompt1);
-            messages.add(userMsg1);
 
-            ObjectNode assistantMsg = mapper.createObjectNode()
-                    .put("role", "assistant")
-                    .put("content", assistant);
-            messages.add(assistantMsg);
-
-
-            ObjectNode userMsg2 = mapper.createObjectNode()
-                    .put("role", "user")
-                    .put("content", userPrompt2);
-            messages.add(userMsg2);
+            for (String userPrompt : userPrompts) {
+                ObjectNode userMsg = mapper.createObjectNode()
+                        .put("role", "user")
+                        .put("content", userPrompt);
+                messages.add(userMsg);
+            }
 
             payload.set("messages", messages);
 
@@ -282,21 +233,20 @@ public class SpeechServiceImpl implements SpeechService {
         String userPrompt1 = """
                     === 예시 1 전사 ===
                     ‘사람이 많은 곳에 가면 너무 불편해요.’ ‘그 불편함이 언제부터 시작됐는지 설명해 주세요.’ ‘먼저 작은 목표부터 시도해 보는 건 어떨까요?’
+                    
+                    === 예시 1 응답 ===
+                    상담자는 불편함의 시점을 구체적으로 파악하기 위해 질문했습니다,
+                    상담자는 안전한 환경에서 단계적 노출을 제안했습니다,
+                    상담자는 작은 성취 경험(짧은 산책)을 통해 자기효능감을 높이도록 안내했습니다,
+                    상담자는 내담자의 감정 변화를 모니터링할 방법을 제시했습니다,
+                    상담자는 비난 없는 지지적 환경 조성을 강조했습니다
                     """;
-
-        String assistant = """
-                상담자는 불편함의 시점을 구체적으로 파악하기 위해 질문했습니다,
-                상담자는 안전한 환경에서 단계적 노출을 제안했습니다,
-                상담자는 작은 성취 경험(짧은 산책)을 통해 자기효능감을 높이도록 안내했습니다,
-                상담자는 내담자의 감정 변화를 모니터링할 방법을 제시했습니다,
-                상담자는 비난 없는 지지적 환경 조성을 강조했습니다
-                """;
 
         String userPrompt2 = """
                 === 실제 전사 ===
                 """ + text;
 
-        return getGptAnswer(systemPrompt, userPrompt1, assistant, userPrompt2);
+        return getGptAnswer(systemPrompt, userPrompt1, userPrompt2);
     }
 
     private String extractClient(String text) {
@@ -312,21 +262,20 @@ public class SpeechServiceImpl implements SpeechService {
         String userPrompt1 = """
                     === 예시 1 전사 ===
                     ‘사람이 많은 곳에 가면 너무 불편해요.’ ‘그 불편함이 언제부터 시작됐는지 설명해 주세요.’ ‘먼저 작은 목표부터 시도해 보는 건 어떨까요?’
+                    
+                    === 예시 1 응답 ===
+                    내담자는 사람 많은 장소에서 불편함과 불안함을 느낀다고 표현했습니다,
+                    내담자는 고립된 환경에서 시간 흐름을 잊는다고 언급했습니다,
+                    내담자는 일에 대한 흥미와 동시에 두려움을 경험하고 있음을 드러냈습니다,
+                    내담자는 자신의 능력에 의문을 품으며 낮은 자기효능감을 표현했습니다,
+                    내담자는 외부 환경이 정서적 안정에 큰 영향을 미친다고 설명했습니다
                     """;
-
-        String assistant = """
-                내담자는 사람 많은 장소에서 불편함과 불안함을 느낀다고 표현했습니다,
-                내담자는 고립된 환경에서 시간 흐름을 잊는다고 언급했습니다,
-                내담자는 일에 대한 흥미와 동시에 두려움을 경험하고 있음을 드러냈습니다,
-                내담자는 자신의 능력에 의문을 품으며 낮은 자기효능감을 표현했습니다,
-                내담자는 외부 환경이 정서적 안정에 큰 영향을 미친다고 설명했습니다
-                """;
 
         String userPrompt2 = """
                 === 실제 전사 ===
                 """ + text;
 
-        return getGptAnswer(systemPrompt, userPrompt1, assistant, userPrompt2);
+        return getGptAnswer(systemPrompt, userPrompt1, userPrompt2);
     }
 
     private String extractNotesAndMemos(String text) {
@@ -342,21 +291,20 @@ public class SpeechServiceImpl implements SpeechService {
         String userPrompt1 = """
                     === 예시 1 전사 ===
                     ‘사람이 많은 곳에 가면 너무 불편해요.’ ‘그 불편함이 언제부터 시작됐는지 설명해 주세요.’ ‘먼저 작은 목표부터 시도해 보는 건 어떨까요?’
+                    
+                    === 예시 1 응답 ===
+                    내담자가 사람 많은 환경에서 심한 불안을 호소함,
+                    내담자가 고립된 상태에서 일상 리듬 붕괴를 언급함,
+                    상담자가 단계적 노출 기법을 제안하며 심리적 안전을 강조함,
+                    상담자가 작은 목표 설정을 통해 자기효능감 회복을 유도함,
+                    상담자가 지원 프로그램 참여를 권유하며 사회적 연결 강화를 촉진함
                     """;
-
-        String assistant = """
-                내담자가 사람 많은 환경에서 심한 불안을 호소함,
-                내담자가 고립된 상태에서 일상 리듬 붕괴를 언급함,
-                상담자가 단계적 노출 기법을 제안하며 심리적 안전을 강조함,
-                상담자가 작은 목표 설정을 통해 자기효능감 회복을 유도함,
-                상담자가 지원 프로그램 참여를 권유하며 사회적 연결 강화를 촉진함
-                """;
 
         String userPrompt2 = """
                 === 실제 전사 ===
                 """ + text;
 
-        return getGptAnswer(systemPrompt, userPrompt1, assistant, userPrompt2);
+        return getGptAnswer(systemPrompt, userPrompt1, userPrompt2);
     }
 
 
@@ -368,10 +316,8 @@ public class SpeechServiceImpl implements SpeechService {
                  - 결과는 하나의 문단(2~3문장)으로 작성하세요.
                  - 번호나 추가 형식 없이, 순수 요약문만 출력하세요.
                 """;
-        String userPrompt = """
-                    다음 대화 내용을 한국어로 누락 없이 요약해 주세요:
-                    """;
-        return getGptAnswer(systemPrompt, userPrompt, text);
+        String userPrompt = "다음 대화 내용을 한국어로 누락 없이 요약해 주세요:\n" + text;
+        return getGptAnswer(systemPrompt, userPrompt);
     }
 
     private String getExtension(String name) {
