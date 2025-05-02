@@ -14,16 +14,25 @@ pipeline {
         // 1. 먼저 .env 파일부터 읽음
         stage('Load .env File') {
             steps {
-                script {
-                    def envFilePath = "cicd/.env"
-                    if (!fileExists(envFilePath)) {
-                        error "❌ .env 파일이 ${envFilePath} 위치에 존재하지 않습니다."
+                withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
+                    script {
+                        def envFilePath = "cicd/.env"
+
+                        // .env 파일 동적으로 생성
+                        writeFile file: envFilePath, text: DOTENV
+
+                        // 존재 확인
+                        if (!fileExists(envFilePath)) {
+                            error "❌ .env 파일이 ${envFilePath} 위치에 존재하지 않습니다."
+                        }
+
+                        env.ENV_PROPS = readProperties file: envFilePath
+                        echo "✅ .env 파일을 Credentials로부터 로딩 완료"
                     }
-                    env.ENV_PROPS = readProperties file: envFilePath
-                    echo "✅ .env 파일 로딩 완료"
                 }
             }
         }
+
         // 2. 빌드 및 배포
         stage('Docker Compose Up') {
             steps {
