@@ -1,3 +1,5 @@
+def envProps
+
 pipeline {
     agent any
 
@@ -26,8 +28,8 @@ pipeline {
                             error "❌ .env 파일이 ${envFilePath} 위치에 존재하지 않습니다."
                         }
 
-                        env.envPropsJson = readProperties file: envFilePath
-                        echo "✅ .env 파일을 Credentials로부터 로딩 완료"
+                        envProps = readProperties file: envFilePath
+                        echo "✅ .env 파일 로딩 완료: ${envProps}"
                     }
                 }
             }
