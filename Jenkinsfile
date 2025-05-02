@@ -139,37 +139,36 @@ pipeline {
         }
 
         success {
-            when {
-                expression { params.ENV == 'master' }
-            }
-            steps {
-                echo '🎉 Build 성공 → Stable 이미지 태깅 및 푸시'
-                sh '''
-                    docker tag dearie-backend dearie-backend:stable
-                    docker tag lightreborn-backend lightreborn-backend:stable
-                    docker push dearie-backend:stable
-                    docker push lightreborn-backend:stable
-                '''
+            script {
+                if (params.ENV == 'master') {
+                    echo '🎉 Build 성공 → Stable 이미지 태깅 및 푸시'
+                    sh '''
+                        docker tag dearie-backend dearie-backend:stable
+                        docker tag lightreborn-backend lightreborn-backend:stable
+                        docker push dearie-backend:stable
+                        docker push lightreborn-backend:stable
+                    '''
+                }
             }
         }
 
         failure {
-            when {
-                expression { params.ENV == 'master' }
-            }
-            steps {
-                echo '⛔ 실패 → 이전 stable 이미지로 롤백 시도'
-                sh '''
-                    docker stop dearie-backend || true
-                    docker stop lightreborn-backend || true
-                    docker rm dearie-backend || true
-                    docker rm lightreborn-backend || true
-                    docker pull dearie-backend:stable
-                    docker pull lightreborn-backend:stable
-                    docker run -d --name dearie-backend --network shared_backend -p 8082:8082 dearie-backend:stable
-                    docker run -d --name lightreborn-backend --network shared_backend -p 8081:8081 lightreborn-backend:stable
-                '''
+            script {
+                if (params.ENV == 'master') {
+                    echo '⛔ 실패 → 이전 stable 이미지로 롤백 시도'
+                    sh '''
+                        docker stop dearie-backend || true
+                        docker stop lightreborn-backend || true
+                        docker rm dearie-backend || true
+                        docker rm lightreborn-backend || true
+                        docker pull dearie-backend:stable
+                        docker pull lightreborn-backend:stable
+                        docker run -d --name dearie-backend --network shared_backend -p 8082:8082 dearie-backend:stable
+                        docker run -d --name lightreborn-backend --network shared_backend -p 8081:8081 lightreborn-backend:stable
+                    '''
+                }
             }
         }
     }
+
 }
