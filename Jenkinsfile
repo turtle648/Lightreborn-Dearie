@@ -1,4 +1,5 @@
 def envProps
+def buildSuccess = false
 
 pipeline {
     agent any
@@ -9,7 +10,6 @@ pipeline {
 
     environment {
         MATTERMOST_WEBHOOK_ID = 'MATTERMOST_WEBHOOK'
-        IMAGE_BUILD_SUCCESS = "false"
     }
 
     stages {
@@ -150,9 +150,9 @@ pipeline {
         stage('Mark Image Build Success') {
             steps {
                 script {
-                    env.IMAGE_BUILD_SUCCESS = "true"
+                    buildSuccess = true
                     echo "🫠 현재 빌드 상태: ${currentBuild.result}"
-                    echo "✅ 이미지 빌드 성공 상태로 설정: ${env.IMAGE_BUILD_SUCCESS}"
+                    echo "✅ 이미지 빌드 성공 상태로 설정: ${buildSuccess}"
                 }
             }
         }
@@ -172,7 +172,7 @@ pipeline {
                     }
                 }
 
-                if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
+                if (buildSuccess || currentBuild.result == 'SUCCESS') {
                     sendMessage("🎉 배포 성공 : `${env.ENV}` 환경\n- Job: `${env.JOB_NAME}`\n- Build: #${env.BUILD_NUMBER}")
                 } else {
                     sendMessage("❌ 배포 실패 : `${env.ENV}` 환경\n- Job: `${env.JOB_NAME}`\n- Build: #${env.BUILD_NUMBER}\n- [로그 확인하기](${env.BUILD_URL})")
