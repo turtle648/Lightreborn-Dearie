@@ -35,10 +35,7 @@ public class YouthConsultationController {
             @Parameter(description = "업로드할 상담 음성 파일 (.m4a 등)", required = true)
             @RequestPart("file") MultipartFile file
     ) {
-        String transcript = speechService.transcribe(file);
-        String summary = speechService.summarizeText(transcript);
-
-        SpeechResponseDTO response = SpeechResponseDTO.builder().text(transcript).summary(summary).build();
+        SpeechResponseDTO response = speechService.getGeneralSummarize(file);
 
         return ResponseEntity
                 .ok(BaseResponse.success(200, "음성 변환을 완료하였습니다", response));
