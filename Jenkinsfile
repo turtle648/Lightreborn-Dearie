@@ -14,16 +14,25 @@ pipeline {
         // 1. 먼저 .env 파일부터 읽음
         stage('Load .env File') {
             steps {
-                script {
-                    def envFilePath = "cicd/.env"
-                    if (!fileExists(envFilePath)) {
-                        error "❌ .env 파일이 ${envFilePath} 위치에 존재하지 않습니다."
+                withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
+                    script {
+                        def envFilePath = "cicd/.env"
+
+                        // .env 파일 동적으로 생성
+                        writeFile file: envFilePath, text: DOTENV
+
+                        // 존재 확인
+                        if (!fileExists(envFilePath)) {
+                            error "❌ .env 파일이 ${envFilePath} 위치에 존재하지 않습니다."
+                        }
+
+                        env.ENV_PROPS = readProperties file: envFilePath
+                        echo "✅ .env 파일을 Credentials로부터 로딩 완료"
                     }
-                    env.ENV_PROPS = readProperties file: envFilePath
-                    echo "✅ .env 파일 로딩 완료"
                 }
             }
         }
+
         // 2. 빌드 및 배포
         stage('Docker Compose Up') {
             steps {
@@ -130,37 +139,36 @@ pipeline {
         }
 
         success {
-            when {
-                expression { params.ENV == 'master' }
-            }
-            steps {
-                echo '🎉 Build 성공 → Stable 이미지 태깅 및 푸시'
-                sh '''
-                    docker tag dearie-backend dearie-backend:stable
-                    docker tag lightreborn-backend lightreborn-backend:stable
-                    docker push dearie-backend:stable
-                    docker push lightreborn-backend:stable
-                '''
+            script {
+                if (params.ENV == 'master') {
+                    echo '🎉 Build 성공 → Stable 이미지 태깅 및 푸시'
+                    sh '''
+                        docker tag dearie-backend dearie-backend:stable
+                        docker tag lightreborn-backend lightreborn-backend:stable
+                        docker push dearie-backend:stable
+                        docker push lightreborn-backend:stable
+                    '''
+                }
             }
         }
 
         failure {
-            when {
-                expression { params.ENV == 'master' }
-            }
-            steps {
-                echo '⛔ 실패 → 이전 stable 이미지로 롤백 시도'
-                sh '''
-                    docker stop dearie-backend || true
-                    docker stop lightreborn-backend || true
-                    docker rm dearie-backend || true
-                    docker rm lightreborn-backend || true
-                    docker pull dearie-backend:stable
-                    docker pull lightreborn-backend:stable
-                    docker run -d --name dearie-backend --network shared_backend -p 8082:8082 dearie-backend:stable
-                    docker run -d --name lightreborn-backend --network shared_backend -p 8081:8081 lightreborn-backend:stable
-                '''
+            script {
+                if (params.ENV == 'master') {
+                    echo '⛔ 실패 → 이전 stable 이미지로 롤백 시도'
+                    sh '''
+                        docker stop dearie-backend || true
+                        docker stop lightreborn-backend || true
+                        docker rm dearie-backend || true
+                        docker rm lightreborn-backend || true
+                        docker pull dearie-backend:stable
+                        docker pull lightreborn-backend:stable
+                        docker run -d --name dearie-backend --network shared_backend -p 8082:8082 dearie-backend:stable
+                        docker run -d --name lightreborn-backend --network shared_backend -p 8081:8081 lightreborn-backend:stable
+                    '''
+                }
             }
         }
     }
+
 }

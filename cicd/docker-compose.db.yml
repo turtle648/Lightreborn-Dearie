@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  dearie-db:
+    image: postgres:16
+    container_name: dearie-db
+    ports:
+      - "5433:5432"
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DEARIE_DB_USER}
+      - POSTGRES_PASSWORD=${DEARIE_DB_PASSWORD}
+      - POSTGRES_DB=${DEARIE_DB_NAME}
+    volumes:
+      - postgres_data_dearie:/var/lib/postgresql/data
+    networks:
+      - dearie-net
+    restart: unless-stopped
+
+  lightreborn-db:
+    image: postgres:16
+    container_name: lightreborn-db
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${LIGHT_DB_USER}
+      - POSTGRES_PASSWORD=${LIGHT_DB_PASSWORD}
+      - POSTGRES_DB=${LIGHT_DB_NAME}
+    volumes:
+      - postgres_data_lightreborn:/var/lib/postgresql/data
+    networks:
+      - lightreborn-net
+    restart: unless-stopped
+
+volumes:
+  postgres_data_dearie:
+  postgres_data_lightreborn:
+
+networks:
+  dearie-net:
+    external: true
+  lightreborn-net:
+    external: true
