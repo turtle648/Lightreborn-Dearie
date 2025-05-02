@@ -151,6 +151,7 @@ pipeline {
             steps {
                 script {
                     env.IMAGE_BUILD_SUCCESS = "true"
+                    echo "🫠 현재 빌드 상태: ${currentBuild.result}"
                     echo "✅ 이미지 빌드 성공 상태로 설정: ${env.IMAGE_BUILD_SUCCESS}"
                 }
             }
