@@ -13,6 +13,10 @@ java {
 	}
 }
 
+springBoot {
+	mainClass = 'com.ssafy.backend.BackendApplication'
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
@@ -42,8 +46,15 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	runtimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+processResources {
+    filesMatching("application.properties") {
+        expand(project.properties)
+    }
 }

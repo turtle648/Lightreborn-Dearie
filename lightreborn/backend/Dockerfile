@@ -3,7 +3,6 @@ FROM openjdk:21-jdk-slim AS build
 
 WORKDIR /app
 
-# Gradle 캐싱을 위해 먼저 의존성 관련 파일 복사
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 COPY gradlew ./
@@ -11,21 +10,20 @@ COPY gradlew ./
 # 실행 권한 부여
 RUN chmod +x gradlew
 
-# 전체 프로젝트 복사 후 재빌드
 COPY . .
 RUN chmod +x gradlew
 
-# 빌드
+# 의존성 설치
 RUN ./gradlew build -x test --no-daemon
 
-# 실제 런타임 이미지
+# 2. 실행 단계
 FROM openjdk:21-jdk
 
 WORKDIR /app
 
-# jar 파일 복사
-COPY --from=build /app/build/libs/*.jar dearie-backend.jar
+# jar 이름 명확히 설정
+COPY --from=build /app/build/libs/*.jar lightreborn-backend.jar
 
-EXPOSE 8082
+EXPOSE 8081
 
-CMD ["java", "-jar", "dearie-backend.jar"]
+CMD ["java", "-jar", "lightreborn-backend.jar"]
