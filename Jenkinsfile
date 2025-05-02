@@ -91,6 +91,7 @@ pipeline {
                             -url='${dbUrl}' \\
                             -user=${dbUser} \\
                             -password=${dbPassword}
+                            -baselineOnMigrate=true
                         """.stripIndent().trim()
                         
                         def infoOutput = sh(script: "${baseCmd} info -outputType=json || true", returnStdout: true).trim()
