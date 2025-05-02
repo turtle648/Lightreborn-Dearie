@@ -12,13 +12,10 @@ import java.util.List;
 
 public class CustomUserDetails implements UserDetails {
     @Getter
-    private Long id;
-    @Getter
     private String userId;
     private List<GrantedAuthority> authorities;
 
     public CustomUserDetails(User user) {
-        this.id = user.getId();
         this.userId = user.getUserId();
         this.authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
     }

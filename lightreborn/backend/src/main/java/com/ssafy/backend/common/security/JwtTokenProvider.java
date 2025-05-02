@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 public class JwtTokenProvider {
-    @Value("${spring.profiles.active:dev}")
+    @Value("${spring.profiles.active:local}")
     private String activeProfile;
 
     public static final int EXPIRATION_TIME = 60 * 60 * 24;
@@ -52,7 +52,7 @@ public class JwtTokenProvider {
     }
 
     public ResponseCookie generateTokenCookie(String jwtToken) {
-        boolean isDev = activeProfile.equals("dev");
+        boolean isDev = activeProfile.equals("local");
 
         return ResponseCookie.from("access_token", jwtToken)
                 .httpOnly(true)
@@ -64,7 +64,7 @@ public class JwtTokenProvider {
     }
 
     public ResponseCookie expiredTokenCookie(String jwtToken) {
-        boolean isDev = activeProfile.equals("dev");
+        boolean isDev = activeProfile.equals("local");
 
         long remainTime = getRemainingExpiration(jwtToken);
         redisTemplate.opsForValue().set(jwtToken, "logout", remainTime, TimeUnit.MILLISECONDS);
