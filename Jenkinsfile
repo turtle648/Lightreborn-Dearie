@@ -40,10 +40,23 @@ pipeline {
             steps {
                 script {
                     echo "🚀 docker-compose up"
-                    sh """
-                        docker-compose -f docker-compose.yml down || true
-                        docker-compose -f docker-compose.yml up -d --build
-                    """
+                    // envProps에서 필요한 환경 변수를 설정
+                    withEnv([
+                        "DEARIE_DB_URL=${envProps.DEARIE_DB_URL}",
+                        "DEARIE_DB_USER=${envProps.DEARIE_DB_USER}",
+                        "DEARIE_DB_PASSWORD=${envProps.DEARIE_DB_PASSWORD}",
+                        "DEARIE_DB_NAME=${envProps.DEARIE_DB_NAME}",
+                        "LIGHT_DB_URL=${envProps.LIGHT_DB_URL}",
+                        "LIGHT_DB_USER=${envProps.LIGHT_DB_USER}",
+                        "LIGHT_DB_PASSWORD=${envProps.LIGHT_DB_PASSWORD}",
+                        "LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}",
+                        "JWT_SECRET=${envProps.JWT_SECRET}"
+                    ]) {
+                        sh """
+                            docker-compose -f docker-compose.yml down || true
+                            docker-compose -f docker-compose.yml up -d --build
+                        """
+                    }
                 }
             }
         }        
