@@ -64,59 +64,61 @@ pipeline {
         stage('Flyway Check and Migration') {
             steps {
                 script {
-		    // ✅ .env를 JSON 문자열로 전달했다면 다시 역직렬화
                     def projects = ['dearie', 'lightreborn']
                     def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
-		                    
-
+                    
                     projects.each { project ->
-                        def dbUrl = envProps.get("${project.toUpperCase()}_DB_URL")
-                        def dbUser = envProps.get("${project.toUpperCase()}_DB_USER")
-                        def dbPassword = envProps.get("${project.toUpperCase()}_DB_PASSWORD")
-
+                        def projUpper = project.toUpperCase()
                         def migrationPath = (params.ENV == 'master') ?
                             "${workspace}/${project}/backend/src/main/resources/db/migration_master" :
                             "${workspace}/${project}/backend/src/main/resources/db/migration"
-
+                        
                         echo "🚀 Running Flyway for ${project} - path: ${migrationPath}"
-
-                        def baseCmd = """
-                            docker run --rm \\
-                              --network shared-net \\
-                              -v ${migrationPath}:/flyway/sql \\
-                              flyway/flyway \\
-                              -locations=filesystem:/flyway/sql \\
-                              -url='${dbUrl}' \\
-                              -user=${dbUser} \\
-                              -password=${dbPassword}
-                        """.stripIndent().trim()
-
-                        def infoOutput = sh(script: "${baseCmd} info -outputType=json || true", returnStdout: true).trim()
-                        def infoJson
-
-                        try {
-                            infoJson = readJSON text: infoOutput
-                        } catch (e) {
-                            if (infoOutput.contains("Validate failed") || infoOutput.contains("Detected failed migration")) {
-                                echo "⚠️ Repairing Flyway for ${project}"
-                                sh "${baseCmd} repair"
-                                infoOutput = sh(script: "${baseCmd} info -outputType=json", returnStdout: true).trim()
+                        
+                        // 여기서 직접 환경 변수 값을 사용합니다 (withEnv 블록 내부에서)
+                        withEnv([
+                            "DB_URL=${envProps.get("${projUpper}_DB_URL") ?: "jdbc:postgresql://${project}-db:5432/${project}"}",
+                            "DB_USER=${envProps.get("${projUpper}_DB_USER") ?: "ssafy"}",
+                            "DB_PASSWORD=${envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"}"
+                        ]) {
+                            def baseCmd = """
+                                docker run --rm \\
+                                --network shared-net \\
+                                -v ${migrationPath}:/flyway/sql \\
+                                flyway/flyway \\
+                                -locations=filesystem:/flyway/sql \\
+                                -url='\${DB_URL}' \\
+                                -user=\${DB_USER} \\
+                                -password=\${DB_PASSWORD}
+                            """.stripIndent().trim()
+                            
+                            def infoOutput = sh(script: "${baseCmd} info -outputType=json || true", returnStdout: true).trim()
+                            def infoJson
+                            
+                            try {
                                 infoJson = readJSON text: infoOutput
-                            } else {
-                                error "❌ Flyway info failed for ${project}: ${infoOutput}"
+                            } catch (e) {
+                                if (infoOutput.contains("Validate failed") || infoOutput.contains("Detected failed migration")) {
+                                    echo "⚠️ Repairing Flyway for ${project}"
+                                    sh "${baseCmd} repair"
+                                    infoOutput = sh(script: "${baseCmd} info -outputType=json", returnStdout: true).trim()
+                                    infoJson = readJSON text: infoOutput
+                                } else {
+                                    error "❌ Flyway info failed for ${project}: ${infoOutput}"
+                                }
                             }
+                            
+                            def needsRepair = infoJson?.migrations?.any {
+                                it.state.toLowerCase() in ['failed', 'missing_success', 'outdated', 'ignored']
+                            } ?: false
+                            
+                            if (needsRepair) {
+                                echo "🔧 Migration issue detected for ${project}, running repair"
+                                sh "${baseCmd} repair"
+                            }
+                            
+                            sh "${baseCmd} migrate"
                         }
-
-                        def needsRepair = infoJson?.migrations?.any {
-                            it.state.toLowerCase() in ['failed', 'missing_success', 'outdated', 'ignored']
-                        } ?: false
-
-                        if (needsRepair) {
-                            echo "🔧 Migration issue detected for ${project}, running repair"
-                            sh "${baseCmd} repair"
-                        }
-
-                        sh "${baseCmd} migrate"
                     }
                 }
             }
