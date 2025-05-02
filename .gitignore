@@ -1,0 +1,3 @@
+cicd/
+.idea/
+!cicd/docker-compose.db.yml

@@ -1,83 +1,73 @@
-networks:
-  backend-dearie:
-    external: true
-    name: backend_dearie
-
-  backend-lightreborn:
-    external: true
-    name: backend_lightreborn
-
-  frontend-lightreborn:
-    external: true
-    name: frontend_lightreborn
+version: "3.9"
 
 services:
-  # lightreborn 서비스
-  lightreborn-backend:
-    build:
-      context: ./lightreborn/backend
-      dockerfile: Dockerfile
-    restart: always
-    container_name: lightreborn-backend
-    env_file:
-      - .env
-    environment:
-      SPRING_PROFILES_ACTIVE: server
-    ports:
-      - "8081:8080"
-    networks:
-      - backend-lightreborn
-
-  lightreborn-frontend:
-    build:
-      context: ./lightreborn/frontend
-      dockerfile: Dockerfile
-    image: lightreborn-frontend
-    restart: always
-    container_name: frontend
-    environment:
-      NODE_ENV: production
-    env_file:
-      - .env
-    depends_on:
-      - lightreborn-backend
-    ports:
-      - "3001:3000"
-    networks:
-      - frontend-lightreborn
-      - backend-lightreborn
-
-  # dearie 서비스
-  dearie-backend:
+  # dearie
+  backend-dearie:
     build:
       context: ./dearie/backend
-      dockerfile: Dockerfile
-    restart: always
+    image: dearie-backend:latest
     container_name: dearie-backend
     env_file:
-      - .env
-    environment:
-      SPRING_PROFILES_ACTIVE: server
+      - ./cicd/.env
     ports:
-      - "8082:8080"
+      - "8082:8082"
+    depends_on:
+      - redis-dearie
     networks:
-      - backend-dearie
+      - dearie-net
+      - shared-net
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
 
-  # dearie-frontend:
-  #   build:
-  #     context: ./dearie/frontend
-  #     dockerfile: Dockerfile
-  #   image: frontend
-  #   restart: always
-  #   container_name: frontend_dearie
-  #   environment:
-  #     NODE_ENV: production
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - dearie-backend
-  #   ports:
-  #     - "3000:3000"
-  #   networks:
-  #     - frontend-tier
-  #     - backend-tier
+  redis-dearie:
+    image: redis:latest
+    container_name: redis-dearie
+    ports:
+      - "6380:6379"
+    networks:
+      - dearie-net
+
+  # lightreborn
+  backend-lightreborn:
+    build: 
+      context: ./lightreborn/backend
+    image: lightreborn-backend:latest
+    container_name: lightreborn-backend
+    env_file:
+      - ./cicd/.env
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis-lightreborn
+    networks:
+      - lightreborn-net
+      - shared-net
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+
+  frontend-lightreborn:
+    build: 
+      context: ./lightreborn/frontend
+    image: lightreborn-frontend:latest
+    container_name: lightreborn-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend-lightreborn
+    networks:
+      - lightreborn-net
+
+  redis-lightreborn:
+    image: redis:latest
+    container_name: redis-lightreborn
+    ports:
+      - "6379:6379"
+    networks:
+      - lightreborn-net
+
+networks:
+  dearie-net:
+    external: true
+  lightreborn-net:
+    external: true
+  shared-net:
