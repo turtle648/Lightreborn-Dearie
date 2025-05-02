@@ -83,7 +83,7 @@ pipeline {
                         ]) {
                             def baseCmd = """
                                 docker run --rm \\
-                                --network shared-net \\
+                                --network soboro_shared-net \\
                                 -v ${migrationPath}:/flyway/sql \\
                                 flyway/flyway \\
                                 -locations=filesystem:/flyway/sql \\
