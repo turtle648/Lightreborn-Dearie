@@ -84,7 +84,7 @@ pipeline {
                         // 변수를 직접 문자열에 삽입
                         def baseCmd = """
                             docker run --rm \\
-                            --network soboro_shared-net \\
+                            --network ${project}-net \\
                             -v ${migrationPath}:/flyway/sql \\
                             flyway/flyway \\
                             -locations=filesystem:/flyway/sql \\
