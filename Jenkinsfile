@@ -39,7 +39,7 @@ pipeline {
                 script {
                     echo "🚀 docker-compose up"
                     sh """
-                        docker rm -f redis-lightreborn redis-dearie dearie-backend lightreborn-backend lightreborn-frontend || true
+                        docker-compose -f docker-compose.yml down || true
                         docker-compose -f docker-compose.yml up -d --build
                     """
                 }
