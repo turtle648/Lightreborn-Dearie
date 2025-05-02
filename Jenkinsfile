@@ -26,7 +26,7 @@ pipeline {
                             error "❌ .env 파일이 ${envFilePath} 위치에 존재하지 않습니다."
                         }
 
-                        env.ENV_PROPS = readProperties file: envFilePath
+                        env.envPropsJson = readProperties file: envFilePath
                         echo "✅ .env 파일을 Credentials로부터 로딩 완료"
                     }
                 }
@@ -49,13 +49,16 @@ pipeline {
         stage('Flyway Check and Migration') {
             steps {
                 script {
+		    // ✅ .env를 JSON 문자열로 전달했다면 다시 역직렬화
+                    def envProps = env.envPropsJson
                     def projects = ['dearie', 'lightreborn']
                     def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
-                    
+		                    
+
                     projects.each { project ->
-                        def dbUrl = env.ENV_PROPS["${project.toUpperCase()}_DB_URL"]
-                        def dbUser = env.ENV_PROPS["${project.toUpperCase()}_DB_USER"]
-                        def dbPassword = env.ENV_PROPS["${project.toUpperCase()}_DB_PASSWORD"]
+                        def dbUrl = envProps.get("${project.toUpperCase()}_DB_URL")
+                        def dbUser = envProps.get("${project.toUpperCase()}_DB_USER")
+                        def dbPassword = envProps.get("${project.toUpperCase()}_DB_PASSWORD")
 
                         def migrationPath = (params.ENV == 'master') ?
                             "${workspace}/${project}/backend/src/main/resources/db/migration_master" :
