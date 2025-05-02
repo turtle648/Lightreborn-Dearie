@@ -14,4 +14,5 @@ interface PromotionNetworkStore {
 
 export const usePromotionNetworkStore = create<PromotionNetworkStore>((set) => ({
   promotionNetwork: [],
+  
 }));    
