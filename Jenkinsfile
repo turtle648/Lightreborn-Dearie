@@ -52,7 +52,6 @@ pipeline {
             steps {
                 script {
 		    // ✅ .env를 JSON 문자열로 전달했다면 다시 역직렬화
-                    def envProps = env.envPropsJson
                     def projects = ['dearie', 'lightreborn']
                     def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
 		                    
