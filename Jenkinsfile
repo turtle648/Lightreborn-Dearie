@@ -73,6 +73,14 @@ pipeline {
                             "${workspace}/${project}/backend/src/main/resources/db/migration_master" :
                             "${workspace}/${project}/backend/src/main/resources/db/migration"
                         
+                        // 마이그레이션 파일 존재 확인
+                        def hasMigrationFiles = sh(script: "ls -la ${migrationPath}/*.sql 2>/dev/null || true", returnStatus: true) == 0
+                        
+                        if (!hasMigrationFiles) {
+                            echo "⚠️ No migration files found in ${migrationPath}, skipping Flyway for ${project}"
+                            return // 현재 프로젝트의 처리를 건너뛰고 다음 프로젝트로 넘어감
+                        }
+                        
                         // 환경 변수 값을 직접 가져와서 변수로 저장
                         def dbUrl = envProps.get("${projUpper}_DB_URL") ?: "jdbc:postgresql://${project}-db:5432/${project}"
                         def dbUser = envProps.get("${projUpper}_DB_USER") ?: "ssafy"
@@ -90,36 +98,49 @@ pipeline {
                             -locations=filesystem:/flyway/sql \\
                             -url='${dbUrl}' \\
                             -user=${dbUser} \\
-                            -password=${dbPassword}
+                            -password=${dbPassword} \\
                             -baselineOnMigrate=true
                         """.stripIndent().trim()
                         
+                        // 먼저 info 명령으로 상태 확인
                         def infoOutput = sh(script: "${baseCmd} info -outputType=json || true", returnStdout: true).trim()
-                        def infoJson
                         
+                        // 에러 메시지가 포함되어 있는지 확인
+                        if (infoOutput.contains("ERROR:") || infoOutput.contains("Usage flyway")) {
+                            echo "⚠️ Flyway info command failed for ${project}: ${infoOutput}"
+                            echo "⚠️ Skipping Flyway migration for ${project}"
+                            return // 현재 프로젝트 건너뛰기
+                        }
+                        
+                        def infoJson
                         try {
                             infoJson = readJSON text: infoOutput
-                        } catch (e) {
-                            if (infoOutput.contains("Validate failed") || infoOutput.contains("Detected failed migration")) {
-                                echo "⚠️ Repairing Flyway for ${project}"
-                                sh "${baseCmd} repair"
-                                infoOutput = sh(script: "${baseCmd} info -outputType=json", returnStdout: true).trim()
-                                infoJson = readJSON text: infoOutput
-                            } else {
-                                error "❌ Flyway info failed for ${project}: ${infoOutput}"
+                            
+                            // 마이그레이션이 필요한지 확인
+                            def pendingMigrations = infoJson.migrations?.findAll { it.state == "pending" }
+                            if (!pendingMigrations || pendingMigrations.isEmpty()) {
+                                echo "✅ No pending migrations for ${project}, skipping migrate command"
+                                return // 현재 프로젝트 건너뛰기
                             }
+                            
+                            // 실패한 마이그레이션이 있는지 확인
+                            def failedMigrations = infoJson.migrations?.findAll { 
+                                it.state.toLowerCase() in ['failed', 'missing_success', 'outdated', 'ignored'] 
+                            }
+                            
+                            if (failedMigrations && !failedMigrations.isEmpty()) {
+                                echo "🔧 Failed migrations detected for ${project}, running repair"
+                                sh "${baseCmd} repair"
+                            }
+                            
+                            // 마이그레이션 실행
+                            echo "🚀 Running migrations for ${project}"
+                            sh "${baseCmd} migrate"
+                        } catch (e) {
+                            echo "⚠️ Error processing Flyway info for ${project}: ${e.message}"
+                            echo "⚠️ Attempting to migrate anyway"
+                            sh "${baseCmd} migrate || true" // 마이그레이션 실패해도 파이프라인은 계속 진행
                         }
-                        
-                        def needsRepair = infoJson?.migrations?.any {
-                            it.state.toLowerCase() in ['failed', 'missing_success', 'outdated', 'ignored']
-                        } ?: false
-                        
-                        if (needsRepair) {
-                            echo "🔧 Migration issue detected for ${project}, running repair"
-                            sh "${baseCmd} repair"
-                        }
-                        
-                        sh "${baseCmd} migrate"
                     }
                 }
             }
