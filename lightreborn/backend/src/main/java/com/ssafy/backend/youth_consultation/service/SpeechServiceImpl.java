@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ssafy.backend.auth.model.dto.TranscriptionResultDTO;
 import com.ssafy.backend.youth_consultation.entity.CounselingLog;
 import com.ssafy.backend.youth_consultation.entity.IsolatedYouth;
 import com.ssafy.backend.youth_consultation.entity.SurveyProcessStep;
@@ -18,18 +19,27 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Utilities;
+import software.amazon.awssdk.services.s3.model.GetUrlRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 @Service
@@ -40,6 +50,11 @@ public class SpeechServiceImpl implements SpeechService {
     private final ExecutorService executorService;
     private final IsolatedYouthRepository isolatedYouthRepository;
     private final CounselingLogRepository counselingLogRepository;
+    private final S3AsyncClient s3Client;
+    private final S3Utilities s3Utilities;
+
+    @Value("${spring.cloud.aws.s3.bucket}")
+    private String bucket;
 
     @Value("${openai.api.key}")
     private String apiKey;
@@ -53,7 +68,8 @@ public class SpeechServiceImpl implements SpeechService {
         IsolatedYouth isolatedYouth = isolatedYouthRepository.findById(requestDTO.getIsolatedYouthId())
                 .orElseThrow(() -> new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_PERSON));
 
-        String transcript = transcribe(requestDTO.getFile());
+        TranscriptionResultDTO resultDTO = transcribe(requestDTO.getFile());
+        String transcript = resultDTO.getTranscript();
         String client = extractClient(transcript);
         String counselor = extractCounselorContent(transcript);
         String notes = extractNotesAndMemos(transcript);
@@ -79,6 +95,7 @@ public class SpeechServiceImpl implements SpeechService {
                         .isolatedYouth(isolatedYouth)
                         .clientKeyword(client)
                         .summarize(summarize)
+                        .voiceFileUrl(resultDTO.getUploadUrl())
                         .build()
         );
 
@@ -91,7 +108,7 @@ public class SpeechServiceImpl implements SpeechService {
                 .build();
     }
 
-    private String transcribe(MultipartFile file) {
+    private TranscriptionResultDTO transcribe(MultipartFile file) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("파일이 비어 있습니다.");
         }
@@ -152,17 +169,25 @@ public class SpeechServiceImpl implements SpeechService {
             headers.setBearerAuth(apiKey);
 
             HttpEntity<MultiValueMap<String,Object>> req = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> resp = restTemplate.exchange(
-                    "https://api.openai.com/v1/audio/transcriptions",
-                    HttpMethod.POST, req, String.class
-            );
-            log.info("[Whisper 응답] {}", resp.getBody());
-
             ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(resp.getBody());
-            return root.get("text").asText();
-        } catch (IOException | InterruptedException e) {
+
+            String path = uploadFile(wav);
+
+            String transcript = executorService.submit(() -> {
+                ResponseEntity<String> resp = restTemplate.exchange("https://api.openai.com/v1/audio/transcriptions",
+                        HttpMethod.POST, req, String.class);
+                JsonNode root = mapper.readTree(resp.getBody());
+                return root.get("text")
+                        .asText()
+                        .trim();
+            }).get();
+
+            return TranscriptionResultDTO.builder()
+                    .transcript(transcript)
+                    .uploadUrl(path)
+                    .build();
+
+        } catch (IOException | InterruptedException | ExecutionException e) {
             log.error("[오디오 처리 오류]", e);
             throw new RuntimeException("오디오 처리 실패: " + e.getMessage(), e);
         } finally {
@@ -170,6 +195,48 @@ public class SpeechServiceImpl implements SpeechService {
             outputFile.delete();
         }
     }
+
+    public String uploadFile(Resource resource) throws IOException {
+        String originalName = resource.getFilename();
+        String key = UUID.randomUUID() + "_" + originalName;
+        long length = resource.contentLength();
+
+        String contentType = URLConnection.guessContentTypeFromName(originalName);
+        if (contentType == null) {
+            contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        }
+
+        PutObjectRequest putReq = PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .contentType(contentType)
+                .contentLength(length)
+                .build();
+
+        InputStream in = resource.getInputStream();
+        AsyncRequestBody body = AsyncRequestBody.fromInputStream(in, length, executorService);
+
+        s3Client.putObject(putReq, body)
+                .whenComplete((resp, err) -> {
+                    if (err != null) {
+                        log.error("S3 업로드 실패: bucket={}, key={}", bucket, key, err);
+                        // TODO: retry logic
+                    }
+                    try {
+                        in.close();
+                    } catch (IOException e) {
+                        log.warn("InputStream close 실패", e);
+                    }
+                });
+
+        return s3Utilities.getUrl(
+                GetUrlRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .build()
+        ).toExternalForm();
+    }
+
 
     private String getGptAnswer(String systemPrompt, String... userPrompts) {
         try {
