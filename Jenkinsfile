@@ -53,9 +53,10 @@ pipeline {
                     def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
                     
                     projects.each { project ->
-                        def dbUrl = envProps["${project.toUpperCase()}_DB_URL"]
-                        def dbUser = envProps["${project.toUpperCase()}_DB_USER"]
-                        def dbPassword = envProps["${project.toUpperCase()}_DB_PASSWORD"]
+                        def dbUrl = env.ENV_PROPS["${project.toUpperCase()}_DB_URL"]
+                        def dbUser = env.ENV_PROPS["${project.toUpperCase()}_DB_USER"]
+                        def dbPassword = env.ENV_PROPS["${project.toUpperCase()}_DB_PASSWORD"]
+
                         def migrationPath = (params.ENV == 'master') ?
                             "${workspace}/${project}/backend/src/main/resources/db/migration_master" :
                             "${workspace}/${project}/backend/src/main/resources/db/migration"
