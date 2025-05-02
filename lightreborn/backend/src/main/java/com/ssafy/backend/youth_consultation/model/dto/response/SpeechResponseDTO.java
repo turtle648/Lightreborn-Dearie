@@ -1,4 +1,4 @@
-package com.ssafy.backend.youth_consultation.dto.response;
+package com.ssafy.backend.youth_consultation.model.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;

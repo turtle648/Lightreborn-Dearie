@@ -9,12 +9,12 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "survey_personal_info")
+@Table(name = "personal_info")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SurveyPersonalInfo {
+public class PersonalInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,8 +29,4 @@ public class SurveyPersonalInfo {
 
     @Column(length = 20)
     private String emergencyContact;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "isolated_youth_id")
-    private IsolatedYouth isolatedYouth;
 }

@@ -17,10 +17,8 @@ public class SurveyQuestion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 50)
     private String content;
 
-    @Column(length = 5)
+    @Column(length = 10)
     private String questionCode;
-
 }

@@ -1,0 +1,15 @@
+package com.ssafy.backend.youth_consultation.exception;
+
+import com.ssafy.backend.common.exception.BaseErrorCode;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.springframework.http.HttpStatus;
+
+@Getter
+@AllArgsConstructor
+public enum YouthConsultationErrorCode implements BaseErrorCode {
+    NO_MATCH_PERSON(HttpStatus.BAD_REQUEST, "일치하는 고립청년이 없습니다.");
+
+    private final HttpStatus status;
+    private final String message;
+}

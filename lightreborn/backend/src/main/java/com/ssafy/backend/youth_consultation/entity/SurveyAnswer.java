@@ -20,11 +20,15 @@ public class SurveyAnswer {
     @Column(columnDefinition = "TEXT")
     private String answerText;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "answer_choice")
+    private Answer answerChoice;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "survey_question_id")
     private SurveyQuestion surveyQuestion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "counseling_log_id")
-    private CounselingLog counselingLog;
+    @JoinColumn(name = "personal_info_id")
+    private PersonalInfo personalInfo;
 }
