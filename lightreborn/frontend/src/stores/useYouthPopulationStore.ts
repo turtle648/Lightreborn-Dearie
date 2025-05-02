@@ -10,6 +10,6 @@ interface YouthPopulationStore {
   youthPopulation: YouthPopulation[];
 }
 
-export const useYouthPopulationStore = create<YouthPopulationStore>((set) => ({
+export const useYouthPopulationStore = create<YouthPopulationStore>((_set) => ({
   youthPopulation: [],
 }));    

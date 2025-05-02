@@ -1,113 +1,104 @@
 pipeline {
     agent any
 
+    parameters {
+  		choice(name: 'ENV', choices: ['develop', 'master'], description: 'Select deploy environment')
+	}
+
     environment {
-        // Define credential IDs used in the pipeline
-        DB_CRED_ID = 'DB_CRED'
         MATTERMOST_WEBHOOK_ID = 'MATTERMOST_WEBHOOK'
-        // Default build success flag
         IMAGE_BUILD_SUCCESS = "false"
     }
 
     stages {
-        stage('Check Required Credentials') {
+        // 1. 먼저 .env 파일부터 읽음
+        stage('Load .env File') {
             steps {
                 script {
-                    def checkCredentialExists = { credId, credType ->
+                    def envFilePath = "cicd/.env"
+                    if (!fileExists(envFilePath)) {
+                        error "❌ .env 파일이 ${envFilePath} 위치에 존재하지 않습니다."
+                    }
+                    env.ENV_PROPS = readProperties file: envFilePath
+                    echo "✅ .env 파일 로딩 완료"
+                }
+            }
+        }
+        // 2. 빌드 및 배포
+        stage('Docker Compose Up') {
+            steps {
+                script {
+                    echo "🚀 docker-compose up"
+                    sh """
+                        docker-compose -f docker-compose.yml up -d --build
+                    """
+                }
+            }
+        }        
+        // 3. Flyway 데이터 마이그레이션
+        stage('Flyway Check and Migration') {
+            steps {
+                script {
+                    def projects = ['dearie', 'lightreborn']
+                    def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
+                    
+                    projects.each { project ->
+                        def dbUrl = envProps["${project.toUpperCase()}_DB_URL"]
+                        def dbUser = envProps["${project.toUpperCase()}_DB_USER"]
+                        def dbPassword = envProps["${project.toUpperCase()}_DB_PASSWORD"]
+                        def migrationPath = (params.ENV == 'master') ?
+                            "${workspace}/${project}/backend/src/main/resources/db/migration_master" :
+                            "${workspace}/${project}/backend/src/main/resources/db/migration"
+
+                        echo "🚀 Running Flyway for ${project} - path: ${migrationPath}"
+
+                        def baseCmd = """
+                            docker run --rm \\
+                              --network shared-net \\
+                              -v ${migrationPath}:/flyway/sql \\
+                              flyway/flyway \\
+                              -locations=filesystem:/flyway/sql \\
+                              -url='${dbUrl}' \\
+                              -user=${dbUser} \\
+                              -password=${dbPassword}
+                        """.stripIndent().trim()
+
+                        def infoOutput = sh(script: "${baseCmd} info -outputType=json || true", returnStdout: true).trim()
+                        def infoJson
+
                         try {
-                            withCredentials([file(credentialsId: credId, variable: 'CRED_FILE_CHECK')]) {
-                                echo "✅ Credential '${credId}' (${credType}) found."
-                            }
+                            infoJson = readJSON text: infoOutput
                         } catch (e) {
-                            error "❌ Critical Credential Missing: Cannot find '${credId}' (${credType}). Please configure it in Jenkins."
-                        }
-                    }
-                    checkCredentialExists(env.DB_CRED_ID, 'Secret File (JSON)')
-                    checkCredentialExists(env.MATTERMOST_WEBHOOK_ID, 'Secret Text')
-                }
-            }
-        }
-
-        stage('Generate .env files') {
-            steps {
-                script {
-                    withCredentials([file(credentialsId: env.DB_CRED_ID, variable: 'DB_CRED_FILE')]) {
-                        def creds = readJSON file: DB_CRED_FILE
-
-                        // Generate .env for lightreborn
-                        def lightrebornEnvCreds = creds['lightreborn']
-                        if (!lightrebornEnvCreds) {
-                            error "❌ Lightreborn configuration not found in DB_CRED.json"
+                            if (infoOutput.contains("Validate failed") || infoOutput.contains("Detected failed migration")) {
+                                echo "⚠️ Repairing Flyway for ${project}"
+                                sh "${baseCmd} repair"
+                                infoOutput = sh(script: "${baseCmd} info -outputType=json", returnStdout: true).trim()
+                                infoJson = readJSON text: infoOutput
+                            } else {
+                                error "❌ Flyway info failed for ${project}: ${infoOutput}"
+                            }
                         }
 
-                        // Generate Spring Datasource URL for lightreborn
-                        lightrebornEnvCreds['SPRING_DATASOURCE_URL'] = "jdbc:postgresql://${lightrebornEnvCreds['POSTGRES_HOST']}:${lightrebornEnvCreds['POSTGRES_PORT']}/${lightrebornEnvCreds['POSTGRES_DB']}"
-                        lightrebornEnvCreds['SPRING_DATASOURCE_USERNAME'] = lightrebornEnvCreds['POSTGRES_USER']
-                        lightrebornEnvCreds['SPRING_DATASOURCE_PASSWORD'] = lightrebornEnvCreds['POSTGRES_PASSWORD']
+                        def needsRepair = infoJson?.migrations?.any {
+                            it.state.toLowerCase() in ['failed', 'missing_success', 'outdated', 'ignored']
+                        } ?: false
 
-                        def lightrebornEnvLines = lightrebornEnvCreds.collect { key, value -> "${key}=${value}" }
-                        def lightrebornEnvContent = "# Generated by Jenkins for lightreborn\n" + lightrebornEnvLines.join('\n')
-
-                        writeFile file: 'lightreborn.env', text: lightrebornEnvContent, encoding: 'UTF-8'
-                        echo "✅ lightreborn.env file generated using DB_CRED.json"
-
-                        // Generate .env for dearie
-                        def dearieEnvCreds = creds['dearie']
-                        if (!dearieEnvCreds) {
-                            error "❌ Dearie configuration not found in DB_CRED.json"
+                        if (needsRepair) {
+                            echo "🔧 Migration issue detected for ${project}, running repair"
+                            sh "${baseCmd} repair"
                         }
 
-                        // Generate Spring Datasource URL for dearie
-                        dearieEnvCreds['SPRING_DATASOURCE_URL'] = "jdbc:postgresql://${dearieEnvCreds['POSTGRES_HOST']}:${dearieEnvCreds['POSTGRES_PORT']}/${dearieEnvCreds['POSTGRES_DB']}"
-                        dearieEnvCreds['SPRING_DATASOURCE_USERNAME'] = dearieEnvCreds['POSTGRES_USER']
-                        dearieEnvCreds['SPRING_DATASOURCE_PASSWORD'] = dearieEnvCreds['POSTGRES_PASSWORD']
-
-                        def dearieEnvLines = dearieEnvCreds.collect { key, value -> "${key}=${value}" }
-                        def dearieEnvContent = "# Generated by Jenkins for dearie\n" + dearieEnvLines.join('\n')
-
-                        writeFile file: 'dearie.env', text: dearieEnvContent, encoding: 'UTF-8'
-                        echo "✅ dearie.env file generated using DB_CRED.json"
+                        sh "${baseCmd} migrate"
                     }
                 }
             }
         }
 
-        stage('Build and Deploy Lightreborn') {
+        // 4. 빌드 성공 여부 상태 반영
+        stage('Mark Image Build Success') {
             steps {
                 script {
-                    try {
-                        // Copy .env to frontend build context
-                        echo "ℹ️ Copying lightreborn.env to ./lightreborn/frontend/ for build context..."
-                        sh 'cp lightreborn.env ./lightreborn/frontend/.env'
-
-                        // Build and deploy lightreborn services
-                        echo "🚀 Starting docker-compose up --build for lightreborn..."
-                        sh "docker-compose --env-file lightreborn.env up -d --build"
-                        env.IMAGE_BUILD_SUCCESS = "true"
-                        echo "✅ Docker Compose build and run successful for lightreborn services."
-                    } catch (Exception e) {
-                        env.IMAGE_BUILD_SUCCESS = "false"
-                        currentBuild.result = 'FAILURE'
-                        error "❌ Docker Compose failed for lightreborn: ${e.getMessage()}"
-                    }
-                }
-            }
-        }
-
-        stage('Build and Deploy Dearie') {
-            steps {
-                script {
-                    try {
-                        // Build and deploy dearie services
-                        echo "🚀 Starting docker-compose up --build for dearie..."
-                        sh "docker-compose --env-file dearie.env up -d --build dearie-backend"
-                        env.IMAGE_BUILD_SUCCESS = "true"
-                        echo "✅ Docker Compose build and run successful for dearie services."
-                    } catch (Exception e) {
-                        env.IMAGE_BUILD_SUCCESS = "false"
-                        currentBuild.result = 'FAILURE'
-                        error "❌ Docker Compose failed for dearie: ${e.getMessage()}"
-                    }
+                    env.IMAGE_BUILD_SUCCESS = "true"
                 }
             }
         }
@@ -116,58 +107,59 @@ pipeline {
     post {
         always {
             script {
-                def notifyMattermost = { String message ->
-                    try {
-                        def payload = groovy.json.JsonOutput.toJson([text: message])
-                        writeFile file: 'payload.json', text: payload, encoding: 'UTF-8'
+                def sendMessage = { String msg ->
+                    def payload = groovy.json.JsonOutput.toJson([text: msg])
+                    writeFile file: 'payload.json', text: payload
 
-                        withCredentials([string(credentialsId: env.MATTERMOST_WEBHOOK_ID, variable: 'MATTERMOST_WEBHOOK_URL')]) {
-                            echo " M Sending notification to Mattermost..."
-                            sh(
-                                script: """
-                                    curl -X POST -H 'Content-Type: application/json; charset=utf-8' --data @payload.json "${MATTERMOST_WEBHOOK_URL}"
-                                """,
-                                label: 'Send Mattermost Notification'
-                            )
-                        }
-                    } catch (credErr) {
-                        echo "⚠️ Failed to send Mattermost notification: Could not load credential '${env.MATTERMOST_WEBHOOK_ID}' or webhook failed. ${credErr.getMessage()}"
-                    } catch (e) {
-                        echo "⚠️ Failed to send Mattermost notification: ${e.getMessage()}"
+                    withCredentials([string(credentialsId: MATTERMOST_WEBHOOK_ID, variable: 'MATTERMOST_WEBHOOK')]) {
+                        sh '''
+                            curl -X POST -H 'Content-Type: application/json' -d @payload.json $MATTERMOST_WEBHOOK
+                        '''
                     }
                 }
 
-                def jobName = env.JOB_NAME ?: 'Unknown Job'
-                def buildNumber = env.BUILD_NUMBER ?: 'N/A'
-                def buildUrl = env.BUILD_URL ?: '#'
-                def finalStatus = currentBuild.result ?: 'UNKNOWN'
-                def statusEmoji = (finalStatus == 'SUCCESS') ? '✅' : '❌'
-                def statusText = (finalStatus == 'SUCCESS') ? '성공' : '실패'
-
-                def message = """
-                ${statusEmoji} *Jenkins Build ${statusText}*
-                - **Project**: lightreborn & dearie
-                - **Job**: ${jobName}
-                - **Build**: #${buildNumber}
-                - **Status**: ${finalStatus}
-                - **Link**: [View Build](${buildUrl})
-                """.stripIndent()
-
-                if (finalStatus != 'SUCCESS' && env.IMAGE_BUILD_SUCCESS == "false") {
-                    message += "\n- **Reason**: Docker Compose build/run failed."
-                } else if (finalStatus != 'SUCCESS') {
-                    message += "\n- **Reason**: Failure occurred in stage: ${currentBuild.currentResult}"
+                if (env.IMAGE_BUILD_SUCCESS == "true") {
+                    sendMessage("✅ 배포 성공 : `${env.ENV}` 환경\n- Job: `${env.JOB_NAME}`\n- Build: #${env.BUILD_NUMBER}")
+                } else {
+                    sendMessage("❌ 배포 실패 : `${env.ENV}` 환경\n- Job: `${env.JOB_NAME}`\n- Build: #${env.BUILD_NUMBER}\n- [로그 확인하기](${env.BUILD_URL})")
                 }
 
-                notifyMattermost(message)
+                sh 'find . -name ".env" -delete || true'
+                sh 'rm -f payload.json || true'
+            }
+        }
 
-                // Cleanup workspace
-                echo "🧹 Cleaning up workspace..."
-                sh 'rm -f lightreborn.env'
-                sh 'rm -f dearie.env'
-                sh 'rm -f ./lightreborn/frontend/.env'
-                sh 'rm -f payload.json'
-                echo "✅ Cleanup complete."
+        success {
+            when {
+                expression { params.ENV == 'master' }
+            }
+            steps {
+                echo '🎉 Build 성공 → Stable 이미지 태깅 및 푸시'
+                sh '''
+                    docker tag dearie-backend dearie-backend:stable
+                    docker tag lightreborn-backend lightreborn-backend:stable
+                    docker push dearie-backend:stable
+                    docker push lightreborn-backend:stable
+                '''
+            }
+        }
+
+        failure {
+            when {
+                expression { params.ENV == 'master' }
+            }
+            steps {
+                echo '⛔ 실패 → 이전 stable 이미지로 롤백 시도'
+                sh '''
+                    docker stop dearie-backend || true
+                    docker stop lightreborn-backend || true
+                    docker rm dearie-backend || true
+                    docker rm lightreborn-backend || true
+                    docker pull dearie-backend:stable
+                    docker pull lightreborn-backend:stable
+                    docker run -d --name dearie-backend --network shared_backend -p 8082:8082 dearie-backend:stable
+                    docker run -d --name lightreborn-backend --network shared_backend -p 8081:8081 lightreborn-backend:stable
+                '''
             }
         }
     }

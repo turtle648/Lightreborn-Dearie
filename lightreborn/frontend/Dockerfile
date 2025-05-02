@@ -1,11 +1,11 @@
-# Node.js 22 기반 이미지
-FROM node:22
+# 1. 빌드
+FROM node:22-alpine AS build
 
 # 작업 디렉토리 설정
 WORKDIR /app
 
 # package.json과 package-lock.json 복사
-COPY package*.json ./
+COPY package.json package-lock.json ./
 
 # 의존성 설치 (package-lock.json을 100% 따름)
 RUN npm ci
@@ -13,11 +13,17 @@ RUN npm ci
 # 전체 프로젝트 복사
 COPY . .
 
-# 🧪 빌드시 사용할 환경변수 복사
-COPY .env .env
+# 빌드 실행
+RUN npm run build -- --no-lint
+# RUN npm run build
 
-# 포트 노출
+# 2. 런타임
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY --from=build /app ./
+
 EXPOSE 3000
 
-# 컨테이너 실행 시 Next.js 실행
-CMD ["npm", "run", "start"]
+CMD ["npm", "start"]
