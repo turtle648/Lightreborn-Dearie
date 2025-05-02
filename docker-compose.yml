@@ -15,7 +15,6 @@ services:
       - redis-dearie
     networks:
       - dearie-net
-      - shared-net
     environment:
       - SPRING_PROFILES_ACTIVE=prod
 
@@ -29,7 +28,7 @@ services:
 
   # lightreborn
   backend-lightreborn:
-    build: 
+    build:
       context: ./lightreborn/backend
     image: lightreborn-backend:latest
     container_name: lightreborn-backend
@@ -41,12 +40,11 @@ services:
       - redis-lightreborn
     networks:
       - lightreborn-net
-      - shared-net
     environment:
       - SPRING_PROFILES_ACTIVE=prod
 
   frontend-lightreborn:
-    build: 
+    build:
       context: ./lightreborn/frontend
     image: lightreborn-frontend:latest
     container_name: lightreborn-frontend
@@ -70,4 +68,3 @@ networks:
     external: true
   lightreborn-net:
     external: true
-  shared-net:
