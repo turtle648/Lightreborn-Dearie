@@ -213,21 +213,16 @@ public class SpeechServiceImpl implements SpeechService {
                 .contentLength(length)
                 .build();
 
-        InputStream in = resource.getInputStream();
-        AsyncRequestBody body = AsyncRequestBody.fromInputStream(in, length, executorService);
 
-        s3Client.putObject(putReq, body)
-                .whenComplete((resp, err) -> {
-                    if (err != null) {
-                        log.error("S3 업로드 실패: bucket={}, key={}", bucket, key, err);
-                        // TODO: retry logic
-                    }
-                    try {
-                        in.close();
-                    } catch (IOException e) {
-                        log.warn("InputStream close 실패", e);
-                    }
-                });
+        try (InputStream in = resource.getInputStream()) {
+            AsyncRequestBody body = AsyncRequestBody.fromInputStream(in, length, executorService);
+            s3Client.putObject(putReq, body)
+                    .whenComplete((resp, err) -> {
+                        if (err != null) {
+                            log.error("S3 업로드 실패: bucket={}, key={}", bucket, key, err);
+                        }
+                    });
+        }
 
         return s3Utilities.getUrl(
                 GetUrlRequest.builder()
