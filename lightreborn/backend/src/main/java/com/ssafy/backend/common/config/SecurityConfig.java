@@ -1,6 +1,5 @@
 package com.ssafy.backend.common.config;
 
-import com.ssafy.backend.common.security.CustomUserDetailsService;
 import com.ssafy.backend.common.security.JwtAuthenticationFilter;
 import com.ssafy.backend.common.security.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,7 +28,6 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final CustomUserDetailsService userDetailsService;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -38,7 +36,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService);
+        return new JwtAuthenticationFilter(jwtTokenProvider);
     }
 
     @Bean
