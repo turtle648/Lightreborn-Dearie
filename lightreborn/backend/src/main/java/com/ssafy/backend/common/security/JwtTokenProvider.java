@@ -2,6 +2,7 @@ package com.ssafy.backend.common.security;
 
 import com.ssafy.backend.auth.entity.User;
 import com.ssafy.backend.auth.repository.UserRepository;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -45,6 +46,7 @@ public class JwtTokenProvider {
     public String generateToken(String userId) {
         return Jwts.builder()
                 .setSubject(userId)
+                .claim("role", "user")
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME * 1000L))
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -145,4 +147,17 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(UserDetails userDetails) {
         return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
     }
+
+    public Claims getClaims(String token) {
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (JwtException e) {
+            throw new IllegalArgumentException("유효하지 않은 JWT 토큰입니다", e);
+        }
+    }
+
 }
