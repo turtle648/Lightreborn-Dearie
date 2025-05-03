@@ -18,18 +18,15 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
                     script {
-                        def envFilePath = "${env.WORKSPACE}/.env"
+                        def envFilePath = "${env.WORKSPACE}/.env"  // ✅ 루트에 저장
 
-                        // .env 파일 동적으로 생성
                         writeFile file: envFilePath, text: DOTENV
 
                         // 존재 확인
                         if (!fileExists(envFilePath)) {
                             error "❌ .env 파일이 ${envFilePath} 위치에 존재하지 않습니다."
                         }
-
-                        envProps = readProperties file: envFilePath
-                        echo "✅ .env 파일 로딩 완료: ${envProps}"
+                        echo "✅ .env 파일 저장 완료: ${envFilePath}"
                     }
                 }
             }
@@ -53,6 +50,9 @@ pipeline {
         stage('Docker Compose Up') {
             steps {
                 script {
+                    def composePath = "${env.WORKSPACE}/docker-compose.yml"
+                    def envPath = "${env.WORKSPACE}/.env"
+
                     echo "🚀 docker-compose up"
                     // envProps에서 필요한 환경 변수를 설정
                     withEnv([
@@ -67,7 +67,7 @@ pipeline {
                         "JWT_SECRET=${envProps.JWT_SECRET}"
                     ]) {
                         sh """
-                            docker-compose -f docker-compose.yml up -d --build
+                            docker-compose --env-file ${envPath} -f ${composePath} up -d --build
                         """
                     }
                 }
