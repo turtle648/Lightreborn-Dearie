@@ -17,6 +17,7 @@ import com.ssafy.backend.youth_consultation.repository.IsolatedYouthRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -32,10 +33,7 @@ import software.amazon.awssdk.services.s3.S3Utilities;
 import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.util.UUID;
@@ -109,8 +107,46 @@ public class SpeechServiceImpl implements SpeechService {
     }
 
     @Override
-    public void uploadIsolationYouthInfo() {
+    public void uploadIsolationYouthInfo(MultipartFile file) {
+        try {
+            File convFile = File.createTempFile("upload-", ".docx");
+            file.transferTo(convFile);
 
+            XWPFDocument doc = new XWPFDocument(new FileInputStream(convFile));
+//            XWPFTable table = null;
+
+            StringBuilder sb = new StringBuilder("\n[표 내용]\n");
+
+            for (IBodyElement element : doc.getBodyElements()) {
+                if (element instanceof XWPFTable) {
+                    XWPFTable table = (XWPFTable) element;
+
+                    for (XWPFTableRow row : table.getRows()) {
+                        for (XWPFTableCell cell : row.getTableCells()) {
+                            sb.append(cell.getText()).append("\t");
+                        }
+                        sb.append("\n");
+                    }
+                }
+            }
+
+//            Iterator<IBodyElement> docElementsIterator = doc.getBodyElementsIterator();
+//            while(docElementsIterator.hasNext()) {
+//                IBodyElement docElement = docElementsIterator.next();
+//
+//                if("TABLE".equalsIgnoreCase(docElement.getElementType().name())) {
+//                    List<XWPFTable> xwpfTableList = docElement.getBody().getTables();
+//
+//                    table = xwpfTableList.get(0);
+//                    sb.append(xwpfTableList.get(0));
+//                }
+//            }
+
+            log.info("[SpeechServiceImpl] uploadIsolationYouthInfo {}", sb);
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private TranscriptionResultDTO transcribe(MultipartFile file) {
