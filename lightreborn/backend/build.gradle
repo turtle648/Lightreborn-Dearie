@@ -50,6 +50,12 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// XSSF: .xlsx
+	implementation 'org.apache.poi:poi-ooxml:5.2.3'
+	//opencsv
+	implementation 'com.opencsv:opencsv:5.9'
+
 	runtimeOnly 'com.h2database:h2'
 }
 
