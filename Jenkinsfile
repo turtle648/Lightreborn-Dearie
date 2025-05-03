@@ -18,7 +18,7 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
                     script {
-                        def envFilePath = "${env.WORKSPACE}/.env"  // ✅ 루트에 저장
+                        def envFilePath = "${env.WORKSPACE}/cicd/.env"  // ✅ 루트에 저장
 
                         writeFile file: envFilePath, text: DOTENV
 
@@ -36,7 +36,7 @@ pipeline {
             steps {
                 script {
                     def composePath = "${env.WORKSPACE}/docker-compose.yml"
-                    def envPath = "${env.WORKSPACE}/.env"
+                    def envPath = "${env.WORKSPACE}/cicd/.env"
 
                     sh """
                         echo "🧹 docker-compose down"
@@ -51,7 +51,7 @@ pipeline {
             steps {
                 script {
                     def composePath = "${env.WORKSPACE}/docker-compose.yml"
-                    def envPath = "${env.WORKSPACE}/.env"
+                    def envPath = "${env.WORKSPACE}/cicd/.env"
 
                     echo "🚀 docker-compose up"
                     // envProps에서 필요한 환경 변수를 설정
