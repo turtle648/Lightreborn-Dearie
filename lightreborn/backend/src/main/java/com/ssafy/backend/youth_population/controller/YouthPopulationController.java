@@ -1,6 +1,7 @@
 package com.ssafy.backend.youth_population.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
+import com.ssafy.backend.common.security.CustomUserDetails;
 import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
 import com.ssafy.backend.youth_population.service.YouthPopulationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,7 +36,9 @@ public class YouthPopulationController {
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @PostMapping(value = "data", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<BaseResponse<List<YouthPopulationResponseDTO>>> uploadData(@RequestParam("file") MultipartFile file) throws IOException {
+    public ResponseEntity<BaseResponse<List<YouthPopulationResponseDTO>>> uploadData(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestParam("file") MultipartFile file) throws IOException {
+        String loginUser = userDetails.getUserId();
+
         List<YouthPopulationResponseDTO> result = youthPopulationService.uploadAndProcess(file);
 
         return ResponseEntity.status(HttpStatus.CREATED)

@@ -26,17 +26,16 @@ import java.util.*;
 public class YouthPopulationServiceImpl implements YouthPopulationService {
 
     private final List<RawFileParser> rawFileParsers;
+    private RawFileParser fileParser;
     private final YouthPopulationRepository youthPopulationRepository;
     private final HangjungsRepository hangjungsRepository;
     private final ObjectMapper objectMapper;
-    private RawFileParser fileParser;
-    private String extension;
 
     @Override
     public List<YouthPopulationResponseDTO> uploadAndProcess(MultipartFile file) throws IOException{
 
         //1. 알맞은 파서 선택
-        fileParser = FileParserUtils.resolveParser(file.getOriginalFilename(), rawFileParsers);
+        fileParser = FileParserUtils.resolveParser(Objects.requireNonNull(file.getOriginalFilename()), rawFileParsers);
 
         Set<String> missing = FileParserUtils.findMissingHeaders(fileParser.extractHeaders(file), HeaderMapping.getHeaderMapping(FileType.POPULATION).keySet());
         if(!missing.isEmpty()) {

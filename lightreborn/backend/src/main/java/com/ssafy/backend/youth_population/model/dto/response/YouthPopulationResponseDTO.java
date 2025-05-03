@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown = true) //연관관계 필드 설정을 위해 추가
 public class YouthPopulationResponseDTO {
     private Long id;
     private Integer youthHouseholdCount;
