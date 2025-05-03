@@ -9,6 +9,8 @@ public class HeaderMapping {
 
     public static final EnumMap<FileType, Map<String,String>> HEADER_ALIAS = new EnumMap<>(FileType.class);
 
+    private HeaderMapping() {}
+
     static
     {
         HEADER_ALIAS.put(FileType.POPULATION, Map.of(
@@ -24,7 +26,14 @@ public class HeaderMapping {
         ));
 
         HEADER_ALIAS.put(FileType.PROMOTION, Map.of(
-
+                "주소",                           "address",
+                "위도",                           "latitude",
+                "경도",                           "longitude",
+                "게시 상태",                        "isPublished",
+                "상태 변경 시각",                 "createdAt",
+                "홍보물 유형",                   "promotionType",
+                "행정동 코드",                   "hangjungCode",
+                "행정동 이름",                   "hangjungName"
         ));
     }
 

@@ -1,14 +1,23 @@
 package com.ssafy.backend.promotion_network.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.AccessLevel;
 
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "promotion_status")
 @Getter
+@Builder(toBuilder = true)
+@AllArgsConstructor(access = AccessLevel.PRIVATE) // builder 전용 생성자
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA용 기본 생성자
+@JsonIgnoreProperties({"hangjungs", "promotionType"})
 public class PromotionStatus {
 
     @Id
@@ -21,15 +30,23 @@ public class PromotionStatus {
 
     private Float longitude;
 
-    private Boolean isCurrent;
+    private Boolean isPublished;
 
     private LocalDate createdAt;
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "hangjung_id")
-    private Hangjungs hangjung;
+    private Hangjungs hangjungs;
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name= "promotion_type_id")
     private PromotionType promotionType;
+
+    public void assignHangjungs(Hangjungs hangjungs) {
+        this.hangjungs = hangjungs;
+    }
+
+    public void assignPromotionType(PromotionType promotionType) {
+        this.promotionType = promotionType;
+    }
 }
