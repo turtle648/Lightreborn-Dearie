@@ -5,4 +5,5 @@ import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO
 
 public interface SpeechService {
     SpeechResponseDTO getGeneralSummarize(SpeechRequestDTO responseDTO);
+    void uploadIsolationYouthInfo();
 }

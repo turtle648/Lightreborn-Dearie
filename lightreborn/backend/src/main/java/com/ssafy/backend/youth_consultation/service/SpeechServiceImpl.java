@@ -108,6 +108,11 @@ public class SpeechServiceImpl implements SpeechService {
                 .build();
     }
 
+    @Override
+    public void uploadIsolationYouthInfo() {
+
+    }
+
     private TranscriptionResultDTO transcribe(MultipartFile file) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("파일이 비어 있습니다.");
@@ -264,8 +269,8 @@ public class SpeechServiceImpl implements SpeechService {
             HttpEntity<String> request = new HttpEntity<>(mapper.writeValueAsString(payload), headers);
 
             return executorService.submit(() -> {
-               ResponseEntity<String> resp = restTemplate.postForEntity("https://api.openai.com/v1/chat/completions",
-                       request, String.class);
+                ResponseEntity<String> resp = restTemplate.postForEntity("https://api.openai.com/v1/chat/completions",
+                        request, String.class);
                 JsonNode root = mapper.readTree(resp.getBody());
                 return root.path("choices")
                         .get(0)
