@@ -1,6 +1,7 @@
 package com.ssafy.backend.common.exception;
 
 import com.ssafy.backend.common.dto.ApiErrorResponse;
+import com.ssafy.backend.common.exception.file.MissingHeadersException;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,26 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 @Hidden  // Swagger 문서에서 이 클래스 제외
 public class GlobalExceptionHandler {
+
+    // ✅ MissingHeadersException 처리
+    @ExceptionHandler(MissingHeadersException.class)
+    public ResponseEntity<ApiErrorResponse> handleMissingHeaders(MissingHeadersException ex) {
+        // 누락된 헤더 이름을 FieldErrorDetail 객체로 매핑
+        List<ApiErrorResponse.FieldErrorDetail> details = ex.getMissingHeaders().stream()
+                .map(headerName -> new ApiErrorResponse.FieldErrorDetail(
+                        headerName,                            // field
+                        "헤더가 누락되었습니다."               // 이유 메시지
+                ))
+                .collect(Collectors.toList());
+
+        // 생성자로 errorCode 와 fieldErrors 리스트를 넘겨줍니다.
+        ApiErrorResponse body = new ApiErrorResponse(
+                ex.getErrorCode(),
+                details
+        );
+        return new ResponseEntity<>(body, ex.getErrorCode().getStatus());
+    }
+
     // ✅ CustomException 처리
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiErrorResponse> handleCustomException(CustomException ex) {

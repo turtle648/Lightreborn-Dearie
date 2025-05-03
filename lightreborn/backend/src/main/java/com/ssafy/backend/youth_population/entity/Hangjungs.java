@@ -12,7 +12,7 @@ public class Hangjungs {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Integer hangjungCode;
+    private String hangjungCode;
 
     private String hangjungName;
 }
