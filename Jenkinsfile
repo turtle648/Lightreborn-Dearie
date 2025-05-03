@@ -68,7 +68,7 @@ pipeline {
                         "JWT_SECRET=${envProps.JWT_SECRET}"
                     ]) {
                         sh """
-                            docker-compose --env-file ${envPath} -f ${composePath} up -d --build
+                            docker-compose --env-file ${envPath} -f ${composePath} up -d --build --force-recreate
                         """
                     }
                 }
