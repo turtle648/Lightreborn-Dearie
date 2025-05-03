@@ -27,6 +27,7 @@ pipeline {
                             error "❌ .env 파일이 ${envFilePath} 위치에 존재하지 않습니다."
                         }
                         echo "✅ .env 파일 저장 완료: ${envFilePath}"
+                        echo "📄 .env 내용:\n" + readFile(envFilePath)
                     }
                 }
             }
