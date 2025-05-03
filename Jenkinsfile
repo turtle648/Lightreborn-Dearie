@@ -32,7 +32,31 @@ pipeline {
                 }
             }
         }
-        // 2. 기존 컨테이너 정리
+        // 2. generate env
+        stage('Generate .env') {
+            steps {
+                script {
+                    def envFilePath = "${env.WORKSPACE}/cicd/.env"
+
+                    def newEnvContent = """
+                    DEARIE_DB_URL=${envProps.DEARIE_DB_URL}
+                    DEARIE_DB_USER=${envProps.DEARIE_DB_USER}
+                    DEARIE_DB_PASSWORD=${envProps.DEARIE_DB_PASSWORD}
+                    DEARIE_DB_NAME=${envProps.DEARIE_DB_NAME}
+                    LIGHT_DB_URL=${envProps.LIGHT_DB_URL}
+                    LIGHT_DB_USER=${envProps.LIGHT_DB_USER}
+                    LIGHT_DB_PASSWORD=${envProps.LIGHT_DB_PASSWORD}
+                    LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}
+                    JWT_SECRET=${envProps.JWT_SECRET}
+                    """.stripIndent().trim()
+
+                    writeFile file: envFilePath, text: newEnvContent
+                    echo "✅ 실제 값으로 .env 재생성 완료"
+                }
+            }
+        }
+
+        // 3. 기존 컨테이너 정리
         stage('Clean up Existing Containers') {
             steps {
                 script {
@@ -47,7 +71,9 @@ pipeline {
             }
         }
 
-        // 3. 빌드 및 배포
+
+
+        // 4. 빌드 및 배포
         stage('Docker Compose Up') {
             steps {
                 script {
@@ -68,13 +94,13 @@ pipeline {
                         "JWT_SECRET=${envProps.JWT_SECRET}"
                     ]) {
                         sh """
-                            docker-compose --env-file ${envPath} -f ${composePath} up -d --build --force-recreate
+                            docker-compose --env-file ${envPath} -f ${composePath} up -d --build
                         """
                     }
                 }
             }
         }        
-        // 4. Flyway 데이터 마이그레이션
+        // 5. Flyway 데이터 마이그레이션
         stage('Flyway Check and Migration') {
             steps {
                 script {
@@ -160,7 +186,7 @@ pipeline {
             }
         }
 
-        // 5. 빌드 성공 여부 상태 반영
+        // 6. 빌드 성공 여부 상태 반영
         stage('Mark Image Build Success') {
             steps {
                 script {
