@@ -18,7 +18,7 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
                     script {
-                        def envFilePath = "cicd/.env"
+                        def envFilePath = "${env.WORKSPACE}/.env"
 
                         // .env 파일 동적으로 생성
                         writeFile file: envFilePath, text: DOTENV
@@ -34,8 +34,22 @@ pipeline {
                 }
             }
         }
+        // 2. 기존 컨테이너 정리
+        stage('Clean up Existing Containers') {
+            steps {
+                script {
+                    def composePath = "${env.WORKSPACE}/docker-compose.yml"
+                    def envPath = "${env.WORKSPACE}/.env"
 
-        // 2. 빌드 및 배포
+                    sh """
+                        echo "🧹 docker-compose down"
+                        docker-compose --env-file ${envPath} -f ${composePath} down || true
+                    """
+                }
+            }
+        }
+
+        // 3. 빌드 및 배포
         stage('Docker Compose Up') {
             steps {
                 script {
@@ -53,14 +67,13 @@ pipeline {
                         "JWT_SECRET=${envProps.JWT_SECRET}"
                     ]) {
                         sh """
-                            docker-compose -f docker-compose.yml down || true
                             docker-compose -f docker-compose.yml up -d --build
                         """
                     }
                 }
             }
         }        
-        // 3. Flyway 데이터 마이그레이션
+        // 4. Flyway 데이터 마이그레이션
         stage('Flyway Check and Migration') {
             steps {
                 script {
@@ -146,7 +159,7 @@ pipeline {
             }
         }
 
-        // 4. 빌드 성공 여부 상태 반영
+        // 5. 빌드 성공 여부 상태 반영
         stage('Mark Image Build Success') {
             steps {
                 script {
@@ -215,5 +228,4 @@ pipeline {
             }
         }
     }
-
 }
