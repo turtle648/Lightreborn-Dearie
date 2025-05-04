@@ -18,7 +18,7 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
                     script {
-                        def envFilePath = "${env.WORKSPACE}/cicd/.env"  // ✅ 루트에 저장
+                        def envFilePath = "${env.WORKSPACE}/cicd/.env"
 
                         writeFile file: envFilePath, text: DOTENV
 
@@ -32,6 +32,7 @@ pipeline {
                 }
             }
         }
+        
         // 2. generate env
         stage('Generate .env') {
             steps {
@@ -71,8 +72,6 @@ pipeline {
             }
         }
 
-
-
         // 4. 빌드 및 배포
         stage('Docker Compose Up') {
             steps {
@@ -81,6 +80,7 @@ pipeline {
                     def envPath = "${env.WORKSPACE}/cicd/.env"
 
                     echo "🚀 docker-compose up"
+                    
                     // envProps에서 필요한 환경 변수를 설정
                     withEnv([
                         "DEARIE_DB_URL=${envProps.DEARIE_DB_URL}",
@@ -99,8 +99,39 @@ pipeline {
                     }
                 }
             }
-        }        
-        // 5. Flyway 데이터 마이그레이션
+        }
+        
+        // 5. 컨테이너 상태 확인 및 안정화 대기
+        stage('Wait for Containers') {
+            steps {
+                script {
+                    echo "⏳ 컨테이너 안정화 대기 중..."
+                    sh """
+                        # 15초 대기
+                        sleep 15
+                        
+                        # 컨테이너 상태 확인
+                        docker ps
+                        
+                        # 백엔드 컨테이너 헬스체크
+                        for i in {1..6}; do
+                            if docker ps | grep -E "dearie-backend|lightreborn-backend" | grep -q Running; then
+                                echo "✅ 백엔드 컨테이너가 실행 중입니다"
+                                break
+                            fi
+                            echo "백엔드 컨테이너 확인 중... (${i}/6)"
+                            sleep 5
+                        done
+                        
+                        # 로그 확인
+                        docker logs dearie-backend --tail 20 || true
+                        docker logs lightreborn-backend --tail 20 || true
+                    """
+                }
+            }
+        }
+        
+        // 6. Flyway 데이터 마이그레이션
         stage('Flyway Check and Migration') {
             steps {
                 script {
@@ -118,7 +149,7 @@ pipeline {
                         
                         if (!hasMigrationFiles) {
                             echo "⚠️ No migration files found in ${migrationPath}, skipping Flyway for ${project}"
-                            return // 현재 프로젝트의 처리를 건너뛰고 다음 프로젝트로 넘어감
+                            return
                         }
                         
                         // 환경 변수 값을 직접 가져와서 변수로 저장
@@ -129,10 +160,12 @@ pipeline {
                         echo "🚀 Running Flyway for ${project} - path: ${migrationPath}"
                         echo "🔗 Using Database URL: ${dbUrl}"
                         
-                        // 변수를 직접 문자열에 삽입
+                        // 네트워크 이름을 실제 사용 중인 것으로 변경
+                        def networkName = (project == 'dearie') ? 'backend_dearie' : 'backend_lightreborn'
+                        
                         def baseCmd = """
                             docker run --rm \\
-                            --network ${project}-net \\
+                            --network ${networkName} \\
                             -v ${migrationPath}:/flyway/sql \\
                             flyway/flyway \\
                             -locations=filesystem:/flyway/sql \\
@@ -149,7 +182,7 @@ pipeline {
                         if (infoOutput.contains("ERROR:") || infoOutput.contains("Usage flyway")) {
                             echo "⚠️ Flyway info command failed for ${project}: ${infoOutput}"
                             echo "⚠️ Skipping Flyway migration for ${project}"
-                            return // 현재 프로젝트 건너뛰기
+                            return
                         }
                         
                         def infoJson
@@ -160,7 +193,7 @@ pipeline {
                             def pendingMigrations = infoJson.migrations?.findAll { it.state == "pending" }
                             if (!pendingMigrations || pendingMigrations.isEmpty()) {
                                 echo "✅ No pending migrations for ${project}, skipping migrate command"
-                                return // 현재 프로젝트 건너뛰기
+                                return
                             }
                             
                             // 실패한 마이그레이션이 있는지 확인
@@ -179,14 +212,14 @@ pipeline {
                         } catch (e) {
                             echo "⚠️ Error processing Flyway info for ${project}: ${e.message}"
                             echo "⚠️ Attempting to migrate anyway"
-                            sh "${baseCmd} migrate || true" // 마이그레이션 실패해도 파이프라인은 계속 진행
+                            sh "${baseCmd} migrate || true"
                         }
                     }
                 }
             }
         }
 
-        // 6. 빌드 성공 여부 상태 반영
+        // 7. 빌드 성공 여부 상태 반영
         stage('Mark Image Build Success') {
             steps {
                 script {
@@ -218,8 +251,12 @@ pipeline {
                     sendMessage("❌ 배포 실패 : `${env.ENV}` 환경\n- Job: `${env.JOB_NAME}`\n- Build: #${env.BUILD_NUMBER}\n- [로그 확인하기](${env.BUILD_URL})")
                 }
 
-                sh 'find . -name ".env" -delete || true'
-                sh 'rm -f payload.json || true'
+                // 컨테이너가 안정화된 후에 .env 파일 삭제
+                sh """
+                    echo "🧹 보안상 민감한 파일 정리 중..."
+                    find . -name ".env" -type f -delete 2>/dev/null || true
+                    rm -f payload.json 2>/dev/null || true
+                """
             }
         }
 
@@ -248,8 +285,10 @@ pipeline {
                         docker rm lightreborn-backend || true
                         docker pull dearie-backend:stable
                         docker pull lightreborn-backend:stable
-                        docker run -d --name dearie-backend --network shared_backend -p 8082:8082 dearie-backend:stable
-                        docker run -d --name lightreborn-backend --network shared_backend -p 8081:8081 lightreborn-backend:stable
+                        
+                        # 올바른 네트워크 이름 사용
+                        docker run -d --name dearie-backend --network backend_dearie -p 8082:8082 dearie-backend:stable
+                        docker run -d --name lightreborn-backend --network backend_lightreborn -p 8081:8081 lightreborn-backend:stable
                     '''
                 }
             }
