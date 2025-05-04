@@ -210,8 +210,7 @@ pipeline {
                             -locations=filesystem:/flyway/sql \\
                             -url='${dbUrl}' \\
                             -user=${dbUser} \\
-                            -password=${dbPassword} \\
-                            -baselineOnMigrate=true
+                            -password=${dbPassword}
                         """.stripIndent().trim()
                         
                         // 먼저 info 명령으로 상태 확인
