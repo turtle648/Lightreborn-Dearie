@@ -19,20 +19,22 @@ pipeline {
                 withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
                     script {
                         def envFilePath = "${env.WORKSPACE}/cicd/.env"
+                        def cleanEnvPath = "${env.WORKSPACE}/cicd/.env.clean"
                         
-                        // 주석 제거 및 파일 작성
-                        def cleanedContent = DOTENV.readLines()
-                            .findAll { line -> 
-                                line.trim() && 
-                                !line.trim().startsWith('#') && 
-                                line.contains('=')
-                            }
-                            .join('\n')
+                        // 원본 파일 작성
+                        writeFile file: envFilePath, text: DOTENV
                         
-                        writeFile file: envFilePath, text: cleanedContent
+                        // 주석 제거하고 깨끗한 파일 생성
+                        sh """
+                            # 주석 제거하고 빈 줄 제거
+                            sed '/^#/d; /^\\s*\$/d' ${envFilePath} > ${cleanEnvPath}
+                            
+                            echo "=== 정리된 .env 파일 ==="
+                            cat ${cleanEnvPath}
+                        """
                         
-                        // 프로퍼티 읽기
-                        envProps = readProperties file: envFilePath
+                        // 깨끗한 파일 읽기
+                        envProps = readProperties file: cleanEnvPath
                         
                         echo "✅ .env 파일 읽기 완료: ${envProps.size()}개 프로퍼티"
                         echo "✅ 키 목록: ${envProps.keySet()}"
