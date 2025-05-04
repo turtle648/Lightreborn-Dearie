@@ -13,20 +13,6 @@ pipeline {
     }
 
     stages {
-        stage('Debug') {
-    steps {
-        withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
-            script {
-                // 이스케이프 문자 확인
-                echo "Raw DOTENV: ${DOTENV.replace('\n', '\\n').replace('\r', '\\r')}"
-                
-                // 다양한 줄바꿈 문자로 분할 시도
-                echo "\\n으로 분할: ${DOTENV.split('\\n').size()} 줄"
-                echo "실제 줄바꿈으로 분할: ${DOTENV.readLines().size()} 줄"
-            }
-        }
-    }
-}
         // 1. 먼저 .env 파일부터 읽음
         stage('Load .env File') {
             steps {
@@ -34,15 +20,16 @@ pipeline {
                     script {
                         def envFilePath = "${env.WORKSPACE}/cicd/.env"
                         
+                        // 현재 credential은 모든 값이 한 줄에 공백으로 구분되어 있으므로 
+                        // 정규식으로 KEY=value 패턴을 찾아서 줄을 분리해야 함
+                        def correctedContent = DOTENV.replaceAll(/([A-Z][A-Z_]+)=/, '\n$1=').trim()
+                        
                         // 파일 작성
-                        writeFile file: envFilePath, text: DOTENV
+                        writeFile file: envFilePath, text: correctedContent
                         
-                        // 더 단순한 파싱 방법
+                        // 이제 제대로 파싱
                         envProps = [:]
-                        
-                        // 파일을 직접 읽어서 파싱
-                        def content = readFile(envFilePath)
-                        content.eachLine { line ->
+                        correctedContent.readLines().each { line ->
                             if (line && line.contains('=') && !line.trim().startsWith('#')) {
                                 def split = line.split('=', 2)
                                 if (split.length == 2) {
@@ -52,6 +39,7 @@ pipeline {
                         }
                         
                         echo "✅ .env 파일 읽기 완료: ${envProps.size()}개 프로퍼티"
+                        echo "✅ 키 목록: ${envProps.keySet()}"
                     }
                 }
             }
