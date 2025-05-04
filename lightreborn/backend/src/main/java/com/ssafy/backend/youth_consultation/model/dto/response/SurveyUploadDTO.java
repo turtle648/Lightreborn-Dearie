@@ -1,7 +1,7 @@
 package com.ssafy.backend.youth_consultation.model.dto.response;
 
 import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollector;
-import com.ssafy.backend.youth_consultation.model.vo.UserAnswers;
+import com.ssafy.backend.youth_consultation.model.collector.SurveyAnswerCollector;
 import lombok.Builder;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -11,5 +11,5 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 public class SurveyUploadDTO {
     public PersonalInfoCollector personalInfo;
-    public UserAnswers answers;
+    public SurveyAnswerCollector answers;
 }

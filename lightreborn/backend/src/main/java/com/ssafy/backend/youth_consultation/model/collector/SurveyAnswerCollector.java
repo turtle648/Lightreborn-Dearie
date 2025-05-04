@@ -1,4 +1,4 @@
-package com.ssafy.backend.youth_consultation.model.vo;
+package com.ssafy.backend.youth_consultation.model.collector;
 
 import com.ssafy.backend.youth_consultation.entity.PersonalInfo;
 import com.ssafy.backend.youth_consultation.entity.SurveyAnswer;
@@ -11,7 +11,7 @@ import java.util.List;
 
 @Slf4j
 @ToString
-public class UserAnswers {
+public class SurveyAnswerCollector {
     private final List<SurveyAnswer> answers = new ArrayList<>();
 
     public void addAnswerText(SurveyQuestion question, String answer) {

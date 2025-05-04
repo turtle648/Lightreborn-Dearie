@@ -13,7 +13,7 @@ import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
 import com.ssafy.backend.youth_consultation.model.state.Answer;
-import com.ssafy.backend.youth_consultation.model.vo.UserAnswers;
+import com.ssafy.backend.youth_consultation.model.collector.SurveyAnswerCollector;
 import com.ssafy.backend.youth_consultation.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -140,7 +140,7 @@ public class SpeechServiceImpl implements SpeechService {
 
             log.info("[SpeechServiceImpl] 질문 리스트 : {}",questions);
 
-            UserAnswers answers = new UserAnswers();
+            SurveyAnswerCollector answers = new SurveyAnswerCollector();
             PersonalInfoCollector personalInfoCollector = new PersonalInfoCollector();
 
             for (IBodyElement element : doc.getBodyElements()) {
