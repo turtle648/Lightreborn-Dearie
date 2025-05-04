@@ -8,12 +8,17 @@ import com.ssafy.backend.auth.model.dto.TranscriptionResultDTO;
 import com.ssafy.backend.youth_consultation.entity.CounselingLog;
 import com.ssafy.backend.youth_consultation.entity.IsolatedYouth;
 import com.ssafy.backend.youth_consultation.entity.SurveyProcessStep;
+import com.ssafy.backend.youth_consultation.entity.SurveyQuestion;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationErrorCode;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationException;
+import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollector;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
+import com.ssafy.backend.youth_consultation.model.state.Answer;
+import com.ssafy.backend.youth_consultation.model.vo.UserAnswers;
 import com.ssafy.backend.youth_consultation.repository.CounselingLogRepository;
 import com.ssafy.backend.youth_consultation.repository.IsolatedYouthRepository;
+import com.ssafy.backend.youth_consultation.repository.SurveyQuestionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,9 +41,14 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import java.io.*;
 import java.net.URLConnection;
 import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -48,6 +58,7 @@ public class SpeechServiceImpl implements SpeechService {
     private final ExecutorService executorService;
     private final IsolatedYouthRepository isolatedYouthRepository;
     private final CounselingLogRepository counselingLogRepository;
+    private final SurveyQuestionRepository surveyQuestionRepository;
     private final S3AsyncClient s3Client;
     private final S3Utilities s3Utilities;
 
@@ -113,40 +124,85 @@ public class SpeechServiceImpl implements SpeechService {
             file.transferTo(convFile);
 
             XWPFDocument doc = new XWPFDocument(new FileInputStream(convFile));
-//            XWPFTable table = null;
 
-            StringBuilder sb = new StringBuilder("\n[표 내용]\n");
+            Map<String, SurveyQuestion> questions = surveyQuestionRepository.findAll()
+                    .stream()
+                    .collect(
+                            Collectors.toMap(
+                                    q -> {
+                                        if(q.getQuestionCode().isBlank()) {
+                                            return q.getContent();
+                                        }
+                                        return q.getQuestionCode() + q.getContent();
+                                    },
+                                    Function.identity()
+                            )
+                    );
+
+            log.info("{}",questions);
+
+            UserAnswers answers = new UserAnswers();
+            PersonalInfoCollector personalInfoCollector = new PersonalInfoCollector();
 
             for (IBodyElement element : doc.getBodyElements()) {
                 if (element instanceof XWPFTable) {
                     XWPFTable table = (XWPFTable) element;
+                    List<XWPFTableRow> rows = table.getRows();
 
-                    for (XWPFTableRow row : table.getRows()) {
-                        for (XWPFTableCell cell : row.getTableCells()) {
-                            sb.append(cell.getText()).append("\t");
+                    for (int rowIdx = 0; rowIdx < rows.size(); rowIdx++) {
+                        String title = rows.get(rowIdx).getTableCells().get(0).getText().trim();
+
+                        if(title.equals("타 현재 주요 고민 내용을 입력해주세요.")) {
+                            String answer = rows.get(rowIdx + 1).getTableCells().get(0).getText().trim();
+                            log.info("{} {}", title, answer);
+                            answers.add(questions.get(title), answer);
                         }
-                        sb.append("\n");
+
+                        else if(questions.containsKey(title)) {
+                            String answer = normalize(rows.get(rowIdx).getTableCells().get(1).getText());
+
+                            try {
+                                personalInfoCollector.add(title, answer);
+                            } catch (IllegalArgumentException e) {
+                                answers.add(questions.get(title), answer);
+                            }
+                            log.info("{} {}", title, answer);
+                        }
+
+                        else if(title.matches("[가-카]")) {
+                            title += rows.get(rowIdx).getTableCells().get(1).getText();
+                            if(questions.containsKey(title)) {
+                                List<XWPFTableCell> cells = rows.get(rowIdx).getTableCells();
+
+                                SurveyQuestion question = questions.get(title);
+                                String questionCode = question.getQuestionCode();
+
+                                for (int idx = 2; idx < cells.size(); idx++) {
+                                    String cellText = normalize(rows.get(rowIdx).getTableCells().get(idx).getText());
+
+                                    if (cellText.isBlank()) continue;
+
+                                    Optional<Answer> answerOpt = Answer.findByQuestionCodeAndColNum(questionCode, idx);
+                                    answerOpt.ifPresent(answer -> answers.add(question, answer.getLabel()));
+                                    log.info("{} {} {}", title, cellText, answerOpt);
+                                }
+                            }
+                        }
                     }
                 }
             }
 
-//            Iterator<IBodyElement> docElementsIterator = doc.getBodyElementsIterator();
-//            while(docElementsIterator.hasNext()) {
-//                IBodyElement docElement = docElementsIterator.next();
-//
-//                if("TABLE".equalsIgnoreCase(docElement.getElementType().name())) {
-//                    List<XWPFTable> xwpfTableList = docElement.getBody().getTables();
-//
-//                    table = xwpfTableList.get(0);
-//                    sb.append(xwpfTableList.get(0));
-//                }
-//            }
-
-            log.info("[SpeechServiceImpl] uploadIsolationYouthInfo {}", sb);
+            log.info("[SpeechServiceImpl] uploadIsolationYouthInfo {}", answers);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String normalize(String input) {
+        if (input == null) return null;
+
+        return input.replaceAll("[\\u00A0\\s]+", "").trim();
     }
 
     private TranscriptionResultDTO transcribe(MultipartFile file) {

@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "personal_info")
@@ -25,7 +25,7 @@ public class PersonalInfo {
     @Column(length = 20)
     private String phoneNumber;
 
-    private LocalDateTime brithDate;
+    private LocalDate brithDate;
 
     @Column(length = 20)
     private String emergencyContact;

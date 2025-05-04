@@ -1,15 +1,15 @@
 package com.ssafy.backend.youth_consultation.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
+@ToString
 @Entity
 @Table(name = "survey_answers")
 @Getter
-@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class SurveyAnswer {
@@ -20,9 +20,8 @@ public class SurveyAnswer {
     @Column(columnDefinition = "TEXT")
     private String answerText;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "answer_choice")
-    private Answer answerChoice;
+    private String answerChoice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "survey_question_id")
