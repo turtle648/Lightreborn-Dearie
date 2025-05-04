@@ -114,12 +114,12 @@ pipeline {
                         docker ps
                         
                         # 백엔드 컨테이너 헬스체크
-                        for i in {1..6}; do
+                        for i in 1 2 3 4 5 6; do
                             if docker ps | grep -E "dearie-backend|lightreborn-backend" | grep -q Running; then
                                 echo "✅ 백엔드 컨테이너가 실행 중입니다"
                                 break
                             fi
-                            echo "백엔드 컨테이너 확인 중... (${i}/6)"
+                            echo "백엔드 컨테이너 확인 중... (\$i/6)"
                             sleep 5
                         done
                         
