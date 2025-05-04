@@ -12,7 +12,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "youth_populations")
-@Builder
+@Builder(toBuilder = true)
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE) // builder 전용 생성자
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA용 기본 생성자
