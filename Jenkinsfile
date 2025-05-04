@@ -56,8 +56,8 @@ pipeline {
                     }
                     
                     // 필수 변수들이 있는지 확인
-                    def requiredVars = ['DEARIE_DB_URL', 'DEARIE_DB_USER', 'DEARIE_DB_PASSWORD', 'DEARIE_DB_NAME',
-                                        'LIGHT_DB_URL', 'LIGHT_DB_USER', 'LIGHT_DB_PASSWORD', 'LIGHT_DB_NAME']
+                    def requiredVars = ['DEARIE_DB_URL', 'DEARIE_DB_USER', 'DEARIE_DB_PASSWORD', 'DEARIE_DB_NAME', 'DEARIE_JWT_SECRET',
+                                        'LIGHT_DB_URL', 'LIGHT_DB_USER', 'LIGHT_DB_PASSWORD', 'LIGHT_DB_NAME', 'LIGHT_JWT_SECRET']
                     
                     requiredVars.each { var ->
                         if (!envProps.containsKey(var)) {
@@ -70,10 +70,12 @@ pipeline {
                     DEARIE_DB_USER=${envProps.DEARIE_DB_USER}
                     DEARIE_DB_PASSWORD=${envProps.DEARIE_DB_PASSWORD}
                     DEARIE_DB_NAME=${envProps.DEARIE_DB_NAME}
+                    DEARIE_JWT_SECRET=${envProps.DEARIE_JWT_SECRET}
                     LIGHT_DB_URL=${envProps.LIGHT_DB_URL}
                     LIGHT_DB_USER=${envProps.LIGHT_DB_USER}
                     LIGHT_DB_PASSWORD=${envProps.LIGHT_DB_PASSWORD}
                     LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}
+                    LIGHT_JWT_SECRET=${envProps.LIGHT_JWT_SECRET}
                     """.stripIndent().trim()
                     
                     writeFile file: envFilePath, text: newEnvContent
@@ -113,11 +115,12 @@ pipeline {
                         "DEARIE_DB_USER=${envProps.DEARIE_DB_USER}",
                         "DEARIE_DB_PASSWORD=${envProps.DEARIE_DB_PASSWORD}",
                         "DEARIE_DB_NAME=${envProps.DEARIE_DB_NAME}",
+                        "DEARIE_JWT_SECRET=${envProps.DEARIE_JWT_SECRET}",
                         "LIGHT_DB_URL=${envProps.LIGHT_DB_URL}",
                         "LIGHT_DB_USER=${envProps.LIGHT_DB_USER}",
                         "LIGHT_DB_PASSWORD=${envProps.LIGHT_DB_PASSWORD}",
                         "LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}",
-                        "JWT_SECRET=${envProps.JWT_SECRET}"
+                        "LIGHT_JWT_SECRET==${envProps.LIGHT_JWT_SECRET=}"
                     ]) {
                         sh """
                             docker-compose --env-file ${envPath} -f ${composePath} up -d --build
@@ -126,53 +129,36 @@ pipeline {
                 }
             }
         }
-
-        stage('Debug Environment Variables') {
-            steps {
-                script {
-                    echo "=== envProps 확인 ==="
-                    echo "envProps: ${envProps}"
-                    envProps.each { key, value ->
-                        echo "Key: ${key}, Value: ${value?.take(6)}****"
-                    }
-                    
-                    sh """
-                        echo "=== cicd/.env 파일 내용 ==="
-                        cat ./cicd/.env
-                    """
-                }
-            }
-        }
         
         // 5. 컨테이너 상태 확인 및 안정화 대기
-        stage('Wait for Containers') {
-            steps {
-                script {
-                    echo "⏳ 컨테이너 안정화 대기 중..."
-                    sh """
-                        # 15초 대기
-                        sleep 15
+        // stage('Wait for Containers') {
+        //     steps {
+        //         script {
+        //             echo "⏳ 컨테이너 안정화 대기 중..."
+        //             sh """
+        //                 # 15초 대기
+        //                 sleep 15
                         
-                        # 컨테이너 상태 확인
-                        docker ps
+        //                 # 컨테이너 상태 확인
+        //                 docker ps
                         
-                        # 백엔드 컨테이너 헬스체크
-                        for i in 1 2 3 4 5 6; do
-                            if docker ps | grep -E "dearie-backend|lightreborn-backend" | grep -q Running; then
-                                echo "✅ 백엔드 컨테이너가 실행 중입니다"
-                                break
-                            fi
-                            echo "백엔드 컨테이너 확인 중... (\$i/6)"
-                            sleep 5
-                        done
+        //                 # 백엔드 컨테이너 헬스체크
+        //                 for i in 1 2 3 4 5 6; do
+        //                     if docker ps | grep -E "dearie-backend|lightreborn-backend" | grep -q Running; then
+        //                         echo "✅ 백엔드 컨테이너가 실행 중입니다"
+        //                         break
+        //                     fi
+        //                     echo "백엔드 컨테이너 확인 중... (\$i/6)"
+        //                     sleep 5
+        //                 done
                         
-                        # 로그 확인
-                        docker logs dearie-backend --tail 20 || true
-                        docker logs lightreborn-backend --tail 20 || true
-                    """
-                }
-            }
-        }
+        //                 # 로그 확인
+        //                 docker logs dearie-backend --tail 20 || true
+        //                 docker logs lightreborn-backend --tail 20 || true
+        //             """
+        //         }
+        //     }
+        // }
         
         // 6. Flyway 데이터 마이그레이션
         stage('Flyway Check and Migration') {
