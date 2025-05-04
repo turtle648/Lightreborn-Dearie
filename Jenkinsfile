@@ -101,6 +101,26 @@ pipeline {
                 }
             }
         }
+
+        stage('Debug Environment Variables') {
+            steps {
+                script {
+                    sh """
+                        🤯🤯🤯
+                        echo "현재 작업 디렉토리: \$(pwd)"
+                        echo ".env 파일 위치:"
+                        find . -name ".env" -type f
+                        echo ""
+                        echo "환경 변수 확인:"
+                        echo "LIGHT_DB_USER: ${LIGHT_DB_USER}"
+                        echo "LIGHT_DB_PASSWORD: ${LIGHT_DB_PASSWORD}"
+                        echo ""
+                        echo "Docker 컨테이너 내부 환경 변수:"
+                        docker exec lightreborn-backend env | grep -E "LIGHT_DB|SPRING"
+                    """
+                }
+            }
+        }
         
         // 5. 컨테이너 상태 확인 및 안정화 대기
         stage('Wait for Containers') {
