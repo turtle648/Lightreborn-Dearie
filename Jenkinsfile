@@ -20,24 +20,21 @@ pipeline {
                     script {
                         def envFilePath = "${env.WORKSPACE}/cicd/.env"
                         
-                        // 현재 credential은 모든 값이 한 줄에 공백으로 구분되어 있으므로 
-                        // 정규식으로 KEY=value 패턴을 찾아서 줄을 분리해야 함
-                        def correctedContent = DOTENV.replaceAll(/([A-Z][A-Z_]+)=/, '\n$1=').trim()
-                        
-                        // 파일 작성
+                        def correctedContent = DOTENV.replaceAll(/([A-Z][A-Z0-9_]+)=/, '\n$1=').trim()
+                
                         writeFile file: envFilePath, text: correctedContent
-                        
+                
                         // 이제 제대로 파싱
                         envProps = [:]
                         correctedContent.readLines().each { line ->
                             if (line && line.contains('=') && !line.trim().startsWith('#')) {
                                 def split = line.split('=', 2)
-                                if (split.length == 2) {
-                                    envProps[split[0].trim()] = split[1].trim()
+                                    if (split.length == 2) {
+                                        envProps[split[0].trim()] = split[1].trim()
+                                    }
                                 }
                             }
-                        }
-                        
+                            
                         echo "✅ .env 파일 읽기 완료: ${envProps.size()}개 프로퍼티"
                         echo "✅ 키 목록: ${envProps.keySet()}"
                     }
@@ -60,7 +57,7 @@ pipeline {
                     
                     // 필수 변수들이 있는지 확인
                     def requiredVars = ['DEARIE_DB_URL', 'DEARIE_DB_USER', 'DEARIE_DB_PASSWORD', 'DEARIE_DB_NAME',
-                                        'LIGHT_DB_URL', 'LIGHT_DB_USER', 'LIGHT_DB_PASSWORD', 'LIGHT_DB_NAME', 'JWT_SECRET']
+                                        'LIGHT_DB_URL', 'LIGHT_DB_USER', 'LIGHT_DB_PASSWORD', 'LIGHT_DB_NAME']
                     
                     requiredVars.each { var ->
                         if (!envProps.containsKey(var)) {
@@ -77,7 +74,6 @@ pipeline {
                     LIGHT_DB_USER=${envProps.LIGHT_DB_USER}
                     LIGHT_DB_PASSWORD=${envProps.LIGHT_DB_PASSWORD}
                     LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}
-                    JWT_SECRET=${envProps.JWT_SECRET}
                     """.stripIndent().trim()
                     
                     writeFile file: envFilePath, text: newEnvContent
