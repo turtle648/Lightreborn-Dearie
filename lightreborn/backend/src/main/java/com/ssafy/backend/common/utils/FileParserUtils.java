@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 public class FileParserUtils {
 
-    private FileParserUtils() {}
+    private FileParserUtils() {} //인스턴스화 방지
 
     /**
      * @param actualHeaders 업로드된 파일의 헤더 목록

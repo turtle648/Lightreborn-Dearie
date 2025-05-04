@@ -63,6 +63,7 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
                 .map(r -> new HangjungKey(r.get("hangjungCode"), r.get("hangjungName")))
                 .collect(Collectors.toSet());
 
+        // 4-1. 각 좌표(hangjungCode + hangjungName)에 대해 개별 검색 조건 Specification 생성
         List<Specification<YouthPopulation>> specs = hangjungKeySet.stream()
                 .map(k -> (Specification<YouthPopulation>) (root, q, cb) ->
                         cb.and(
@@ -72,13 +73,16 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
                 )
                 .toList();
 
-        //4-2. 여러 Specification 을 OR로 묶기
+        // 4-2. 여러 조건을 OR로 묶어 하나의 Combined Specification으로 결합
+        // => (code1 AND name1) OR (code2 AND name2) OR ...
         Specification<YouthPopulation> combinedSpec = specs.stream()
                 .reduce(Specification::or)
                 .orElse((root, q, cb) -> cb.disjunction());
 
+        // 4-3. DB에서 해당 좌표들에 해당하는 기존 YouthPopulation 조회
         List<YouthPopulation> existing = youthPopulationRepository.findAll(combinedSpec);
 
+        // 4-4. 조회된 결과를 좌표 기반으로 Map에 정리 (HangjungKey → YouthPopulation)
         Map<HangjungKey, YouthPopulation> existingMap = existing.stream()
                 .collect(Collectors.toMap(
                         yp -> new HangjungKey(
@@ -100,7 +104,7 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
             {
                 if(incomingDate.isAfter(yp.getBaseDate()))
                 {
-                    //새로 업로드 된 값으로 업데이트
+                    //5-1. 새로 업로드 된 값으로 업데이트
                     YouthPopulation patch = objectMapper.convertValue(row, YouthPopulation.class);
 
                     YouthPopulation updated = patch.toBuilder()
@@ -113,10 +117,10 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
 
             }
             else {
-                // 1. 연관 관계가진 필드 제외하고 매핑
+                //5-2. 연관 관계가진 필드 제외하고 매핑
                 YouthPopulation created = objectMapper.convertValue(row, YouthPopulation.class);
 
-                //2. 행정(@ManyToOne) 찾아주기
+                //5-3. 행정(@ManyToOne) 찾아주기
                 String hanjungCode = row.get("hangjungCode");
                 Hangjungs h = hangjungsRepository.findByHangjungCode(hanjungCode)
                         .orElseThrow(() -> new EntityNotFoundException("행정동을 찾을 수 없음" + hanjungCode));

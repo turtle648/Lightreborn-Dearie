@@ -17,7 +17,7 @@ import java.util.stream.StreamSupport;
 @Component
 public class XlsxRawFileParser implements RawFileParser {
 
-    private final Set<String> STRING_FIELDS = Set.of("hanjungCode");
+    private final Set<String> STRING_FIELDS = Set.of("hanjungCode", "phoneNumber");
     private final DataFormatter dataFormatter = new DataFormatter();
 
     @Override
