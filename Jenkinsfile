@@ -14,20 +14,19 @@ pipeline {
 
     stages {
         stage('Debug') {
-            steps {
-                withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
-                    script {
-                        echo "DOTENV 길이: ${DOTENV.length()}"
-                        echo "DOTENV 첫 200자: ${DOTENV.take(200)}"
-                        echo "DOTENV 줄 수: ${DOTENV.split('\n').size()}"
-                        
-                        DOTENV.split('\n').eachWithIndex { line, index ->
-                            echo "[${index}] ${line}"
-                        }
-                    }
-                }
+    steps {
+        withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
+            script {
+                // 이스케이프 문자 확인
+                echo "Raw DOTENV: ${DOTENV.replace('\n', '\\n').replace('\r', '\\r')}"
+                
+                // 다양한 줄바꿈 문자로 분할 시도
+                echo "\\n으로 분할: ${DOTENV.split('\\n').size()} 줄"
+                echo "실제 줄바꿈으로 분할: ${DOTENV.readLines().size()} 줄"
             }
         }
+    }
+}
         // 1. 먼저 .env 파일부터 읽음
         stage('Load .env File') {
             steps {
