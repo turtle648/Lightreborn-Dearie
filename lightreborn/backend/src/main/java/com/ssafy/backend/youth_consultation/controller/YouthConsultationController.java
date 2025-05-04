@@ -3,6 +3,7 @@ package com.ssafy.backend.youth_consultation.controller;
 import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
+import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
 import com.ssafy.backend.youth_consultation.service.SpeechService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,16 +35,16 @@ public class YouthConsultationController {
             summary = "설문 데이터 업로드",
             description = "설문 응답 결과를 워드 파일로 업로드 합니다."
     )
-    public ResponseEntity<BaseResponse<String>> uploadSurveyFile(
+    public ResponseEntity<BaseResponse<SurveyUploadDTO>> uploadSurveyFile(
             @Parameter(
                     description = "업로드할 워드 파일 (.docx 등)",
                     required = true
             )
             @RequestPart("file") MultipartFile file
             ) {
-        speechService.uploadIsolationYouthInfo(file);
+        SurveyUploadDTO surveyUploadDTO = speechService.uploadIsolationYouthInfo(file);
 
-        return ResponseEntity.ok(BaseResponse.success("은둔 고립 청년 설문 데이터를 성공적으로 추가했습니다"));
+        return ResponseEntity.ok(BaseResponse.success("은둔 고립 청년 설문 데이터를 성공적으로 추가했습니다", surveyUploadDTO));
     }
 
     @PostMapping(value = "/data", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

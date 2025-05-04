@@ -11,6 +11,7 @@ import com.ssafy.backend.youth_consultation.exception.YouthConsultationException
 import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollector;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
+import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
 import com.ssafy.backend.youth_consultation.model.state.Answer;
 import com.ssafy.backend.youth_consultation.model.vo.UserAnswers;
 import com.ssafy.backend.youth_consultation.repository.*;
@@ -116,7 +117,7 @@ public class SpeechServiceImpl implements SpeechService {
 
     @Override
     @Transactional
-    public void uploadIsolationYouthInfo(MultipartFile file) {
+    public SurveyUploadDTO uploadIsolationYouthInfo(MultipartFile file) {
         try {
             File convFile = File.createTempFile("upload-", ".docx");
             file.transferTo(convFile);
@@ -202,6 +203,11 @@ public class SpeechServiceImpl implements SpeechService {
             answers.addPersonalInfo(savedPersonalInfo);
 
             surveyAnswerRepository.saveAll(answers.getAnswers());
+
+            return SurveyUploadDTO.builder()
+                    .personalInfo(personalInfoCollector)
+                    .answers(answers)
+                    .build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

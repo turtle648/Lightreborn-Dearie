@@ -1,5 +1,6 @@
 package com.ssafy.backend.youth_consultation.model.collector;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,9 @@ public class PersonalInfoCollector {
     private String emergencyContent;
     private String phoneNumber;
 
+    @JsonIgnore
     private final Map<String, Consumer<String>> fieldMap = new HashMap<>();
+    @JsonIgnore
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
 
     public PersonalInfoCollector() {
