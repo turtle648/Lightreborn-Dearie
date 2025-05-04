@@ -80,6 +80,7 @@ pipeline {
                     def envPath = "${env.WORKSPACE}/cicd/.env"
 
                     echo "🚀 docker-compose up"
+                    echo "⭐️ 전달할 env경로? : ${envPath}"
                     
                     // envProps에서 필요한 환경 변수를 설정
                     withEnv([
