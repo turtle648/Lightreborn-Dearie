@@ -105,21 +105,15 @@ pipeline {
         stage('Debug Environment Variables') {
             steps {
                 script {
-                    def lightDbUser = envProps.LIGHT_DB_USER
-                    def lightDbPassword = envProps.LIGHT_DB_PASSWORD
-
+                    echo "=== envProps 확인 ==="
+                    echo "envProps: ${envProps}"
+                    envProps.each { key, value ->
+                        echo "Key: ${key}, Value: ${value?.take(6)}****"
+                    }
+                    
                     sh """
-                        echo "=== 디버깅 시작 ==="
-                        echo "현재 작업 디렉토리: \$(pwd)"
-                        echo ".env 파일 위치:"
-                        find . -name ".env" -type f
-                        echo ""
-                        echo "환경 변수 확인:"
-                        echo "LIGHT_DB_USER: ${lightDbUser}"
-                        echo "LIGHT_DB_PASSWORD: ${lightDbPassword}"
-                        echo ""
-                        echo "Docker 컨테이너 내부 환경 변수:"
-                        docker exec lightreborn-backend env | grep -E "LIGHT_DB|SPRING"
+                        echo "=== cicd/.env 파일 내용 ==="
+                        cat ./cicd/.env
                     """
                 }
             }
