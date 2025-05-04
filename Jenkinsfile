@@ -46,7 +46,7 @@ pipeline {
         stage('Generate .env') {
             steps {
                 script {
-                    echo ">>> envProps 상태 확인: ${envProps}"
+                    // echo ">>> envProps 상태 확인: ${envProps}"
                     
                     def envFilePath = "${env.WORKSPACE}/cicd/.env"
                     
@@ -76,6 +76,10 @@ pipeline {
                     LIGHT_DB_PASSWORD=${envProps.LIGHT_DB_PASSWORD}
                     LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}
                     LIGHT_JWT_SECRET=${envProps.LIGHT_JWT_SECRET}
+                    OPENAI_API_KEY=${envProps.OPENAI_API_KEY}
+                    spring.cloud.aws.credentials.access-key=${envProps.S3_ACCESS_KEY ?: envProps.ACCESS_KEY}
+                    spring.cloud.aws.credentials.secret-key=${envProps.S3_SECRET_KEY ?: envProps.SECRET_KEY}
+                    spring.cloud.aws.s3.bucket=${envProps.S3_BUCKET ?: envProps.BUCKET}
                     """.stripIndent().trim()
                     
                     writeFile file: envFilePath, text: newEnvContent
