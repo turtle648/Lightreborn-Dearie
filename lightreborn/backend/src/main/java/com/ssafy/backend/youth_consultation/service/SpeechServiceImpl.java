@@ -132,7 +132,7 @@ public class SpeechServiceImpl implements SpeechService {
                                         if(q.getQuestionCode().isBlank()) {
                                             return q.getContent();
                                         }
-                                        return q.getQuestionCode() + q.getContent();
+                                        return q.getQuestionCode() + " " + q.getContent();
                                     },
                                     Function.identity()
                             )
@@ -168,7 +168,7 @@ public class SpeechServiceImpl implements SpeechService {
                         }
 
                         else if(title.matches("[가-카]")) {
-                            title += rows.get(rowIdx).getTableCells().get(1).getText();
+                            title += " " + rows.get(rowIdx).getTableCells().get(1).getText();
                             if(questions.containsKey(title)) {
                                 List<XWPFTableCell> cells = rows.get(rowIdx).getTableCells();
 
