@@ -5,7 +5,6 @@ import com.ssafy.backend.auth.model.dto.request.SignUpDTO;
 import com.ssafy.backend.auth.model.dto.response.LoginResponseDTO;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.dto.BaseResponse;
-import com.ssafy.backend.common.security.CustomUserDetails;
 import com.ssafy.backend.common.security.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -65,10 +64,8 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<BaseResponse<LoginResponseDTO>> getUserInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        String loginUser = userDetails.getUserId();
-
-        LoginResponseDTO info = authService.findUser(loginUser);
+    public ResponseEntity<BaseResponse<LoginResponseDTO>> getUserInfo(@AuthenticationPrincipal String userId) {
+        LoginResponseDTO info = authService.findUser(userId);
 
         return ResponseEntity.ok()
                 .body(BaseResponse.success(200,"본인 정보 조회를 완료하였습니다", info));

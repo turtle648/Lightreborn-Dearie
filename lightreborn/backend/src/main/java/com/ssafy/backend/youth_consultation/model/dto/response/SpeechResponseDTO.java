@@ -6,9 +6,9 @@ import lombok.Getter;
 @Getter
 @Builder
 public class SpeechResponseDTO {
-    String transcript;
-    String summary;
-    String client;
-    String counselor;
-    String memos;
+    public String transcript;
+    public String summary;
+    public String client;
+    public String counselor;
+    public String memos;
 }

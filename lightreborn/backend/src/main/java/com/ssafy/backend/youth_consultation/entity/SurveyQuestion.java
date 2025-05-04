@@ -1,15 +1,15 @@
 package com.ssafy.backend.youth_consultation.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
+@ToString
 @Entity
 @Table(name = "survey_questions")
 @Getter
-@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class SurveyQuestion {
