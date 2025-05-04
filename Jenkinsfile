@@ -109,7 +109,7 @@ pipeline {
                     def lightDbPassword = envProps.LIGHT_DB_PASSWORD
 
                     sh """
-                        🤯🤯🤯
+                        echo "=== 디버깅 시작 ==="
                         echo "현재 작업 디렉토리: \$(pwd)"
                         echo ".env 파일 위치:"
                         find . -name ".env" -type f
