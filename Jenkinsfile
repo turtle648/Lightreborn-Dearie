@@ -120,7 +120,7 @@ pipeline {
                         "LIGHT_DB_USER=${envProps.LIGHT_DB_USER}",
                         "LIGHT_DB_PASSWORD=${envProps.LIGHT_DB_PASSWORD}",
                         "LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}",
-                        "LIGHT_JWT_SECRET==${envProps.LIGHT_JWT_SECRET=}"
+                        "LIGHT_JWT_SECRET==${envProps.LIGHT_JWT_SECRET}"
                     ]) {
                         sh """
                             docker-compose --env-file ${envPath} -f ${composePath} up -d --build
