@@ -36,7 +36,7 @@ pipeline {
                             }
                             
                         echo "✅ .env 파일 읽기 완료: ${envProps.size()}개 프로퍼티"
-                        echo "✅ 키 목록: ${envProps.keySet()}"
+                        // echo "✅ 키 목록: ${envProps.keySet()}"
                     }
                 }
             }
@@ -77,9 +77,10 @@ pipeline {
                     LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}
                     LIGHT_JWT_SECRET=${envProps.LIGHT_JWT_SECRET}
                     OPENAI_API_KEY=${envProps.OPENAI_API_KEY}
-                    spring.cloud.aws.credentials.access-key=${envProps.S3_ACCESS_KEY ?: envProps.ACCESS_KEY}
-                    spring.cloud.aws.credentials.secret-key=${envProps.S3_SECRET_KEY ?: envProps.SECRET_KEY}
-                    spring.cloud.aws.s3.bucket=${envProps.S3_BUCKET ?: envProps.BUCKET}
+                    spring.cloud.aws.credentials.access-key=${envProps.S3_ACCESS_KEY}
+                    spring.cloud.aws.credentials.secret-key=${envProps.S3_SECRET_KEY}
+                    spring.cloud.aws.s3.bucket=${envProps.S3_BUCKET}
+                    spring.cloud.aws.region.static=ap-northeast-2
                     """.stripIndent().trim()
                     
                     writeFile file: envFilePath, text: newEnvContent
@@ -124,7 +125,12 @@ pipeline {
                         "LIGHT_DB_USER=${envProps.LIGHT_DB_USER}",
                         "LIGHT_DB_PASSWORD=${envProps.LIGHT_DB_PASSWORD}",
                         "LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}",
-                        "LIGHT_JWT_SECRET==${envProps.LIGHT_JWT_SECRET}"
+                        "LIGHT_JWT_SECRET=${envProps.LIGHT_JWT_SECRET}",
+                        "OPENAI_API_KEY=${envProps.OPENAI_API_KEY}",
+                        "spring.cloud.aws.credentials.access-key=${envProps.S3_ACCESS_KEY}",
+                        "spring.cloud.aws.credentials.secret-key=${envProps.S3_SECRET_KEY}",
+                        "spring.cloud.aws.s3.bucket=${envProps.S3_BUCKET}",
+                        "spring.cloud.aws.region.static=ap-northeast-2"
                     ]) {
                         sh """
                             docker-compose --env-file ${envPath} -f ${composePath} up -d --build
