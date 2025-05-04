@@ -13,6 +13,21 @@ pipeline {
     }
 
     stages {
+        stage('Debug') {
+            steps {
+                withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
+                    script {
+                        echo "DOTENV 길이: ${DOTENV.length()}"
+                        echo "DOTENV 첫 200자: ${DOTENV.take(200)}"
+                        echo "DOTENV 줄 수: ${DOTENV.split('\n').size()}"
+                        
+                        DOTENV.split('\n').eachWithIndex { line, index ->
+                            echo "[${index}] ${line}"
+                        }
+                    }
+                }
+            }
+        }
         // 1. 먼저 .env 파일부터 읽음
         stage('Load .env File') {
             steps {
