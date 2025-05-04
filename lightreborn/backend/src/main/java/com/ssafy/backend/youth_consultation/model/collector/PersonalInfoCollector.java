@@ -1,5 +1,6 @@
 package com.ssafy.backend.youth_consultation.model.collector;
 
+import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
@@ -11,6 +12,7 @@ import java.util.function.Consumer;
 
 @Slf4j
 @ToString
+@Getter
 public class PersonalInfoCollector {
     private String name;
     private LocalDate birthDate;

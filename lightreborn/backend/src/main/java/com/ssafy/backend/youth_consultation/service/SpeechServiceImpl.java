@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ssafy.backend.auth.model.dto.TranscriptionResultDTO;
-import com.ssafy.backend.youth_consultation.entity.CounselingLog;
-import com.ssafy.backend.youth_consultation.entity.IsolatedYouth;
-import com.ssafy.backend.youth_consultation.entity.SurveyProcessStep;
-import com.ssafy.backend.youth_consultation.entity.SurveyQuestion;
+import com.ssafy.backend.youth_consultation.entity.*;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationErrorCode;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationException;
 import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollector;
@@ -16,9 +13,7 @@ import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
 import com.ssafy.backend.youth_consultation.model.state.Answer;
 import com.ssafy.backend.youth_consultation.model.vo.UserAnswers;
-import com.ssafy.backend.youth_consultation.repository.CounselingLogRepository;
-import com.ssafy.backend.youth_consultation.repository.IsolatedYouthRepository;
-import com.ssafy.backend.youth_consultation.repository.SurveyQuestionRepository;
+import com.ssafy.backend.youth_consultation.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +54,8 @@ public class SpeechServiceImpl implements SpeechService {
     private final IsolatedYouthRepository isolatedYouthRepository;
     private final CounselingLogRepository counselingLogRepository;
     private final SurveyQuestionRepository surveyQuestionRepository;
+    private final PersonalInfoRepository personalInfoRepository;
+    private final SurveyAnswerRepository surveyAnswerRepository;
     private final S3AsyncClient s3Client;
     private final S3Utilities s3Utilities;
 
@@ -118,6 +115,7 @@ public class SpeechServiceImpl implements SpeechService {
     }
 
     @Override
+    @Transactional
     public void uploadIsolationYouthInfo(MultipartFile file) {
         try {
             File convFile = File.createTempFile("upload-", ".docx");
@@ -139,7 +137,7 @@ public class SpeechServiceImpl implements SpeechService {
                             )
                     );
 
-            log.info("{}",questions);
+            log.info("[SpeechServiceImpl] 질문 리스트 : {}",questions);
 
             UserAnswers answers = new UserAnswers();
             PersonalInfoCollector personalInfoCollector = new PersonalInfoCollector();
@@ -154,8 +152,8 @@ public class SpeechServiceImpl implements SpeechService {
 
                         if(title.equals("타 현재 주요 고민 내용을 입력해주세요.")) {
                             String answer = rows.get(rowIdx + 1).getTableCells().get(0).getText().trim();
-                            log.info("{} {}", title, answer);
-                            answers.add(questions.get(title), answer);
+
+                            answers.addAnswerText(questions.get(title), answer);
                         }
 
                         else if(questions.containsKey(title)) {
@@ -164,9 +162,8 @@ public class SpeechServiceImpl implements SpeechService {
                             try {
                                 personalInfoCollector.add(title, answer);
                             } catch (IllegalArgumentException e) {
-                                answers.add(questions.get(title), answer);
+                                answers.addAnswerChoice(questions.get(title), answer);
                             }
-                            log.info("{} {}", title, answer);
                         }
 
                         else if(title.matches("[가-카]")) {
@@ -183,8 +180,7 @@ public class SpeechServiceImpl implements SpeechService {
                                     if (cellText.isBlank()) continue;
 
                                     Optional<Answer> answerOpt = Answer.findByQuestionCodeAndColNum(questionCode, idx);
-                                    answerOpt.ifPresent(answer -> answers.add(question, answer.getLabel()));
-                                    log.info("{} {} {}", title, cellText, answerOpt);
+                                    answerOpt.ifPresent(answer -> answers.addAnswerChoice(question, answer.getLabel()));
                                 }
                             }
                         }
@@ -192,8 +188,20 @@ public class SpeechServiceImpl implements SpeechService {
                 }
             }
 
-            log.info("[SpeechServiceImpl] uploadIsolationYouthInfo {}", answers);
+            log.info("[SpeechServiceImpl] 워드 파싱 완료 {}", answers);
 
+            PersonalInfo savedPersonalInfo = personalInfoRepository.save(
+                    PersonalInfo.builder()
+                            .name(personalInfoCollector.getName())
+                            .phoneNumber(personalInfoCollector.getPhoneNumber())
+                            .emergencyContact(personalInfoCollector.getEmergencyContent())
+                            .brithDate(personalInfoCollector.getBirthDate())
+                            .build()
+            );
+
+            answers.addPersonalInfo(savedPersonalInfo);
+
+            surveyAnswerRepository.saveAll(answers.getAnswers());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
