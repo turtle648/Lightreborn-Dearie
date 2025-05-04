@@ -23,20 +23,21 @@ pipeline {
                         // 파일 작성
                         writeFile file: envFilePath, text: DOTENV
                         
-                        // 직접 파싱하는 방법
+                        // 더 단순한 파싱 방법
                         envProps = [:]
-                        DOTENV.split('\n').each { line ->
-                            line = line.trim()
-                            if (line && line.contains('=') && !line.startsWith('#')) {
-                                def parts = line.split('=', 2)
-                                if (parts.length == 2) {
-                                    envProps[parts[0].trim()] = parts[1].trim()
+                        
+                        // 파일을 직접 읽어서 파싱
+                        def content = readFile(envFilePath)
+                        content.eachLine { line ->
+                            if (line && line.contains('=') && !line.trim().startsWith('#')) {
+                                def split = line.split('=', 2)
+                                if (split.length == 2) {
+                                    envProps[split[0].trim()] = split[1].trim()
                                 }
                             }
                         }
                         
                         echo "✅ .env 파일 읽기 완료: ${envProps.size()}개 프로퍼티"
-                        echo "✅ 키 목록: ${envProps.keySet()}"
                     }
                 }
             }
