@@ -23,14 +23,16 @@ pipeline {
                         // 파일 작성
                         writeFile file: envFilePath, text: DOTENV
                         
-                        // Properties로 읽기
-                        def props = new Properties()
-                        file(envFilePath).withInputStream { props.load(it) }
-                        
-                        // Map으로 변환
+                        // 직접 파싱하는 방법
                         envProps = [:]
-                        props.each { k, v ->
-                            envProps[k.toString()] = v.toString()
+                        DOTENV.split('\n').each { line ->
+                            line = line.trim()
+                            if (line && line.contains('=') && !line.startsWith('#')) {
+                                def parts = line.split('=', 2)
+                                if (parts.length == 2) {
+                                    envProps[parts[0].trim()] = parts[1].trim()
+                                }
+                            }
                         }
                         
                         echo "✅ .env 파일 읽기 완료: ${envProps.size()}개 프로퍼티"
