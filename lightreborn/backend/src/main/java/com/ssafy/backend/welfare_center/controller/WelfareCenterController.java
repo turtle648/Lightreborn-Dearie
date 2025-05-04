@@ -1,10 +1,8 @@
 package com.ssafy.backend.welfare_center.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
-import com.ssafy.backend.common.security.CustomUserDetails;
 import com.ssafy.backend.welfare_center.model.response.WelfareCenterResponseDTO;
 import com.ssafy.backend.welfare_center.service.WelfareCenterService;
-import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -14,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -40,7 +37,7 @@ public class WelfareCenterController {
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @PostMapping(value = "/data", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<BaseResponse<List<WelfareCenterResponseDTO>>> uploadData(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestParam("file") MultipartFile file) throws IOException{
+    public ResponseEntity<BaseResponse<List<WelfareCenterResponseDTO>>> uploadData(@RequestParam("file") MultipartFile file) throws IOException{
 
         List<WelfareCenterResponseDTO> result = welfareCenterService.uploadAndProcess(file);
 
