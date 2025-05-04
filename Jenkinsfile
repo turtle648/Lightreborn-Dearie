@@ -18,15 +18,33 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
                     script {
+                        echo "📝 DOTENV 길이: ${DOTENV?.length()}"
+                        echo "📝 DOTENV 앞부분: ${DOTENV?.take(200)}"
+                        
                         def envFilePath = "${env.WORKSPACE}/cicd/.env"
-
+                        
+                        // 파일 작성
                         writeFile file: envFilePath, text: DOTENV
-
-                        // 존재 확인
+                        
+                        // 파일 존재 확인
                         if (!fileExists(envFilePath)) {
                             error "❌ .env 파일이 ${envFilePath} 위치에 존재하지 않습니다."
                         }
+                        
+                        // 파일 내용 확인
+                        sh "echo '>>> .env 파일 내용 확인' && cat ${envFilePath}"
+                        
+                        // 프로퍼티 읽기
                         envProps = readProperties file: envFilePath
+                        
+                        // envProps 확인
+                        echo "📊 envProps 크기: ${envProps.size()}"
+                        echo "📊 envProps 키들: ${envProps.keySet()}"
+                        
+                        if (envProps.isEmpty()) {
+                            error "❌ envProps가 비어있습니다!"
+                        }
+                        
                         echo "✅ .env 파일 저장 완료: ${envFilePath}"
                     }
                 }
@@ -37,8 +55,25 @@ pipeline {
         stage('Generate .env') {
             steps {
                 script {
+                    echo ">>> envProps 상태 확인: ${envProps}"
+                    
                     def envFilePath = "${env.WORKSPACE}/cicd/.env"
-
+                    
+                    // envProps가 비어있는지 확인
+                    if (!envProps || envProps.isEmpty()) {
+                        error "❌ envProps가 비어있습니다. 이전 단계에서 .env 파일을 제대로 읽지 못했습니다."
+                    }
+                    
+                    // 필수 변수들이 있는지 확인
+                    def requiredVars = ['DEARIE_DB_URL', 'DEARIE_DB_USER', 'DEARIE_DB_PASSWORD', 'DEARIE_DB_NAME',
+                                        'LIGHT_DB_URL', 'LIGHT_DB_USER', 'LIGHT_DB_PASSWORD', 'LIGHT_DB_NAME', 'JWT_SECRET']
+                    
+                    requiredVars.each { var ->
+                        if (!envProps.containsKey(var)) {
+                            error "❌ 필수 변수 ${var}가 envProps에 없습니다."
+                        }
+                    }
+                    
                     def newEnvContent = """
                     DEARIE_DB_URL=${envProps.DEARIE_DB_URL}
                     DEARIE_DB_USER=${envProps.DEARIE_DB_USER}
@@ -50,7 +85,7 @@ pipeline {
                     LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}
                     JWT_SECRET=${envProps.JWT_SECRET}
                     """.stripIndent().trim()
-
+                    
                     writeFile file: envFilePath, text: newEnvContent
                     echo "✅ 실제 값으로 .env 재생성 완료"
                 }
