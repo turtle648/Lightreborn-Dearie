@@ -191,16 +191,23 @@ public class SpeechServiceImpl implements SpeechService {
 
             log.info("[SpeechServiceImpl] 워드 파싱 완료 {}", answers);
 
-            PersonalInfo savedPersonalInfo = personalInfoRepository.save(
-                    PersonalInfo.builder()
-                            .name(personalInfoCollector.getName())
-                            .phoneNumber(personalInfoCollector.getPhoneNumber())
-                            .emergencyContact(personalInfoCollector.getEmergencyContent())
-                            .brithDate(personalInfoCollector.getBirthDate())
-                            .build()
-            );
+            Optional<PersonalInfo> existPersonalInfo = personalInfoRepository.findByNameAndPhoneNumber(personalInfoCollector.getName(), personalInfoCollector.getPhoneNumber());
 
-            answers.addPersonalInfo(savedPersonalInfo);
+            if(existPersonalInfo.isPresent()) {
+                answers.addPersonalInfo(existPersonalInfo.get());
+            } else {
+                PersonalInfo savedPersonalInfo = personalInfoRepository.save(
+                        PersonalInfo.builder()
+                                .name(personalInfoCollector.getName())
+                                .phoneNumber(personalInfoCollector.getPhoneNumber())
+                                .emergencyContact(personalInfoCollector.getEmergencyContent())
+                                .brithDate(personalInfoCollector.getBirthDate())
+                                .build()
+                );
+
+                answers.addPersonalInfo(savedPersonalInfo);
+            }
+
 
             surveyAnswerRepository.saveAll(answers.getAnswers());
 
