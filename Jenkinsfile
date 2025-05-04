@@ -18,34 +18,24 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'soboro-dotenv', variable: 'DOTENV')]) {
                     script {
-                        echo "📝 DOTENV 길이: ${DOTENV?.length()}"
-                        echo "📝 DOTENV 앞부분: ${DOTENV?.take(200)}"
-                        
                         def envFilePath = "${env.WORKSPACE}/cicd/.env"
                         
-                        // 파일 작성
-                        writeFile file: envFilePath, text: DOTENV
+                        // 주석 제거 및 파일 작성
+                        def cleanedContent = DOTENV.readLines()
+                            .findAll { line -> 
+                                line.trim() && 
+                                !line.trim().startsWith('#') && 
+                                line.contains('=')
+                            }
+                            .join('\n')
                         
-                        // 파일 존재 확인
-                        if (!fileExists(envFilePath)) {
-                            error "❌ .env 파일이 ${envFilePath} 위치에 존재하지 않습니다."
-                        }
-                        
-                        // 파일 내용 확인
-                        sh "echo '>>> .env 파일 내용 확인' && cat ${envFilePath}"
+                        writeFile file: envFilePath, text: cleanedContent
                         
                         // 프로퍼티 읽기
                         envProps = readProperties file: envFilePath
                         
-                        // envProps 확인
-                        echo "📊 envProps 크기: ${envProps.size()}"
-                        echo "📊 envProps 키들: ${envProps.keySet()}"
-                        
-                        if (envProps.isEmpty()) {
-                            error "❌ envProps가 비어있습니다!"
-                        }
-                        
-                        echo "✅ .env 파일 저장 완료: ${envFilePath}"
+                        echo "✅ .env 파일 읽기 완료: ${envProps.size()}개 프로퍼티"
+                        echo "✅ 키 목록: ${envProps.keySet()}"
                     }
                 }
             }
