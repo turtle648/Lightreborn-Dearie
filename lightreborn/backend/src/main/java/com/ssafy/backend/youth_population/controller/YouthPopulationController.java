@@ -35,13 +35,13 @@ public class YouthPopulationController {
             @ApiResponse(responseCode = "400", description = "요청 값 오류"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    @PostMapping(value = "data", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/data", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BaseResponse<List<YouthPopulationResponseDTO>>> uploadData(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestParam("file") MultipartFile file) throws IOException {
         String loginUser = userDetails.getUserId();
 
         List<YouthPopulationResponseDTO> result = youthPopulationService.uploadAndProcess(file);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(BaseResponse.success(200, "데이터 업로드를 성공했습니다.", result));
+                .body(BaseResponse.success(201, "데이터 업로드를 성공했습니다.", result));
     }
 }
