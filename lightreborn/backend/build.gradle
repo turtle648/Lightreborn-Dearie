@@ -59,6 +59,8 @@ dependencies {
 	//opencsv
 	implementation 'com.opencsv:opencsv:5.9'
 
+	implementation 'software.amazon.awssdk:s3'
+
 	runtimeOnly 'com.h2database:h2'
 }
 

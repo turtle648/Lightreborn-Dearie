@@ -9,16 +9,20 @@ import com.ssafy.backend.common.utils.parser.RawFileParser;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
 import com.ssafy.backend.youth_population.entity.YouthPopulation;
 import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
+import com.ssafy.backend.youth_population.model.dto.vo.HangjungKey;
 import com.ssafy.backend.youth_population.repository.HangjungsRepository;
 import com.ssafy.backend.youth_population.repository.YouthPopulationRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -54,26 +58,76 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
 
         log.info("파싱 성공 Object Mapper entity 변환");
 
-        //4. 엔티티 매핑 및 저장
-        List<YouthPopulation> entities = rows.stream()
-                .map(row -> {
+        //4. 기존 객체 조회
+        Set<HangjungKey> hangjungKeySet = rows.stream()
+                .map(r -> new HangjungKey(r.get("hangjungCode"), r.get("hangjungName")))
+                .collect(Collectors.toSet());
 
-                    // 1. 연관 관계가진 필드 제외하고 매핑
-                    YouthPopulation yp = objectMapper.convertValue(row, YouthPopulation.class);
-
-                    //2. 행정(@ManyToOne) 찾아주기
-                    String hanjungCode = row.get("hangjungCode");
-                    Hangjungs h = hangjungsRepository.findByHangjungCode(hanjungCode)
-                            .orElseThrow(() -> new EntityNotFoundException("행정동을 찾을 수 없음" + hanjungCode));
-
-                    yp.assignHangjungs(h);
-                    return yp;
-                })
-                .filter(yp -> !youthPopulationRepository.existsByHangjungs_Id(yp.getHangjungs().getId()))
+        List<Specification<YouthPopulation>> specs = hangjungKeySet.stream()
+                .map(k -> (Specification<YouthPopulation>) (root, q, cb) ->
+                        cb.and(
+                                cb.equal(root.get("hangjungs").get("hangjungCode"), k.hanjungCode()),
+                                cb.equal(root.get("hangjungs").get("hangjungName"), k.hangjungName())
+                        )
+                )
                 .toList();
 
-        //DB에 저장
-        List<YouthPopulation> saved = youthPopulationRepository.saveAll(entities);
+        //4-2. 여러 Specification 을 OR로 묶기
+        Specification<YouthPopulation> combinedSpec = specs.stream()
+                .reduce(Specification::or)
+                .orElse((root, q, cb) -> cb.disjunction());
+
+        List<YouthPopulation> existing = youthPopulationRepository.findAll(combinedSpec);
+
+        Map<HangjungKey, YouthPopulation> existingMap = existing.stream()
+                .collect(Collectors.toMap(
+                        yp -> new HangjungKey(
+                                yp.getHangjungs().getHangjungCode(),
+                                yp.getHangjungs().getHangjungName()
+                        ),
+                        yp->yp
+                ));
+
+        List<YouthPopulation> toSave = new ArrayList<>();
+
+        //5. 저장할 데이터 생성 & 업데이트
+        for(Map<String, String> row : rows) {
+            HangjungKey key = new HangjungKey(row.get("hangjungCode"), row.get("hangjungName"));
+            LocalDate incomingDate = LocalDate.parse(row.get("baseDate"));
+            YouthPopulation yp = existingMap.get(key);
+
+            if(yp != null)
+            {
+                if(incomingDate.isAfter(yp.getBaseDate()))
+                {
+                    //새로 업로드 된 값으로 업데이트
+                    YouthPopulation patch = objectMapper.convertValue(row, YouthPopulation.class);
+
+                    YouthPopulation updated = patch.toBuilder()
+                            .id(yp.getId())
+                            .hangjungs(yp.getHangjungs())
+                            .build();
+
+                    toSave.add(updated);
+                }
+
+            }
+            else {
+                // 1. 연관 관계가진 필드 제외하고 매핑
+                YouthPopulation created = objectMapper.convertValue(row, YouthPopulation.class);
+
+                //2. 행정(@ManyToOne) 찾아주기
+                String hanjungCode = row.get("hangjungCode");
+                Hangjungs h = hangjungsRepository.findByHangjungCode(hanjungCode)
+                        .orElseThrow(() -> new EntityNotFoundException("행정동을 찾을 수 없음" + hanjungCode));
+
+                created.assignHangjungs(h);
+
+                toSave.add(created);
+            }
+        }
+
+        List<YouthPopulation> saved = youthPopulationRepository.saveAll(toSave);
 
         return saved.stream()
                 .map(e ->{
