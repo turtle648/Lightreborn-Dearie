@@ -172,128 +172,98 @@ pipeline {
         
         // 6. Flyway 데이터 마이그레이션
         stage('Flyway Check and Migration') {
-    steps {
-        script {
-            def projects = ['dearie', 'lightreborn']
-            
-            projects.each { project ->
-                def projUpper = project.toUpperCase()
-                
-                def migrationPath = (params.ENV == 'master') ?
-                    "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
-                    "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
-                
-                echo "🔍 Debug - Project: ${project}"
-                echo "🔍 Debug - Migration Path: ${migrationPath}"
-                
-                // 네트워크 이름을 먼저 정의
-                def networkName = (project == 'dearie') ? 'backend_dearie' : 'backend_lightreborn'
-                
-                // 마이그레이션 파일 존재 확인
-                sh "echo '📋 마이그레이션 파일 확인:' && ls -la ${migrationPath} || true"
-                
-                def hasMigrationFiles = sh(script: "ls ${migrationPath}/*.sql 2>/dev/null", returnStatus: true) == 0
-                
-                if (!hasMigrationFiles) {
-                    echo "⚠️ No migration files found in ${migrationPath}, skipping Flyway for ${project}"
-                    return
-                }
+            steps {
+                script {
+                    def projects = ['dearie', 'lightreborn']
+                    
+                    projects.each { project ->
+                        def projUpper = project.toUpperCase()
+                        
+                        def migrationPath = (params.ENV == 'master') ?
+                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
+                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
+                        
+                        echo "🔍 Debug - Project: ${project}"
+                        echo "🔍 Debug - Migration Path: ${migrationPath}"
+                        
+                        // 네트워크 이름을 먼저 정의
+                        def networkName = (project == 'dearie') ? 'backend_dearie' : 'backend_lightreborn'
+                        
+                        // 마이그레이션 파일 존재 확인
+                        sh "echo '📋 마이그레이션 파일 확인:' && ls -la ${migrationPath} || true"
+                        
+                        def hasMigrationFiles = sh(script: "ls ${migrationPath}/*.sql 2>/dev/null", returnStatus: true) == 0
+                        
+                        if (!hasMigrationFiles) {
+                            echo "⚠️ No migration files found in ${migrationPath}, skipping Flyway for ${project}"
+                            return
+                        }
+                        
+                        // 환경 변수 값 확인
+                        def dbUrl = envProps.get("${projUpper}_DB_URL") ?: "jdbc:postgresql://${project}-db:5432/${project}"
+                        def dbUser = envProps.get("${projUpper}_DB_USER") ?: "ssafy"
+                        def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"
+                        
+                        echo "🔗 Database details:"
+                        echo "  - URL: ${dbUrl}"
+                        echo "  - User: ${dbUser}"
+                        
+                        // 임시 디렉토리 생성 및 파일 복사
+                        echo "📁 Creating temporary directory for migrations"
+                        sh """
+                            mkdir -p /tmp/migrations/${project}
+                            cp ${migrationPath}/*.sql /tmp/migrations/${project}/
+                            chmod -R 755 /tmp/migrations/${project}
+                        """
 
-                // 마이그레이션 파일 확인 디버깅
-                echo "🔍 Debugging migration files..."
-                sh """
-                    echo "=== Migration files in Jenkins ==="
-                    ls -la ${migrationPath}
-                    echo "=== File content ==="
-                    cat ${migrationPath}/*.sql
-                    
-                    echo "=== Testing Flyway container access ==="
-                    docker run --rm \\
-                    --network ${networkName} \\
-                    -v ${migrationPath}:/migrations \\
-                    --entrypoint /bin/sh \\
-                    flyway/flyway:9 \\
-                    -c 'ls -la /migrations && cat /migrations/*.sql'
-                """
-                
-                // 환경 변수 값 확인
-                def dbUrl = envProps.get("${projUpper}_DB_URL") ?: "jdbc:postgresql://${project}-db:5432/${project}"
-                def dbUser = envProps.get("${projUpper}_DB_USER") ?: "ssafy"
-                def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"
-                
-                echo "🔗 Database details:"
-                echo "  - URL: ${dbUrl}"
-                echo "  - User: ${dbUser}"
+                        def baseCmd = """
+                            docker run --rm \\
+                            --network ${networkName} \\
+                            -v /tmp/migrations/${project}:/migrations \\
+                            flyway/flyway:9 \\
+                            -locations=filesystem:/migrations \\
+                            -url='${dbUrl}' \\
+                            -user=${dbUser} \\
+                            -password=${dbPassword} \\
+                            -cleanDisabled=false \\
+                            -validateOnMigrate=false
+                        """.stripIndent().trim()
+                        
+                        // Flyway info 실행
+                        echo "🔍 Checking Flyway info..."
+                        try {
+                            def infoOutput = sh(script: "${baseCmd} info", returnStdout: true)
+                            echo "📋 Flyway info output:"
+                            echo infoOutput
+                        } catch (err) {
+                            echo "⚠️ Info command failed: ${err.message}"
+                        }
+                        
+                        // 직접 마이그레이션 실행
+                        echo "🚀 Running Flyway migration..."
+                        sh "${baseCmd} migrate"
+                        
+                        // 마이그레이션 결과 확인
+                        echo "🔍 Verifying migration results..."
+                        sh """
+                            docker run --rm \\
+                            --network ${networkName} \\
+                            postgres:13 \\
+                            psql '${dbUrl}' -U ${dbUser} -c 'SELECT * FROM flyway_schema_history;'
+                            
+                            echo "🔍 Checking hangjungs table..."
+                            docker run --rm \\
+                            --network ${networkName} \\
+                            postgres:13 \\
+                            psql '${dbUrl}' -U ${dbUser} -c 'SELECT COUNT(*) FROM hangjungs;' || echo "Table not found"
+                        """
 
-                // 데이터베이스 연결 테스트
-                echo "🔌 Testing database connection..."
-                sh """
-                    docker run --rm --network ${networkName} \\
-                    postgres:13 \\
-                    pg_isready -h ${project}-db -U ${dbUser} && echo 'Database is ready' || echo 'Failed to connect to database'
-                """
-                
-                // 기존 베이스라인 확인 및 제거
-                echo "🔄 Checking existing baseline..."
-                sh """
-                    docker run --rm \\
-                    --network ${networkName} \\
-                    postgres:13 \\
-                    psql '${dbUrl}' -U ${dbUser} -c 'SELECT * FROM flyway_schema_history;' || echo "No history table"
-                    
-                    # 베이스라인만 있으면 삭제
-                    docker run --rm \\
-                    --network ${networkName} \\
-                    postgres:13 \\
-                    psql '${dbUrl}' -U ${dbUser} -c "DELETE FROM flyway_schema_history WHERE version = '1' AND type = 'BASELINE';" || echo "No baseline to delete"
-                """
-                
-                // Flyway 명령 수정 - locations 옵션 다시 점검
-                def baseCmd = """
-                    docker run --rm \\
-                    --network ${networkName} \\
-                    -v ${migrationPath}:/migrations \\
-                    flyway/flyway:9 \\
-                    -locations=filesystem:/migrations \\
-                    -url='${dbUrl}' \\
-                    -user=${dbUser} \\
-                    -password=${dbPassword} \\
-                    -cleanDisabled=false \\
-                    -validateOnMigrate=false
-                """.stripIndent().trim()
-                
-                // Flyway info 실행
-                echo "🔍 Checking Flyway info..."
-                try {
-                    def infoOutput = sh(script: "${baseCmd} info", returnStdout: true)
-                    echo "📋 Flyway info output:"
-                    echo infoOutput
-                } catch (err) {
-                    echo "⚠️ Info command failed: ${err.message}"
+                        echo "🧹 Cleaning up temporary files"
+                        sh "rm -rf /tmp/migrations/${project}"
+                    }
                 }
-                
-                // 직접 마이그레이션 실행
-                echo "🚀 Running Flyway migration..."
-                sh "${baseCmd} migrate"
-                
-                // 마이그레이션 결과 확인
-                echo "🔍 Verifying migration results..."
-                sh """
-                    docker run --rm \\
-                    --network ${networkName} \\
-                    postgres:13 \\
-                    psql '${dbUrl}' -U ${dbUser} -c 'SELECT * FROM flyway_schema_history;'
-                    
-                    echo "🔍 Checking hangjungs table..."
-                    docker run --rm \\
-                    --network ${networkName} \\
-                    postgres:13 \\
-                    psql '${dbUrl}' -U ${dbUser} -c 'SELECT COUNT(*) FROM hangjungs;' || echo "Table not found"
-                """
             }
         }
-    }
-}
 
         // 7. 빌드 성공 여부 상태 반영
         stage('Mark Image Build Success') {
