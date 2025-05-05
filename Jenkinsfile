@@ -175,17 +175,15 @@ pipeline {
             steps {
                 script {
                     def projects = ['dearie', 'lightreborn']
-                    def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
                     
                     projects.each { project ->
                         def projUpper = project.toUpperCase()
-                        def migrationPath = (params.ENV == 'master') ?
-                            "${workspace}/${project}/backend/src/main/resources/db/migration_master" :
-                            "${workspace}/${project}/backend/src/main/resources/db/migration"
                         
-                        // 디버깅을 위한 로그 추가
+                        def migrationPath = (params.ENV == 'master') ?
+                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
+                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
+                        
                         echo "🔍 Debug - Project: ${project}"
-                        echo "🔍 Debug - Workspace: ${workspace}"
                         echo "🔍 Debug - Migration Path: ${migrationPath}"
                         
                         // 마이그레이션 파일 존재 확인
@@ -202,29 +200,31 @@ pipeline {
                         def dbUrl = envProps.get("${projUpper}_DB_URL") ?: "jdbc:postgresql://${project}-db:5432/${project}"
                         def dbUser = envProps.get("${projUpper}_DB_USER") ?: "ssafy"
                         def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"
-
-                        // 네트워크 이름 정의 (데이터베이스 연결 테스트 전에)
+                        
+                        // 네트워크 이름 확인
                         def networkName = (project == 'dearie') ? 'backend_dearie' : 'backend_lightreborn'
-
+                        
                         // 데이터베이스 연결 테스트
                         echo "🔌 Testing database connection..."
                         sh """
                             docker run --rm --network ${networkName} \\
                             postgres:13 \\
-                            psql '${dbUrl}' -U ${dbUser} -c '\\dt' || echo "Failed to connect to database"
+                            psql '${dbUrl}' -U ${dbUser} -W -c '\\dt' || echo "Failed to connect to database"
                         """                        
                         
                         echo "🔗 Database details:"
                         echo "  - URL: ${dbUrl}"
                         echo "  - User: ${dbUser}"
                         
-                        // 기본 Flyway 명령
+                        // 마운트 경로가 다르므로 컨테이너 내부에서 직접 실행
+                        // Jenkins workspace를 Docker 컨테이너에 마운트하여 실행
                         def baseCmd = """
                             docker run --rm \\
                             --network ${networkName} \\
-                            -v ${migrationPath}:/flyway/sql \\
-                            flyway/flyway \\
-                            -locations=filesystem:/flyway/sql \\
+                            -v ${env.WORKSPACE}:${env.WORKSPACE} \\
+                            -w ${env.WORKSPACE} \\
+                            flyway/flyway:9 \\
+                            -locations=filesystem:${migrationPath} \\
                             -url='${dbUrl}' \\
                             -user=${dbUser} \\
                             -password=${dbPassword}
@@ -240,26 +240,6 @@ pipeline {
                         echo "🚀 Running Flyway migration..."
                         sh "${baseCmd} migrate"
                     }
-                }
-            }
-        }
-        stage('Debug Directory Structure') {
-            steps {
-                script {
-                    echo "🔍 Checking directory structure..."
-                    
-                    // 실제 workspace 경로 확인
-                    sh "echo 'Jenkins workspace: ${env.WORKSPACE}'"
-                    
-                    // Jenkins home 내부 경로 확인
-                    sh "echo 'Checking Jenkins workspace structure:' && find ${env.WORKSPACE} -type d -name 'db' -o -name 'migration' 2>/dev/null || true"
-                    
-                    // 호스트 경로 확인
-                    def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
-                    sh "echo 'Checking host workspace structure:' && find ${workspace} -type d -name 'db' -o -name 'migration' 2>/dev/null || true"
-                    
-                    // 특정 프로젝트 디렉토리 확인
-                    sh "echo 'Checking lightreborn structure:' && ls -la ${workspace}/lightreborn/backend/src/main/resources/ 2>/dev/null || true"
                 }
             }
         }
