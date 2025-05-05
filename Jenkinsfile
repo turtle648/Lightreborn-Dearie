@@ -205,14 +205,15 @@ pipeline {
                         
                         echo "🔍 Debug - Final DB User: ${dbUser}"
                         echo "🔍 Debug - Final DB Password: ${dbPassword}"
-                        
-                        // 나머지 로직은 동일...
+                    
                         def dbName = project
+
+                        def hostMigrationPath = "/home/ubuntu/jenkins-data/workspace/soboro/${project}/backend/src/main/resources/db/migration"
 
                         def baseCmd = """
                             docker run --rm \\
                             --network ${networkName} \\
-                            -v ${migrationPath}:/flyway/sql \\
+                            -v ${hostMigrationPath}:/flyway/sql \\
                             flyway/flyway \\
                             -locations=filesystem:/flyway/sql \\
                             -url='jdbc:postgresql://${dbHost}:5432/${dbName}' \\
@@ -220,6 +221,7 @@ pipeline {
                             -password=${dbPassword} \\
                             -baselineOnMigrate=true
                         """.stripIndent().trim()
+
 
                         
                         // Flyway info 실행
@@ -235,21 +237,6 @@ pipeline {
                         // 직접 마이그레이션 실행
                         echo "🚀 Running Flyway migration..."
                         sh "${baseCmd} migrate"
-                        
-                        // // 마이그레이션 결과 확인 (선택사항)
-                        // echo "🔍 Verifying migration results..."
-                        // sh """
-                        //     docker run --rm \\
-                        //     --network ${networkName} \\
-                        //     postgres:13 \\
-                        //     env PGPASSWORD=${dbPassword} psql --host=${dbHost} --username=${dbUser} --dbname=${dbName} -c 'SELECT * FROM flyway_schema_history;'
-                            
-                        //     echo "🔍 Checking hangjungs table..."
-                        //     docker run --rm \\
-                        //     --network ${networkName} \\
-                        //     postgres:13 \\
-                        //     env PGPASSWORD=${dbPassword} psql --host=${dbHost} --username=${dbUser} --dbname=${dbName} -c 'SELECT COUNT(*) FROM hangjungs;' || echo "Table not found"
-                        // """
                     }
                 }
             }
