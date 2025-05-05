@@ -243,6 +243,26 @@ pipeline {
                 }
             }
         }
+        stage('Debug Directory Structure') {
+            steps {
+                script {
+                    echo "🔍 Checking directory structure..."
+                    
+                    // 실제 workspace 경로 확인
+                    sh "echo 'Jenkins workspace: ${env.WORKSPACE}'"
+                    
+                    // Jenkins home 내부 경로 확인
+                    sh "echo 'Checking Jenkins workspace structure:' && find ${env.WORKSPACE} -type d -name 'db' -o -name 'migration' 2>/dev/null || true"
+                    
+                    // 호스트 경로 확인
+                    def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
+                    sh "echo 'Checking host workspace structure:' && find ${workspace} -type d -name 'db' -o -name 'migration' 2>/dev/null || true"
+                    
+                    // 특정 프로젝트 디렉토리 확인
+                    sh "echo 'Checking lightreborn structure:' && ls -la ${workspace}/lightreborn/backend/src/main/resources/ 2>/dev/null || true"
+                }
+            }
+        }
 
         // 7. 빌드 성공 여부 상태 반영
         stage('Mark Image Build Success') {
