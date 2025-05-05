@@ -189,9 +189,16 @@ pipeline {
                         def networkName = "${project}-net"
                         def dbHost = "${project}-db"
 
+                        // envProps 디버깅
+                        echo "🔍 Debug - envProps keys: ${envProps.keySet()}"
+                        echo "🔍 Debug - Looking for ${projUpper}_DB_USER: ${envProps.get("${projUpper}_DB_USER")}"
+                        
                         // 프로젝트별 DB 사용자/비밀번호 설정
                         def dbUser = envProps.get("${projUpper}_DB_USER")
                         def dbPassword = envProps.get("${projUpper}_DB_PASSWORD")
+                        
+                        // 실제 데이터베이스 이름은 project 그대로 사용
+                        def dbName = project
 
                         def baseCmd = """
                             docker run --rm \\
@@ -199,7 +206,7 @@ pipeline {
                             -v ${migrationPath}:/flyway/sql \\
                             flyway/flyway \\
                             -locations=filesystem:/flyway/sql \\
-                            -url='jdbc:postgresql://${dbHost}:5432/${project}' \\
+                            -url='jdbc:postgresql://${dbHost}:5432/${dbName}' \\
                             -user=${dbUser} \\
                             -password=${dbPassword}
                         """.stripIndent().trim()
@@ -225,13 +232,13 @@ pipeline {
                             docker run --rm \\
                             --network ${networkName} \\
                             postgres:13 \\
-                            env PGPASSWORD=${dbPassword} psql --host=${dbHost} --username=${dbUser} --dbname=${project} -c 'SELECT * FROM flyway_schema_history;'
+                            env PGPASSWORD=${dbPassword} psql --host=${dbHost} --username=${dbUser} --dbname=${dbName} -c 'SELECT * FROM flyway_schema_history;'
                             
                             echo "🔍 Checking hangjungs table..."
                             docker run --rm \\
                             --network ${networkName} \\
                             postgres:13 \\
-                            env PGPASSWORD=${dbPassword} psql --host=${dbHost} --username=${dbUser} --dbname=${project} -c 'SELECT COUNT(*) FROM hangjungs;' || echo "Table not found"
+                            env PGPASSWORD=${dbPassword} psql --host=${dbHost} --username=${dbUser} --dbname=${dbName} -c 'SELECT COUNT(*) FROM hangjungs;' || echo "Table not found"
                         """
                     }
                 }
@@ -306,8 +313,8 @@ pipeline {
                         docker pull lightreborn-backend:stable
                         
                         # 올바른 네트워크 이름 사용
-                        docker run -d --name dearie-backend --network backend_dearie -p 8082:8082 dearie-backend:stable
-                        docker run -d --name lightreborn-backend --network backend_lightreborn -p 8081:8081 lightreborn-backend:stable
+                        docker run -d --name dearie-backend --network dearie-net -p 8082:8082 dearie-backend:stable
+                        docker run -d --name lightreborn-backend --network lightreborn-net -p 8081:8081 lightreborn-backend:stable
                     '''
                 }
             }
