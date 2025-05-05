@@ -36,7 +36,7 @@ pipeline {
                             }
                             
                         echo "✅ .env 파일 읽기 완료: ${envProps.size()}개 프로퍼티"
-                        echo "✅ 키 목록: ${envProps.keySet()}"
+                        // echo "✅ 키 목록: ${envProps.keySet()}"
                     }
                 }
             }
@@ -188,17 +188,49 @@ pipeline {
                         // 네트워크 이름을 먼저 정의
                         def networkName = "${project}-net"
                         def dbHost = "${project}-db"
-
-                        // envProps 디버깅
-                        echo "🔍 Debug - envProps type: ${envProps.getClass()}"
-                        echo "🔍 Debug - envProps size: ${envProps.size()}"
-                        echo "🔍 Debug - envProps contents:"
-                        envProps.each { key, value ->
-                            echo "  ${key} = ${value}"
-                        }
-                        // 직접 키 확인
-                        echo "🔍 Debug - Direct key check for DEARIE_DB_USER: ${envProps['DEARIE_DB_USER']}"
-                        echo "🔍 Debug - DEARIE_DB_USER via .get(): ${envProps.get('DEARIE_DB_USER')}"
+                        
+                        // 네트워크 상태 확인
+                        echo "🔍 Checking Docker network status..."
+                        sh """
+                            echo "Available networks:"
+                            docker network ls
+                            
+                            echo "Checking ${networkName} network:"
+                            docker network inspect ${networkName} || echo "Network ${networkName} not found"
+                            
+                            echo "Checking containers on ${networkName}:"
+                            docker network inspect ${networkName} | jq '.[0].Containers' || echo "No containers found"
+                            
+                            echo "Checking if ${dbHost} is running:"
+                            docker ps | grep ${dbHost} || echo "${dbHost} not found"
+                            
+                            echo "Inspecting ${dbHost} container:"
+                            docker inspect ${dbHost} | grep -A 10 NetworkSettings || echo "${dbHost} not found"
+                        """
+                        
+                        // 연결 테스트
+                        echo "🔌 Testing connection to ${dbHost}..."
+                        sh """
+                            docker run --rm --network ${networkName} \\
+                            alpine ping -c 3 ${dbHost} || echo "Cannot ping ${dbHost}"
+                        """
+                        
+                        // Flyway 명령 전에 컨테이너 상태 확인
+                        echo "🔍 Waiting for ${dbHost} to be ready..."
+                        sh """
+                            timeout=30
+                            counter=0
+                            while [ \$counter -lt \$timeout ]; do
+                                if docker run --rm --network ${networkName} \\
+                                alpine sh -c "nc -z ${dbHost} 5432"; then
+                                    echo "${dbHost} is ready!"
+                                    break
+                                fi
+                                counter=\$((counter+1))
+                                echo "Waiting for ${dbHost}... (\$counter/\$timeout)"
+                                sleep 1
+                            done
+                        """
                         
                         // 프로젝트별 DB 사용자/비밀번호 설정
                         def dbUser = envProps.get("${projUpper}_DB_USER") ?: envProps["${projUpper}_DB_USER"] ?: "ssafy"
@@ -207,7 +239,7 @@ pipeline {
                         echo "🔍 Debug - Final DB User: ${dbUser}"
                         echo "🔍 Debug - Final DB Password: ${dbPassword}"
                         
-                        // 실제 데이터베이스 이름은 project 그대로 사용
+                        // 나머지 로직은 동일...
                         def dbName = project
 
                         def baseCmd = """
