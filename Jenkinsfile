@@ -36,7 +36,7 @@ pipeline {
                             }
                             
                         echo "✅ .env 파일 읽기 완료: ${envProps.size()}개 프로퍼티"
-                        // echo "✅ 키 목록: ${envProps.keySet()}"
+                        echo "✅ 키 목록: ${envProps.keySet()}"
                     }
                 }
             }
@@ -190,12 +190,22 @@ pipeline {
                         def dbHost = "${project}-db"
 
                         // envProps 디버깅
-                        echo "🔍 Debug - envProps keys: ${envProps.keySet()}"
-                        echo "🔍 Debug - Looking for ${projUpper}_DB_USER: ${envProps.get("${projUpper}_DB_USER")}"
+                        echo "🔍 Debug - envProps type: ${envProps.getClass()}"
+                        echo "🔍 Debug - envProps size: ${envProps.size()}"
+                        echo "🔍 Debug - envProps contents:"
+                        envProps.each { key, value ->
+                            echo "  ${key} = ${value}"
+                        }
+                        // 직접 키 확인
+                        echo "🔍 Debug - Direct key check for DEARIE_DB_USER: ${envProps['DEARIE_DB_USER']}"
+                        echo "🔍 Debug - DEARIE_DB_USER via .get(): ${envProps.get('DEARIE_DB_USER')}"
                         
                         // 프로젝트별 DB 사용자/비밀번호 설정
-                        def dbUser = envProps.get("${projUpper}_DB_USER")
-                        def dbPassword = envProps.get("${projUpper}_DB_PASSWORD")
+                        def dbUser = envProps.get("${projUpper}_DB_USER") ?: envProps["${projUpper}_DB_USER"] ?: "ssafy"
+                        def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: envProps["${projUpper}_DB_PASSWORD"] ?: "ssafy"
+                        
+                        echo "🔍 Debug - Final DB User: ${dbUser}"
+                        echo "🔍 Debug - Final DB Password: ${dbPassword}"
                         
                         // 실제 데이터베이스 이름은 project 그대로 사용
                         def dbName = project
