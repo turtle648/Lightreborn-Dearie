@@ -216,6 +216,15 @@ pipeline {
                             chmod -R 755 /tmp/migrations/${project}
                         """
 
+                        // 기존 베이스라인 제거
+                        echo "🔄 Removing existing baseline if present..."
+                        sh """
+                            docker run --rm \\
+                            --network ${networkName} \\
+                            postgres:13 \\
+                            psql --host=${project}-db --username=${dbUser} --dbname=${project} -c "DELETE FROM flyway_schema_history WHERE version = '1' AND type = 'BASELINE';" || echo "No baseline to remove"
+                        """
+
                         def baseCmd = """
                             docker run --rm \\
                             --network ${networkName} \\
@@ -249,13 +258,13 @@ pipeline {
                             docker run --rm \\
                             --network ${networkName} \\
                             postgres:13 \\
-                            psql '${dbUrl}' -U ${dbUser} -c 'SELECT * FROM flyway_schema_history;'
+                            psql --host=${project}-db --username=${dbUser} --dbname=${project} -c 'SELECT * FROM flyway_schema_history;'
                             
                             echo "🔍 Checking hangjungs table..."
                             docker run --rm \\
                             --network ${networkName} \\
                             postgres:13 \\
-                            psql '${dbUrl}' -U ${dbUser} -c 'SELECT COUNT(*) FROM hangjungs;' || echo "Table not found"
+                            psql --host=${project}-db --username=${dbUser} --dbname=${project} -c 'SELECT COUNT(*) FROM hangjungs;' || echo "Table not found"
                         """
 
                         echo "🧹 Cleaning up temporary files"
