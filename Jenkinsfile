@@ -222,7 +222,7 @@ pipeline {
                             docker run --rm \\
                             --network ${networkName} \\
                             postgres:13 \\
-                            psql --host=${project}-db --username=${dbUser} --dbname=${project} -c "DELETE FROM flyway_schema_history WHERE version = '1' AND type = 'BASELINE';" || echo "No baseline to remove"
+                            env PGPASSWORD=${dbPassword} psql --host=${project}-db --username=${dbUser} --dbname=${project} -c "DELETE FROM flyway_schema_history WHERE version = '1' AND type = 'BASELINE';" || echo "No baseline to remove"
                         """
 
                         def baseCmd = """
@@ -258,13 +258,13 @@ pipeline {
                             docker run --rm \\
                             --network ${networkName} \\
                             postgres:13 \\
-                            psql --host=${project}-db --username=${dbUser} --dbname=${project} -c 'SELECT * FROM flyway_schema_history;'
+                            env PGPASSWORD=${dbPassword} psql --host=${project}-db --username=${dbUser} --dbname=${project} -c 'SELECT * FROM flyway_schema_history;'
                             
                             echo "🔍 Checking hangjungs table..."
                             docker run --rm \\
                             --network ${networkName} \\
                             postgres:13 \\
-                            psql --host=${project}-db --username=${dbUser} --dbname=${project} -c 'SELECT COUNT(*) FROM hangjungs;' || echo "Table not found"
+                            env PGPASSWORD=${dbPassword} psql --host=${project}-db --username=${dbUser} --dbname=${project} -c 'SELECT COUNT(*) FROM hangjungs;' || echo "Table not found"
                         """
 
                         echo "🧹 Cleaning up temporary files"
