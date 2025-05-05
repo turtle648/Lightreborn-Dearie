@@ -185,6 +185,16 @@ pipeline {
                         
                         echo "🔍 Debug - Migration Path: ${migrationPath}"
                         
+                        // 마이그레이션 파일 존재 확인
+                        sh "echo '📋 마이그레이션 파일 확인:' && ls -la ${migrationPath} || true"
+                        
+                        def hasMigrationFiles = sh(script: "ls ${migrationPath}/*.sql 2>/dev/null", returnStatus: true) == 0
+                        
+                        if (!hasMigrationFiles) {
+                            echo "⚠️ No migration files found in ${migrationPath}, skipping Flyway for ${project}"
+                            return
+                        }
+                        
                         // 네트워크 이름을 먼저 정의
                         def networkName = "${project}-net"
                         def dbHost = "${project}-db"
@@ -207,7 +217,8 @@ pipeline {
                             -locations=filesystem:/flyway/sql \\
                             -url='jdbc:postgresql://${dbHost}:5432/${dbName}' \\
                             -user=${dbUser} \\
-                            -password=${dbPassword}
+                            -password=${dbPassword} \\
+                            -baselineOnMigrate=true
                         """.stripIndent().trim()
 
                         
@@ -225,7 +236,7 @@ pipeline {
                         echo "🚀 Running Flyway migration..."
                         sh "${baseCmd} migrate"
                         
-                        // // 마이그레이션 결과 확인
+                        // // 마이그레이션 결과 확인 (선택사항)
                         // echo "🔍 Verifying migration results..."
                         // sh """
                         //     docker run --rm \\
