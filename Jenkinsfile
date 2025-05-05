@@ -183,60 +183,27 @@ pipeline {
                             "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
                             "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
                         
-                        echo "🔍 Debug - Project: ${project}"
                         echo "🔍 Debug - Migration Path: ${migrationPath}"
                         
                         // 네트워크 이름을 먼저 정의
-                        def networkName = (project == 'dearie') ? 'backend_dearie' : 'backend_lightreborn'
-                        
-                        // 마이그레이션 파일 존재 확인
-                        sh "echo '📋 마이그레이션 파일 확인:' && ls -la ${migrationPath} || true"
-                        
-                        def hasMigrationFiles = sh(script: "ls ${migrationPath}/*.sql 2>/dev/null", returnStatus: true) == 0
-                        
-                        if (!hasMigrationFiles) {
-                            echo "⚠️ No migration files found in ${migrationPath}, skipping Flyway for ${project}"
-                            return
-                        }
-                        
-                        // 환경 변수 값 확인
-                        def dbUrl = envProps.get("${projUpper}_DB_URL") ?: "jdbc:postgresql://${project}-db:5432/${project}"
-                        def dbUser = envProps.get("${projUpper}_DB_USER") ?: "ssafy"
-                        def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"
-                        
-                        echo "🔗 Database details:"
-                        echo "  - URL: ${dbUrl}"
-                        echo "  - User: ${dbUser}"
-                        
-                        // 임시 디렉토리 생성 및 파일 복사
-                        echo "📁 Creating temporary directory for migrations"
-                        sh """
-                            mkdir -p /tmp/migrations/${project}
-                            cp ${migrationPath}/*.sql /tmp/migrations/${project}/
-                            chmod -R 755 /tmp/migrations/${project}
-                        """
+                        def networkName = "${project}-net"
+                        def dbHost = "${project}-db"
 
-                        // 기존 베이스라인 제거
-                        echo "🔄 Removing existing baseline if present..."
-                        sh """
-                            docker run --rm \\
-                            --network ${networkName} \\
-                            postgres:13 \\
-                            env PGPASSWORD=${dbPassword} psql --host=${project}-db --username=${dbUser} --dbname=${project} -c "DELETE FROM flyway_schema_history WHERE version = '1' AND type = 'BASELINE';" || echo "No baseline to remove"
-                        """
+                        // 프로젝트별 DB 사용자/비밀번호 설정
+                        def dbUser = envProps.get("${projUpper}_DB_USER")
+                        def dbPassword = envProps.get("${projUpper}_DB_PASSWORD")
 
                         def baseCmd = """
                             docker run --rm \\
                             --network ${networkName} \\
-                            -v /tmp/migrations/${project}:/migrations \\
-                            flyway/flyway:9 \\
-                            -locations=filesystem:/migrations \\
-                            -url='${dbUrl}' \\
+                            -v ${migrationPath}:/flyway/sql \\
+                            flyway/flyway \\
+                            -locations=filesystem:/flyway/sql \\
+                            -url='jdbc:postgresql://${dbHost}:5432/${project}' \\
                             -user=${dbUser} \\
-                            -password=${dbPassword} \\
-                            -cleanDisabled=false \\
-                            -validateOnMigrate=false
+                            -password=${dbPassword}
                         """.stripIndent().trim()
+
                         
                         // Flyway info 실행
                         echo "🔍 Checking Flyway info..."
@@ -258,17 +225,14 @@ pipeline {
                             docker run --rm \\
                             --network ${networkName} \\
                             postgres:13 \\
-                            env PGPASSWORD=${dbPassword} psql --host=${project}-db --username=${dbUser} --dbname=${project} -c 'SELECT * FROM flyway_schema_history;'
+                            env PGPASSWORD=${dbPassword} psql --host=${dbHost} --username=${dbUser} --dbname=${project} -c 'SELECT * FROM flyway_schema_history;'
                             
                             echo "🔍 Checking hangjungs table..."
                             docker run --rm \\
                             --network ${networkName} \\
                             postgres:13 \\
-                            env PGPASSWORD=${dbPassword} psql --host=${project}-db --username=${dbUser} --dbname=${project} -c 'SELECT COUNT(*) FROM hangjungs;' || echo "Table not found"
+                            env PGPASSWORD=${dbPassword} psql --host=${dbHost} --username=${dbUser} --dbname=${project} -c 'SELECT COUNT(*) FROM hangjungs;' || echo "Table not found"
                         """
-
-                        echo "🧹 Cleaning up temporary files"
-                        sh "rm -rf /tmp/migrations/${project}"
                     }
                 }
             }
