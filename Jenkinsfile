@@ -204,37 +204,43 @@ pipeline {
                         // 네트워크 이름 확인
                         def networkName = (project == 'dearie') ? 'backend_dearie' : 'backend_lightreborn'
                         
-                        // 데이터베이스 연결 테스트
+                        echo "🔗 Database details:"
+                        echo "  - URL: ${dbUrl}"
+                        echo "  - User: ${dbUser}"
+
+                        // 데이터베이스 연결 테스트 (psql 대신 API 확인)
                         echo "🔌 Testing database connection..."
                         sh """
                             docker run --rm --network ${networkName} \\
                             postgres:13 \\
-                            psql '${dbUrl}' -U ${dbUser} -W -c '\\dt' || echo "Failed to connect to database"
-                        """                        
+                            pg_isready -h ${project}-db -U ${dbUser} && echo 'Database is ready' || echo 'Failed to connect to database'
+                        """
                         
-                        echo "🔗 Database details:"
-                        echo "  - URL: ${dbUrl}"
-                        echo "  - User: ${dbUser}"
+                        // 컨테이너 내부 경로 설정
+                        def containerMigrationPath = "/flyway/sql"
                         
-                        // 마운트 경로가 다르므로 컨테이너 내부에서 직접 실행
-                        // Jenkins workspace를 Docker 컨테이너에 마운트하여 실행
+                        // Docker 볼륨 마운트 수정: 호스트 경로가 아닌 컨테이너 내부 경로로
                         def baseCmd = """
                             docker run --rm \\
                             --network ${networkName} \\
-                            -v ${env.WORKSPACE}:${env.WORKSPACE} \\
-                            -w ${env.WORKSPACE} \\
+                            -v ${migrationPath}:${containerMigrationPath} \\
                             flyway/flyway:9 \\
-                            -locations=filesystem:${migrationPath} \\
+                            -locations=filesystem:${containerMigrationPath} \\
                             -url='${dbUrl}' \\
                             -user=${dbUser} \\
-                            -password=${dbPassword}
+                            -password=${dbPassword} \\
+                            -baselineOnMigrate=true
                         """.stripIndent().trim()
                         
-                        // Flyway info를 JSON 없이 실행
+                        // Flyway info 실행
                         echo "🔍 Checking Flyway info..."
-                        def infoOutput = sh(script: "${baseCmd} info", returnStdout: true, returnStatus: false)
-                        echo "📋 Flyway info output:"
-                        echo infoOutput
+                        try {
+                            def infoOutput = sh(script: "${baseCmd} info", returnStdout: true)
+                            echo "📋 Flyway info output:"
+                            echo infoOutput
+                        } catch (err) {
+                            echo "⚠️ Info command failed: ${err.message}"
+                        }
                         
                         // 직접 마이그레이션 실행
                         echo "🚀 Running Flyway migration..."
