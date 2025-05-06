@@ -49,6 +49,7 @@ public class SpeechServiceImpl implements SpeechService {
     private final SurveyQuestionRepository surveyQuestionRepository;
     private final PersonalInfoRepository personalInfoRepository;
     private final SurveyAnswerRepository surveyAnswerRepository;
+    private final SurveyVersionRepository surveyVersionRepository;
 
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
@@ -138,7 +139,30 @@ public class SpeechServiceImpl implements SpeechService {
             );
 
             if(existPersonalInfo.isPresent()) {
-                surveyAnswerCollector.addPersonalInfo(existPersonalInfo.get());
+                Optional<SurveyVersion> surveyVersion = surveyVersionRepository.findTopByPersonalInfoOrderByVersionDesc(existPersonalInfo.get());
+
+                if(surveyVersion.isEmpty()) {
+                    SurveyVersion newSurveyVersion = surveyVersionRepository.save(
+                            SurveyVersion.builder()
+                                    .personalInfo(existPersonalInfo.get())
+                                    .build()
+                    );
+
+                    surveyAnswerCollector.addVersion(newSurveyVersion);
+                }
+
+                surveyVersion.ifPresent(version -> {
+                    SurveyVersion newVersion = surveyVersionRepository.save(
+                            SurveyVersion.builder()
+                                    .version(version.getVersion() + 1L)
+                                    .personalInfo(version.getPersonalInfo())
+                                    .build()
+                    );
+
+                    surveyAnswerCollector.addVersion(newVersion);
+                });
+
+
             } else {
                 PersonalInfo savedPersonalInfo = personalInfoRepository.save(
                         PersonalInfo.builder()
@@ -149,9 +173,14 @@ public class SpeechServiceImpl implements SpeechService {
                                 .build()
                 );
 
-                surveyAnswerCollector.addPersonalInfo(savedPersonalInfo);
-            }
+                SurveyVersion newSurveyVersion = surveyVersionRepository.save(
+                        SurveyVersion.builder()
+                                .personalInfo(savedPersonalInfo)
+                                .build()
+                );
 
+                surveyAnswerCollector.addVersion(newSurveyVersion);
+            }
 
             surveyAnswerRepository.saveAll(surveyAnswerCollector.getAnswers());
 
