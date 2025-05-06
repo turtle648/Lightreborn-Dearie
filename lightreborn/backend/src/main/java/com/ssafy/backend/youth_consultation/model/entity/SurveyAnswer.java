@@ -1,4 +1,4 @@
-package com.ssafy.backend.youth_consultation.entity;
+package com.ssafy.backend.youth_consultation.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

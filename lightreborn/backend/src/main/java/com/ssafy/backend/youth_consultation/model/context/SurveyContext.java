@@ -1,7 +1,7 @@
-package com.ssafy.backend.youth_consultation.model.dto;
+package com.ssafy.backend.youth_consultation.model.context;
 
 import com.ssafy.backend.common.utils.FileParserUtils;
-import com.ssafy.backend.youth_consultation.entity.SurveyQuestion;
+import com.ssafy.backend.youth_consultation.model.entity.SurveyQuestion;
 import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollector;
 import com.ssafy.backend.youth_consultation.model.collector.SurveyAnswerCollector;
 import com.ssafy.backend.youth_consultation.model.state.Answer;

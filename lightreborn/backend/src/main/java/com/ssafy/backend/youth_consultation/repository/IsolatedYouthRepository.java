@@ -1,6 +1,6 @@
 package com.ssafy.backend.youth_consultation.repository;
 
-import com.ssafy.backend.youth_consultation.entity.IsolatedYouth;
+import com.ssafy.backend.youth_consultation.model.entity.IsolatedYouth;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

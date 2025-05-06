@@ -1,4 +1,4 @@
-package com.ssafy.backend.youth_consultation.entity;
+package com.ssafy.backend.youth_consultation.model.entity;
 
 public enum SurveyProcessStep {
     SELF_DIAGNOSIS,          // 온라인 자가척도 작성

@@ -1,6 +1,6 @@
 package com.ssafy.backend.auth.service;
 
-import com.ssafy.backend.auth.entity.User;
+import com.ssafy.backend.auth.model.entity.User;
 import com.ssafy.backend.auth.exception.AuthErrorCode;
 import com.ssafy.backend.auth.exception.AuthException;
 import com.ssafy.backend.auth.model.dto.request.LoginRequestDTO;
