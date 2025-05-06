@@ -4,12 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.ssafy.backend.youth_consultation.model.dto.TranscriptionResultDTO;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationErrorCode;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationException;
 import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollector;
 import com.ssafy.backend.youth_consultation.model.collector.SurveyAnswerCollector;
 import com.ssafy.backend.youth_consultation.model.context.SurveyContext;
+import com.ssafy.backend.youth_consultation.model.context.TranscriptionContext;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
@@ -19,30 +19,19 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Utilities;
-import software.amazon.awssdk.services.s3.model.GetUrlRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URLConnection;
-import java.nio.file.Files;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -53,13 +42,13 @@ import java.util.stream.Collectors;
 public class SpeechServiceImpl implements SpeechService {
     private final RestTemplate restTemplate;
     private final ExecutorService executorService;
+    private final S3AsyncClient s3Client;
+    private final S3Utilities s3Utilities;
     private final IsolatedYouthRepository isolatedYouthRepository;
     private final CounselingLogRepository counselingLogRepository;
     private final SurveyQuestionRepository surveyQuestionRepository;
     private final PersonalInfoRepository personalInfoRepository;
     private final SurveyAnswerRepository surveyAnswerRepository;
-    private final S3AsyncClient s3Client;
-    private final S3Utilities s3Utilities;
 
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
@@ -76,8 +65,21 @@ public class SpeechServiceImpl implements SpeechService {
         IsolatedYouth isolatedYouth = isolatedYouthRepository.findById(requestDTO.getIsolatedYouthId())
                 .orElseThrow(() -> new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_PERSON));
 
-        TranscriptionResultDTO resultDTO = transcribe(requestDTO.getFile());
-        String transcript = resultDTO.getTranscript();
+
+        TranscriptionContext transcriptionContext = new TranscriptionContext(
+                restTemplate,
+                executorService,
+                s3Client,
+                s3Utilities,
+                bucket,
+                apiKey,
+                ffmpegCmd,
+                requestDTO.getFile()
+        );
+
+        transcriptionContext.transcribe();
+
+        String transcript = transcriptionContext.getTranscript();
         String client = extractClient(transcript);
         String counselor = extractCounselorContent(transcript);
         String notes = extractNotesAndMemos(transcript);
@@ -103,7 +105,7 @@ public class SpeechServiceImpl implements SpeechService {
                         .isolatedYouth(isolatedYouth)
                         .clientKeyword(client)
                         .summarize(summarize)
-                        .voiceFileUrl(resultDTO.getUploadUrl())
+                        .voiceFileUrl(transcriptionContext.getUploadUrl())
                         .build()
         );
 
@@ -177,132 +179,6 @@ public class SpeechServiceImpl implements SpeechService {
                         )
                 );
     }
-
-
-    private TranscriptionResultDTO transcribe(MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new IllegalArgumentException("파일이 비어 있습니다.");
-        }
-
-        String baseName = UUID.randomUUID().toString();
-        File tmpDir = new File(System.getProperty("java.io.tmpdir"));
-        File inputFile = new File(tmpDir, baseName + getExtension(file.getOriginalFilename()));
-        File outputFile = new File(tmpDir, baseName + ".wav");
-
-        try {
-            // 1) MultipartFile → 로컬 파일
-            try (FileOutputStream fos = new FileOutputStream(inputFile)) {
-                fos.write(file.getBytes());
-            }
-
-            // 2) FFmpeg 호출 : WAV 변환 (16kHz mono PCM)
-            ProcessBuilder pb = new ProcessBuilder(
-                    ffmpegCmd, "-y",
-                    "-i", inputFile.getAbsolutePath(),
-                    "-ar", "16000",
-                    "-ac", "1",
-                    "-codec:a", "pcm_s16le",
-                    outputFile.getAbsolutePath()
-            );
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            int exit = process.waitFor();
-            if (exit != 0) {
-                throw new RuntimeException("FFmpeg 변환 실패, exit code=" + exit);
-            }
-
-            // 3) 변환된 WAV → ByteArrayResource
-            ByteArrayResource wav = new ByteArrayResource(Files.readAllBytes(outputFile.toPath())) {
-                @Override
-                public String getFilename() { return outputFile.getName(); }
-            };
-
-            // 4) Whisper API 요청
-            HttpHeaders fileHeaders = new HttpHeaders();
-            fileHeaders.setContentDisposition(
-                    ContentDisposition.builder("form-data").name("file").filename(wav.getFilename()).build()
-            );
-            fileHeaders.setContentType(MediaType.parseMediaType("audio/wav"));
-
-            HttpEntity<ByteArrayResource> filePart = new HttpEntity<>(wav, fileHeaders);
-            HttpHeaders modelHeaders = new HttpHeaders();
-            modelHeaders.setContentDisposition(
-                    ContentDisposition.builder("form-data").name("model").build()
-            );
-            HttpEntity<String> modelPart = new HttpEntity<>("whisper-1", modelHeaders);
-
-            MultiValueMap<String,Object> body = new LinkedMultiValueMap<>();
-            body.add("file", filePart);
-            body.add("model", modelPart);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-            headers.setBearerAuth(apiKey);
-
-            HttpEntity<MultiValueMap<String,Object>> req = new HttpEntity<>(body, headers);
-            ObjectMapper mapper = new ObjectMapper();
-
-            String path = uploadFile(wav);
-
-            String transcript = executorService.submit(() -> {
-                ResponseEntity<String> resp = restTemplate.exchange("https://api.openai.com/v1/audio/transcriptions",
-                        HttpMethod.POST, req, String.class);
-                JsonNode root = mapper.readTree(resp.getBody());
-                return root.get("text")
-                        .asText()
-                        .trim();
-            }).get();
-
-            return TranscriptionResultDTO.builder()
-                    .transcript(transcript)
-                    .uploadUrl(path)
-                    .build();
-
-        } catch (IOException | InterruptedException | ExecutionException e) {
-            log.error("[오디오 처리 오류]", e);
-            throw new RuntimeException("오디오 처리 실패: " + e.getMessage(), e);
-        } finally {
-            inputFile.delete();
-            outputFile.delete();
-        }
-    }
-
-    public String uploadFile(Resource resource) throws IOException {
-        String originalName = resource.getFilename();
-        String key = UUID.randomUUID() + "_" + originalName;
-        long length = resource.contentLength();
-
-        String contentType = URLConnection.guessContentTypeFromName(originalName);
-        if (contentType == null) {
-            contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
-        }
-
-        PutObjectRequest putReq = PutObjectRequest.builder()
-                .bucket(bucket)
-                .key(key)
-                .contentType(contentType)
-                .contentLength(length)
-                .build();
-
-
-        try (InputStream in = resource.getInputStream()) {
-            AsyncRequestBody body = AsyncRequestBody.fromInputStream(in, length, executorService);
-            s3Client.putObject(putReq, body)
-                    .whenComplete((resp, err) -> {
-                        if (err != null) {
-                            log.error("S3 업로드 실패: bucket={}, key={}", bucket, key, err);
-                        }
-                    });
-        }
-
-        return s3Utilities.getUrl(
-                GetUrlRequest.builder()
-                        .bucket(bucket)
-                        .key(key)
-                        .build()
-        ).toExternalForm();
-    }
-
 
     private String getGptAnswer(String systemPrompt, String... userPrompts) {
         try {
@@ -451,10 +327,5 @@ public class SpeechServiceImpl implements SpeechService {
                 """;
         String userPrompt = "다음 대화 내용을 한국어로 누락 없이 요약해 주세요:\n" + text;
         return getGptAnswer(systemPrompt, userPrompt);
-    }
-
-    private String getExtension(String name) {
-        if (name == null || !name.contains(".")) return "";
-        return name.substring(name.lastIndexOf("."));
     }
 }
