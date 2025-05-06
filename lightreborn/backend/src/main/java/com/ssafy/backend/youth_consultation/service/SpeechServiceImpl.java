@@ -9,16 +9,15 @@ import com.ssafy.backend.youth_consultation.entity.*;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationErrorCode;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationException;
 import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollector;
+import com.ssafy.backend.youth_consultation.model.collector.SurveyAnswerCollector;
+import com.ssafy.backend.youth_consultation.model.dto.SurveyContext;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
-import com.ssafy.backend.youth_consultation.model.state.Answer;
-import com.ssafy.backend.youth_consultation.model.collector.SurveyAnswerCollector;
 import com.ssafy.backend.youth_consultation.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -34,10 +33,12 @@ import software.amazon.awssdk.services.s3.S3Utilities;
 import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLConnection;
 import java.nio.file.Files;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -119,82 +120,23 @@ public class SpeechServiceImpl implements SpeechService {
     @Transactional
     public SurveyUploadDTO uploadIsolationYouthInfo(MultipartFile file) {
         try {
-            File convFile = File.createTempFile("upload-", ".docx");
-            file.transferTo(convFile);
 
-            XWPFDocument doc = new XWPFDocument(new FileInputStream(convFile));
-
-            Map<String, SurveyQuestion> questions = surveyQuestionRepository.findAll()
-                    .stream()
-                    .collect(
-                            Collectors.toMap(
-                                    q -> {
-                                        if(q.getQuestionCode().isBlank()) {
-                                            return q.getContent();
-                                        }
-                                        return q.getQuestionCode() + " " + q.getContent();
-                                    },
-                                    Function.identity()
-                            )
-                    );
+            Map<String, SurveyQuestion> questions = getQuestions();
 
             log.info("[SpeechServiceImpl] 질문 리스트 : {}",questions);
 
-            SurveyAnswerCollector answers = new SurveyAnswerCollector();
-            PersonalInfoCollector personalInfoCollector = new PersonalInfoCollector();
+            SurveyContext surveyContext = new SurveyContext(questions, file);
 
-            for (IBodyElement element : doc.getBodyElements()) {
-                if (element instanceof XWPFTable) {
-                    XWPFTable table = (XWPFTable) element;
-                    List<XWPFTableRow> rows = table.getRows();
+            PersonalInfoCollector personalInfoCollector = surveyContext.getPersonalInfoCollector();
+            SurveyAnswerCollector surveyAnswerCollector = surveyContext.getAnswers();
 
-                    for (int rowIdx = 0; rowIdx < rows.size(); rowIdx++) {
-                        String title = rows.get(rowIdx).getTableCells().get(0).getText().trim();
-
-                        if(title.equals("타 현재 주요 고민 내용을 입력해주세요.")) {
-                            String answer = rows.get(rowIdx + 1).getTableCells().get(0).getText().trim();
-
-                            answers.addAnswerText(questions.get(title), answer);
-                        }
-
-                        else if(questions.containsKey(title)) {
-                            String answer = normalize(rows.get(rowIdx).getTableCells().get(1).getText());
-
-                            try {
-                                personalInfoCollector.add(title, answer);
-                            } catch (IllegalArgumentException e) {
-                                answers.addAnswerChoice(questions.get(title), answer);
-                            }
-                        }
-
-                        else if(title.matches("[가-카]")) {
-                            title += " " + rows.get(rowIdx).getTableCells().get(1).getText();
-                            if(questions.containsKey(title)) {
-                                List<XWPFTableCell> cells = rows.get(rowIdx).getTableCells();
-
-                                SurveyQuestion question = questions.get(title);
-                                String questionCode = question.getQuestionCode();
-
-                                for (int idx = 2; idx < cells.size(); idx++) {
-                                    String cellText = normalize(rows.get(rowIdx).getTableCells().get(idx).getText());
-
-                                    if (cellText.isBlank()) continue;
-
-                                    Optional<Answer> answerOpt = Answer.findByQuestionCodeAndColNum(questionCode, idx);
-                                    answerOpt.ifPresent(answer -> answers.addAnswerChoice(question, answer.getLabel()));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            log.info("[SpeechServiceImpl] 워드 파싱 완료 {}", answers);
-
-            Optional<PersonalInfo> existPersonalInfo = personalInfoRepository.findByNameAndPhoneNumber(personalInfoCollector.getName(), personalInfoCollector.getPhoneNumber());
+            Optional<PersonalInfo> existPersonalInfo = personalInfoRepository.findByNameAndPhoneNumber(
+                    personalInfoCollector.getName(),
+                    personalInfoCollector.getPhoneNumber()
+            );
 
             if(existPersonalInfo.isPresent()) {
-                answers.addPersonalInfo(existPersonalInfo.get());
+                surveyAnswerCollector.addPersonalInfo(existPersonalInfo.get());
             } else {
                 PersonalInfo savedPersonalInfo = personalInfoRepository.save(
                         PersonalInfo.builder()
@@ -205,26 +147,37 @@ public class SpeechServiceImpl implements SpeechService {
                                 .build()
                 );
 
-                answers.addPersonalInfo(savedPersonalInfo);
+                surveyAnswerCollector.addPersonalInfo(savedPersonalInfo);
             }
 
 
-            surveyAnswerRepository.saveAll(answers.getAnswers());
+            surveyAnswerRepository.saveAll(surveyAnswerCollector.getAnswers());
 
             return SurveyUploadDTO.builder()
                     .personalInfo(personalInfoCollector)
-                    .answers(answers)
+                    .answers(surveyAnswerCollector)
                     .build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private String normalize(String input) {
-        if (input == null) return null;
-
-        return input.replaceAll("[\\u00A0\\s]+", "").trim();
+    private Map<String, SurveyQuestion> getQuestions() {
+        return surveyQuestionRepository.findAll()
+                .stream()
+                .collect(
+                        Collectors.toMap(
+                                q -> {
+                                    if(q.getQuestionCode().isBlank()) {
+                                        return q.getContent();
+                                    }
+                                    return q.getQuestionCode() + " " + q.getContent();
+                                },
+                                Function.identity()
+                        )
+                );
     }
+
 
     private TranscriptionResultDTO transcribe(MultipartFile file) {
         if (file.isEmpty()) {
