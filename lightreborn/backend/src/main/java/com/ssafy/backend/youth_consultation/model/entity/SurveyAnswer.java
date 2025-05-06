@@ -28,6 +28,6 @@ public class SurveyAnswer {
     private SurveyQuestion surveyQuestion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "personal_info_id")
-    private PersonalInfo personalInfo;
+    @JoinColumn(name = "survey_version_id")
+    private SurveyVersion surveyVersion;
 }

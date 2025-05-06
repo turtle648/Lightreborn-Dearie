@@ -1,8 +1,8 @@
 package com.ssafy.backend.youth_consultation.model.collector;
 
-import com.ssafy.backend.youth_consultation.model.entity.PersonalInfo;
 import com.ssafy.backend.youth_consultation.model.entity.SurveyAnswer;
 import com.ssafy.backend.youth_consultation.model.entity.SurveyQuestion;
+import com.ssafy.backend.youth_consultation.model.entity.SurveyVersion;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,7 +33,7 @@ public class SurveyAnswerCollector {
     }
 
 
-    public void addPersonalInfo(PersonalInfo personalInfo) {
+    public void addVersion(SurveyVersion surveyVersion) {
         List<SurveyAnswer> updated = new ArrayList<>();
 
         for (SurveyAnswer answer : answers) {
@@ -41,7 +41,7 @@ public class SurveyAnswerCollector {
                     .answerText(answer.getAnswerText())
                     .answerChoice(answer.getAnswerChoice())
                     .surveyQuestion(answer.getSurveyQuestion())
-                    .personalInfo(personalInfo)
+                    .surveyVersion(surveyVersion)
                     .build());
         }
 
