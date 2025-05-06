@@ -1,6 +1,6 @@
 package com.ssafy.backend.auth.repository;
 
-import com.ssafy.backend.auth.entity.User;
+import com.ssafy.backend.auth.model.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

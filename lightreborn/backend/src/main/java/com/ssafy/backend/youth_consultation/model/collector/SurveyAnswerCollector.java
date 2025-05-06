@@ -1,8 +1,8 @@
 package com.ssafy.backend.youth_consultation.model.collector;
 
-import com.ssafy.backend.youth_consultation.entity.PersonalInfo;
-import com.ssafy.backend.youth_consultation.entity.SurveyAnswer;
-import com.ssafy.backend.youth_consultation.entity.SurveyQuestion;
+import com.ssafy.backend.youth_consultation.model.entity.PersonalInfo;
+import com.ssafy.backend.youth_consultation.model.entity.SurveyAnswer;
+import com.ssafy.backend.youth_consultation.model.entity.SurveyQuestion;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 

@@ -34,4 +34,11 @@ public class FileParserUtils {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 파일 형식입니다." + extension));
     }
+
+    public static String normalize(String input) {
+        if (input == null) return null;
+
+        return input.replaceAll("[\\u00A0\\s]+", "").trim();
+    }
+
 }

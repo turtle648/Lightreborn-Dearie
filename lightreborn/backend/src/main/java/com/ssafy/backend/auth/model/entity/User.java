@@ -1,4 +1,4 @@
-package com.ssafy.backend.auth.entity;
+package com.ssafy.backend.auth.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
