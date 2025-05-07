@@ -2,6 +2,7 @@ package com.ssafy.backend.promotion_network.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.promotion_network.model.response.PromotionNetworkResponseDTO;
+import com.ssafy.backend.promotion_network.model.response.PromotionResponseDTO;
 import com.ssafy.backend.promotion_network.service.PromotionNetworkService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -11,10 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -40,6 +38,14 @@ public class PromotionNetworkController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(201, "데이터 업로드를 성공했습니다.", result));
+    }
+
+    @GetMapping(value = "/{hangjungId}")
+    public ResponseEntity<BaseResponse<List<PromotionResponseDTO>>> promotionData(@PathVariable("hangjungId") int hangjungId){
+
+        List<PromotionResponseDTO> result = promotionNetworkService.selectPromotions(hangjungId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(201, "데이터 불러오기 성공", result));
     }
 
 }

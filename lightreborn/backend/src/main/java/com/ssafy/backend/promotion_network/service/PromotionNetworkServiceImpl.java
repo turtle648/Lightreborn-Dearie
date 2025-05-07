@@ -9,6 +9,7 @@ import com.ssafy.backend.common.utils.parser.RawFileParser;
 import com.ssafy.backend.promotion_network.entity.PromotionStatus;
 import com.ssafy.backend.promotion_network.entity.PromotionType;
 import com.ssafy.backend.promotion_network.model.response.PromotionNetworkResponseDTO;
+import com.ssafy.backend.promotion_network.model.response.PromotionResponseDTO;
 import com.ssafy.backend.promotion_network.repository.PromotionStatusRepository;
 import com.ssafy.backend.promotion_network.repository.PromotionTypeRepository;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
@@ -137,4 +138,29 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
                     return psDto;
                 }).toList();
     }
+
+    @Override
+    public List<PromotionResponseDTO> selectPromotions(int hangjungId) {
+        List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId((long) hangjungId);
+        return list.stream().map(this::convertToDTO).toList();
+    }
+
+    // entity -> DTO로 형변환
+    private PromotionResponseDTO convertToDTO(PromotionStatus status) {
+        PromotionResponseDTO dto = new PromotionResponseDTO();
+        dto.setAddress(status.getAddress());
+        dto.setIsPublished(status.getIsPublished());
+        dto.setCreatedAt(status.getCreatedAt());
+
+        // 문자열로 매핑
+        if (status.getPromotionType() != null) {
+            dto.setPromotionType(status.getPromotionType().getType()); // 예: 약국
+        } else {
+            dto.setPromotionType(null); // 혹시모를 예외 처리
+        }
+
+        return dto; // 연관 관계 주의
+    }
+
+
 }

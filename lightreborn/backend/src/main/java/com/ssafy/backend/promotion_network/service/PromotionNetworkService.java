@@ -1,6 +1,7 @@
 package com.ssafy.backend.promotion_network.service;
 
 import com.ssafy.backend.promotion_network.model.response.PromotionNetworkResponseDTO;
+import com.ssafy.backend.promotion_network.model.response.PromotionResponseDTO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -17,4 +18,6 @@ public interface PromotionNetworkService {
      * 업로드한 파일에 대한 파싱을 진행하는 함수
      * */
     List<PromotionNetworkResponseDTO> parseAndMapFile(MultipartFile file) throws IOException;
+
+    List<PromotionResponseDTO> selectPromotions(int hangjungId);
 }
