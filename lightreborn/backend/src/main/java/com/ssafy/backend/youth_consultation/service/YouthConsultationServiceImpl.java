@@ -15,10 +15,7 @@ import com.ssafy.backend.youth_consultation.model.dto.request.AddScheduleRequest
 import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.UpdateCounselingLogRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.AddScheduleResponseDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
+import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.model.entity.*;
 import com.ssafy.backend.youth_consultation.model.state.CounselingConstants;
 import com.ssafy.backend.youth_consultation.model.state.SurveyStepConstants;
@@ -30,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -74,6 +72,20 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     private String ffmpegCmd;
 
     @Override
+    public GetCounselingLogResponseDTO getCounselingLog(int pageNum, int sizeNum) {
+        Pageable pageable = PageRequest.of(pageNum, sizeNum, Sort.by("consultationDate").descending());
+
+        Page<CounselingLog> counselingLogPage = counselingLogRepository.findAll(pageable);
+
+        return GetCounselingLogResponseDTO.builder()
+                .currentPage(counselingLogPage.getNumber())
+                .totalPages(counselingLogPage.getTotalPages())
+                .totalElements(counselingLogPage.getTotalElements())
+                .counselingLogs(counselingLogPage.getContent())
+                .build();
+    }
+
+    @Override
     public PeopleInfoResponseDTO searchPeopleInfo(PeopleInfoRequestDTO peopleInfoRequestDTO) {
         SurveyProcessStep surveyProcessStep = SurveyStepConstants.DEFAULT_STEP;
         Pageable pageable = PageRequest.of(peopleInfoRequestDTO.getPageNum(), peopleInfoRequestDTO.getSizeNum());
@@ -106,7 +118,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
 
         CounselingLog log = counselingLogRepository.save(
                 CounselingLog.builder()
-                        .consultation_date(addScheduleRequestDTO.getDate().atStartOfDay())
+                        .consultationDate(addScheduleRequestDTO.getDate().atStartOfDay())
                         .isolatedYouth(isolatedYouth)
                         .counselingProcess(CounselingConstants.DEFAULT_STEP)
                         .build()
@@ -264,6 +276,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         CounselingLog newLog = counselingLogRepository.save(
                 CounselingLog.builder()
                         .id(id)
+                        .consultationDate(counselingLog.getConsultationDate())
                         .isolatedYouth(counselingLog.getIsolatedYouth())
                         .fullScript(counselingLog.getFullScript())
                         .voiceFileUrl(counselingLog.getVoiceFileUrl())

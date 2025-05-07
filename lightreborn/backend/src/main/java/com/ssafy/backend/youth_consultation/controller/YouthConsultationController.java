@@ -5,10 +5,7 @@ import com.ssafy.backend.youth_consultation.model.dto.request.AddScheduleRequest
 import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.UpdateCounselingLogRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.AddScheduleResponseDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
+import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.service.YouthConsultationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,6 +27,20 @@ import org.springframework.web.multipart.MultipartFile;
 public class YouthConsultationController {
 
     private final YouthConsultationService youthConsultationService;
+
+    @GetMapping("/")
+    @Operation(
+            summary = "상담 일지 리스트 가져오기 (5개씩)",
+            description = "상담 일지 리스트 가져옵니다. default size는 5입니다."
+    )
+    public ResponseEntity<BaseResponse<GetCounselingLogResponseDTO>> searchIsolationYouthWithPagination(
+            @RequestParam(value = "page", defaultValue = "0") int pageNum,
+            @RequestParam(value = "size", defaultValue = "5") int sizeNum
+    ) {
+        GetCounselingLogResponseDTO responseDTO = youthConsultationService.getCounselingLog(pageNum, sizeNum);
+
+        return ResponseEntity.ok().body(BaseResponse.success("상담 대상자를 성공적으로 검색하였습니다.", responseDTO));
+    }
 
     @PostMapping("/people")
     @Operation(
