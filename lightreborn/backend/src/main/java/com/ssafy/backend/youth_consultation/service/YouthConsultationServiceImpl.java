@@ -14,12 +14,8 @@ import com.ssafy.backend.youth_consultation.model.context.TranscriptionContext;
 import com.ssafy.backend.youth_consultation.model.dto.request.AddScheduleRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.model.dto.request.UpdateCounselingLogRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.AddScheduleResponseDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
+import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.model.entity.*;
 import com.ssafy.backend.youth_consultation.model.state.CounselingConstants;
 import com.ssafy.backend.youth_consultation.model.state.SurveyStepConstants;
@@ -31,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -45,7 +42,9 @@ import software.amazon.awssdk.services.s3.S3Utilities;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Year;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -75,6 +74,20 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     // CLI 명령어(기본: ffmpeg) 또는 절대 경로 설정
     @Value("${openai.ffmpeg.path:ffmpeg}")
     private String ffmpegCmd;
+
+    @Override
+    public GetCounselingLogResponseDTO getCounselingLog(int pageNum, int sizeNum) {
+        Pageable pageable = PageRequest.of(pageNum, sizeNum, Sort.by("consultationDate").descending());
+
+        Page<CounselingLog> counselingLogPage = counselingLogRepository.findAll(pageable);
+
+        return GetCounselingLogResponseDTO.builder()
+                .currentPage(counselingLogPage.getNumber())
+                .totalPages(counselingLogPage.getTotalPages())
+                .totalElements(counselingLogPage.getTotalElements())
+                .counselingLogs(counselingLogPage.getContent())
+                .build();
+    }
 
     @Override
     public PeopleInfoResponseDTO searchPeopleInfo(PeopleInfoRequestDTO peopleInfoRequestDTO) {
@@ -109,7 +122,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
 
         CounselingLog log = counselingLogRepository.save(
                 CounselingLog.builder()
-                        .consultation_date(addScheduleRequestDTO.getDate().atStartOfDay())
+                        .consultationDate(addScheduleRequestDTO.getDate().atStartOfDay())
                         .isolatedYouth(isolatedYouth)
                         .counselingProcess(CounselingConstants.DEFAULT_STEP)
                         .build()
@@ -335,6 +348,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         CounselingLog newLog = counselingLogRepository.save(
                 CounselingLog.builder()
                         .id(id)
+                        .consultationDate(counselingLog.getConsultationDate())
                         .isolatedYouth(counselingLog.getIsolatedYouth())
                         .fullScript(counselingLog.getFullScript())
                         .voiceFileUrl(counselingLog.getVoiceFileUrl())

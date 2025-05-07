@@ -8,10 +8,11 @@ import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface YouthConsultationService {
-    SpeechResponseDTO getGeneralSummarize(SpeechRequestDTO responseDTO);
-    SurveyUploadDTO uploadIsolationYouthInfo(MultipartFile file);
+    GetCounselingLogResponseDTO getCounselingLog(int pageNum, int sizeNum);
     PeopleInfoResponseDTO searchPeopleInfo(PeopleInfoRequestDTO peopleInfoRequestDTO);
     AddScheduleResponseDTO addSchedule(Long id, AddScheduleRequestDTO addScheduleRequestDTO);
+    SpeechResponseDTO getGeneralSummarize(SpeechRequestDTO responseDTO);
+    SurveyUploadDTO uploadIsolationYouthInfo(MultipartFile file);
     SpeechResponseDTO updateCounselingLog(Long id, UpdateCounselingLogRequestDTO requestDTO);
 
     /**
