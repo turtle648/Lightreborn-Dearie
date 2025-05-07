@@ -14,6 +14,7 @@ import com.ssafy.backend.youth_consultation.model.context.TranscriptionContext;
 import com.ssafy.backend.youth_consultation.model.dto.request.AddScheduleRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
+import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.model.dto.request.UpdateCounselingLogRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.AddScheduleResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
@@ -42,11 +43,13 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Utilities;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalDate;
+import java.time.Year;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @Slf4j
@@ -225,7 +228,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                                 .name(personalInfoCollector.getName())
                                 .phoneNumber(personalInfoCollector.getPhoneNumber())
                                 .emergencyContact(personalInfoCollector.getEmergencyContent())
-                                .brithDate(personalInfoCollector.getBirthDate())
+                                .birthDate(personalInfoCollector.getBirthDate())
                                 .build()
                 );
 
@@ -250,6 +253,74 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     }
 
     @Override
+    public ConsultationResponseDTO getConsultationSummaryStats() {
+
+        //1. 누적 통계
+        List<IsolatedYouthRepository.CategoryCount> stats = isolatedYouthRepository.countByIsolationLevel();
+
+        long total = stats.stream()
+                .mapToLong(IsolatedYouthRepository.CategoryCount::getCount)
+                .sum();
+
+        Map<String,Long> byCategory = stats.stream()
+                .collect(Collectors.toMap(
+                        IsolatedYouthRepository.CategoryCount::getCategory,
+                        IsolatedYouthRepository.CategoryCount::getCount
+                ));
+
+        //2. 최근 3개월 신규 등록
+        //2-1. 최근 3개월 상담자 정보 호출
+        LocalDate cutoff = LocalDate.now().minusMonths(3);
+        List<IsolatedYouthRepository.MonthCount> raw = isolatedYouthRepository.countRecentRegistrations(cutoff);
+
+        //2-2. 최근 3개월 달 리스트 생성
+        List<Integer> months = IntStream.rangeClosed(0, 2)
+                .mapToObj(i -> LocalDate.now().minusMonths(2-i).getMonthValue())
+                .toList();
+
+        //2-3. MonthlyConsultationDto로 매핑하면서, 해당 월에 대한 정보가 없으면 0으로 채우기
+        List<MonthlyConsultationDTO> recent = months.stream()
+                .map(m -> {
+                    long cnt = raw.stream()
+                            .filter(r -> r.getMonth().equals(m))
+                            .mapToLong(IsolatedYouthRepository.MonthCount::getCount)
+                            .findFirst()
+                            .orElse(0L);
+                    return new MonthlyConsultationDTO(m, cnt);
+                })
+                .toList();
+
+        return new ConsultationResponseDTO(total, byCategory, recent);
+    }
+
+    @Override
+    public YearlyConsultationDTO getYearlyConsultationSummary() {
+        int currYear = Year.now().getValue();
+        int prevYear = currYear - 1;
+
+        List<Integer> currentYearCounts = convertToMonthlyArray(isolatedYouthRepository.countMonthByYear(currYear));
+        List<Integer> prevYearCounts = convertToMonthlyArray(isolatedYouthRepository.countMonthByYear(prevYear));
+
+        return YearlyConsultationDTO.builder()
+                .currentYear(currYear)
+                .currentMonthlyCount(currentYearCounts)
+                .previousYear(prevYear)
+                .previousMonthlyCount(prevYearCounts)
+                .build();
+    }
+
+    private List<Integer> convertToMonthlyArray(List<Object[]> rawCounts){
+        List<Integer> monthly = IntStream.range(0, 12).boxed().map(i -> 0).collect(Collectors.toList());
+
+        for(Object[] row : rawCounts){
+            int month = ((Number) row[0]).intValue();
+            int cnt = ((Number) row[1]).intValue();
+            monthly.set(month - 1,cnt);
+        }
+
+        return monthly;
+    }
+
     public SpeechResponseDTO updateCounselingLog(Long id, UpdateCounselingLogRequestDTO requestDTO) {
         CounselingLog counselingLog = counselingLogRepository.findById(id)
                 .orElseThrow(() ->

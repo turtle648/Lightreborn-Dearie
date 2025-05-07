@@ -8,7 +8,10 @@ import com.ssafy.backend.youth_consultation.model.dto.request.UpdateCounselingLo
 import com.ssafy.backend.youth_consultation.model.dto.response.AddScheduleResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
+import com.ssafy.backend.youth_consultation.model.dto.response.ConsultationResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
+import com.ssafy.backend.youth_consultation.model.dto.response.YearlyConsultationDTO;
+
 import com.ssafy.backend.youth_consultation.service.YouthConsultationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -43,7 +46,6 @@ public class YouthConsultationController {
 
         return ResponseEntity.ok().body(BaseResponse.success("상담 대상자를 성공적으로 검색하였습니다.", responseDTO));
     }
-
 
     @PostMapping("/{youthId}/schedules")
     @Operation(
@@ -100,6 +102,30 @@ public class YouthConsultationController {
 
         return ResponseEntity
                 .ok(BaseResponse.success(200, "음성 변환을 완료하였습니다", response));
+    }
+
+    @GetMapping(value = "/summary")
+    @Operation(
+            summary = "상담 현황",
+            description = "전체 누적 상담자 및 최근 3개월 상담 현황 데이터를 얻습니다."
+    )
+    public ResponseEntity<BaseResponse<ConsultationResponseDTO>> getConsultationSummaryStats() {
+
+        ConsultationResponseDTO response = youthConsultationService.getConsultationSummaryStats();
+
+        return ResponseEntity.ok(BaseResponse.success(200, "상담 현황 정보를 얻었습니다.", response));
+    }
+
+    @GetMapping(value = "/yearly-consultations")
+    @Operation(
+            summary = "월별 상담 현황",
+            description = "1년을 기준으로 월별 상담 건수에 대한 데이터를 얻습니다."
+    )
+    public ResponseEntity<BaseResponse<YearlyConsultationDTO>> getYearlyConsultationSummary(@RequestParam(value = "year", required = false) Integer year) {
+
+        YearlyConsultationDTO response = youthConsultationService.getYearlyConsultationSummary();
+
+        return ResponseEntity.ok(BaseResponse.success(200, "올해 월별 상담 정보를 얻었습니다.", response));
     }
 
     @PatchMapping("/{counselingId}")

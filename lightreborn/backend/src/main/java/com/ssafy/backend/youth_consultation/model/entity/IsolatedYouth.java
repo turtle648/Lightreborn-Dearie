@@ -14,7 +14,9 @@ public class IsolatedYouth {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String isolationLevel;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "isolation_level", length = 20)
+    private IsolationLevel isolationLevel;
 
     @Column(length = 2)
     private String economicLevel;
@@ -29,6 +31,6 @@ public class IsolatedYouth {
     private SurveyProcessStep surveyProcessStep;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "personal_info")
+    @JoinColumn(name = "personal_info_id")
     private PersonalInfo personalInfo;
 }
