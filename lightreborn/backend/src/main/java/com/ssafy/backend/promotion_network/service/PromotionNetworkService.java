@@ -25,7 +25,9 @@ public interface PromotionNetworkService {
 
     PromotionSummaryResponse getPromotionSummary(Long dongCode);
 
-    PromotionDetailByRegionDTO getPromotionDetail(Long hangjungId) throws IOException;
+//    PromotionDetailByRegionDTO getPromotionDetail(Long hangjungId) throws IOException;
+
+    double calculatePromotionPerYouth(Long dongCode);
 }
 
 

@@ -30,4 +30,6 @@ public interface YouthPopulationRepository extends JpaRepository<YouthPopulation
      * */
     @Query("SELECT SUM(yp.youthPopulation) FROM YouthPopulation yp")
     int sumAllYouthPopulation();
+
+
 }

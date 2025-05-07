@@ -44,11 +44,6 @@ public class PromotionNetworkController {
 
 
     @Operation(summary = "홍보물 네트워크 페이지 데이터 통합 조회", description = "홍보물 네트워크에 대한 정보를 조회합니다")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "홍보물 정보 조회 성공"),
-            @ApiResponse(responseCode = "400", description = "요청 값 오류"),
-            @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
     @GetMapping("/{dong-code}/summary")
     public ResponseEntity<BaseResponse<PromotionSummaryResponse>> getPromotionSummeryData(@PathVariable("dong-code") Long dongCode){
 
@@ -59,12 +54,7 @@ public class PromotionNetworkController {
 
 
     @Operation(summary = "특정 행정동의 홍보물 리스트 조회", description = "홍보물에 대한 정보 리스트를 조회합니다")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "홍보물 정보 조회 성공"),
-            @ApiResponse(responseCode = "400", description = "요청 값 오류"),
-            @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    @GetMapping(value = "/{dong-code}")
+    @GetMapping(value = "/{dong-code}/details")
     public ResponseEntity<BaseResponse<List<PromotionResponseDTO>>> getPromotionData(@PathVariable("dong-code") Long dongCode){
 
         List<PromotionResponseDTO> result = promotionNetworkService.selectPromotions(dongCode);
@@ -73,12 +63,12 @@ public class PromotionNetworkController {
     }
 
 
-    @Operation(summary = "행정동 상세 홍보 통계 조회", description = "행정동의 홍보물, 유형 비율, 청년 인구 대비 수치 등 포함")
-    @GetMapping("/promotion-detail/{hangjungId}")
-    public ResponseEntity<BaseResponse<PromotionDetailByRegionDTO>> getPromotionDetail(
+    @Operation(summary = "행정동 청년인구당 홍보물 비율", description = "행정동의 홍보물, 유형 비율, 청년 인구 대비 수치 등 포함")
+    @GetMapping("/{dong-code}")
+    public ResponseEntity<BaseResponse<Double>> getPromotionDetail(
             @PathVariable("dong-code") Long dongCode) throws IOException {
 
-        PromotionDetailByRegionDTO result = promotionNetworkService.getPromotionDetail(dongCode);
+        Double result = promotionNetworkService.calculatePromotionPerYouth(dongCode);
         return ResponseEntity.ok(BaseResponse.success(200, "홍보 거점 상세 조회 성공", result));
     }
 

@@ -146,7 +146,8 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
 
     @Override
     public List<PromotionResponseDTO> selectPromotions(Long dongCode) {
-        List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId((long) dongCode);
+        Long hangjungId = hangjungsRepository.findHangjungsIdByHangjungCode(dongCode.toString());
+        List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId(hangjungId);
         return list.stream().map(this::convertToDTO).toList();
     }
 
@@ -186,7 +187,9 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
     }
 
     public PromotionSummaryResponse getPromotionSummary(Long dongCode) {
-        List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId((long) dongCode);
+        Long hangjungId = hangjungsRepository.findHangjungsIdByHangjungCode(dongCode.toString());
+
+        List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId(hangjungId);
         List<PromotionResponseDTO> dtoList = list.stream().map(this::convertToDTO).toList();
 
         Map<String, Double> typeRatio = calculatePromotionTypeRatio(dtoList);
@@ -194,45 +197,30 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         PromotionSummaryResponse summary = new PromotionSummaryResponse();
         summary.setPromotions(dtoList);
         summary.setTypeRatio(typeRatio);
+        summary.setPopulationPerPromotions(calculatePromotionPerYouth(dongCode));
         return summary;
     }
 
-
     @Override
-    public PromotionDetailByRegionDTO getPromotionDetail(Long dongCode) throws IOException {
-        // 1. 홍보물 리스트 조회
-        List<PromotionStatus> statusList = promotionStatusRepository.findByHangjungsId(dongCode);
-        List<PromotionResponseDTO> dtoList = statusList.stream()
-                .map(this::convertToDTO)
-                .toList();
+    public double calculatePromotionPerYouth(Long dongCode) {
 
-        // 2. 유형별 개수 집계
-        Map<String, Integer> typeCountMap = new HashMap<>();
-        for (PromotionResponseDTO dto : dtoList) {
-            typeCountMap.merge(dto.getPromotionType(), 1, Integer::sum);
-        }
+        // 행정동 id 를 행정동Code로 변환
+        Long hangjungId = hangjungsRepository.findHangjungsIdByHangjungCode(dongCode.toString());
 
-        // 3. 청년 인구 수 및 비율
+        // 1. 홍보물 개수
+        int promotionCount = promotionStatusRepository.findByHangjungsId(hangjungId).size();
+        System.out.println("❤️홍보물 개수 = " + promotionCount);
+
+        // 2. 청년 인구 수
         YouthPopulation yp = youthPopulationRepository.findLatestByHangjungCode(dongCode)
-                .orElseThrow(() -> new IllegalArgumentException("해당 행정동의 인구 데이터가 없습니다."));
-        int youthPopulation = yp.getYouthPopulation();
-        int totalYouthPopulation = youthPopulationRepository.sumAllYouthPopulation();
-        double youthRatio = (double) youthPopulation / totalYouthPopulation * 100;
+                .orElseThrow(() -> new IllegalArgumentException("해당 동의 청년 인구 정보가 없습니다."));
+        int youthPop = yp.getYouthPopulation();
+        System.out.println("❤️청년 인구 수 = " + youthPop);
 
-        // 4. 홍보물 / 청년 수
-        double promotionPerYouth = youthPopulation == 0 ? 0.0 :
-                (double) dtoList.size() / youthPopulation;
-
-        return PromotionDetailByRegionDTO.builder()
-                .region(yp.getHangjungs().getHangjungName())
-                .regionCode(yp.getHangjungs().getId())
-                .youthPopulation(youthPopulation)
-                .youthRatio(String.format("%.1f", youthRatio))
-                .promotionCount(dtoList.size())
-                .promotionPerYouth(Math.round(promotionPerYouth * 1000.0) / 1000.0) // 소수점 셋째자리
-                .promotionList(dtoList)
-                .promotionTypeDistribution(typeCountMap)
-                .build();
+        // 3. 백분율 계산
+        if (youthPop == 0) return 0.0;
+        double ratio = (promotionCount * 100.0) / youthPop;
+        return Math.round(ratio * 10.0) / 10.0;  // 소수점 첫째 자리 반올림
     }
 
 
