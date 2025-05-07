@@ -19,7 +19,7 @@ public class CounselingLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDateTime consultation_date;
+    private LocalDateTime consultationDate;
     private String voiceFileUrl;
     private String fullScript;
     private String summarize;
@@ -37,6 +37,6 @@ public class CounselingLog {
 
     @PrePersist
     protected void onCreate() {
-        this.consultation_date = LocalDateTime.now();
+        this.consultationDate = LocalDateTime.now();
     }
 }
