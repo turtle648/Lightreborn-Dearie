@@ -1,7 +1,7 @@
 package com.ssafy.backend.youth_population.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
-import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
+import com.ssafy.backend.youth_population.model.dto.response.*;
 import com.ssafy.backend.youth_population.service.YouthPopulationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -12,14 +12,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -43,4 +41,33 @@ public class YouthPopulationController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(201, "데이터 업로드를 성공했습니다.", result));
     }
+
+    @Operation(summary = "청년 1인 가구 비율 및 성비 조회")
+    @GetMapping("/single-household-ratio/{dong-code}")
+    public ResponseEntity<BaseResponse<YouthHouseholdRatioDTO>> getYouthHouseholdRatio(@PathVariable("dong-code") Long dongCode) throws IOException {
+        YouthHouseholdRatioDTO result = youthPopulationService.getYouthHouseholdRatioByDongCode(dongCode);
+        return ResponseEntity.ok(BaseResponse.success(200, "청년 1인 가구 비율 조회를 성공했습니다.", result));
+    }
+
+    @Operation(summary = "행정동의 청년 인구 비율 조회", description = "행정동의 청년 인구 수 / 양산 시 전체 청년 인구 수")
+    @GetMapping("/distribution/{dong-code}")
+    public ResponseEntity<BaseResponse<YouthStatsByRegionDTO>> getYouthDistributionByRegion(@PathVariable("dong-code") Long dongCode) throws IOException {
+        YouthStatsByRegionDTO result = youthPopulationService.getYouthDistributionByDongCode(dongCode);
+        return ResponseEntity.ok(BaseResponse.success(200, "청년 통계 조회를 성공했습니다.", result));
+    }
+
+    @Operation(summary = "행정구역별 청년 인구 비율을 조회")
+    @GetMapping("/distribution")
+    public ResponseEntity<BaseResponse<Map<String, Object>>> getYouthDistributionAllRegions() throws IOException{
+        List<YouthRegionDistributionDTO> result = youthPopulationService.getYouthDistributionAllRegions();
+        return ResponseEntity.ok(BaseResponse.success(200, "지역별 청년 비율 조회를 성공했습니다.", Map.of("regionData", result)));
+    }
+
+    @Operation(summary = "청년 인구 데이터 통합 조회")
+    @GetMapping("")
+    public ResponseEntity<BaseResponse<YouthDashboardSummaryDTO>> getDashboardSummary() throws IOException {
+        YouthDashboardSummaryDTO result = youthPopulationService.getInitialDashboardData();
+        return ResponseEntity.ok(BaseResponse.success(200, "청년 통합 통계 조회에 성공했습니다.", result));
+    }
+
 }

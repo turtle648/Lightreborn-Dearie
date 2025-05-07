@@ -6,24 +6,32 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationErrorCode;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationException;
+import com.ssafy.backend.youth_consultation.model.collector.PeopleInfoCollector;
 import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollector;
 import com.ssafy.backend.youth_consultation.model.collector.SurveyAnswerCollector;
 import com.ssafy.backend.youth_consultation.model.context.SurveyContext;
 import com.ssafy.backend.youth_consultation.model.context.TranscriptionContext;
+import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
+import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
 import com.ssafy.backend.youth_consultation.model.entity.*;
+import com.ssafy.backend.youth_consultation.model.state.SurveyStepConstants;
 import com.ssafy.backend.youth_consultation.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -39,7 +47,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class SpeechServiceImpl implements SpeechService {
+public class YouthConsultationServiceImpl implements YouthConsultationService {
     private final RestTemplate restTemplate;
     private final ExecutorService executorService;
     private final S3AsyncClient s3Client;
@@ -60,6 +68,30 @@ public class SpeechServiceImpl implements SpeechService {
     // CLI 명령어(기본: ffmpeg) 또는 절대 경로 설정
     @Value("${openai.ffmpeg.path:ffmpeg}")
     private String ffmpegCmd;
+
+    @Override
+    public PeopleInfoResponseDTO searchPeopleInfo(PeopleInfoRequestDTO peopleInfoRequestDTO) {
+        SurveyProcessStep surveyProcessStep = SurveyStepConstants.DEFAULT_STEP;
+        Pageable pageable = PageRequest.of(peopleInfoRequestDTO.getPageNum(), peopleInfoRequestDTO.getSizeNum());
+
+        Page<IsolatedYouth> isolatedYouthPage = null;
+
+        if(!StringUtils.hasText(peopleInfoRequestDTO.getName())) {
+            isolatedYouthPage = isolatedYouthRepository.findBySurveyProcessStep(surveyProcessStep, pageable);
+        }
+
+        if(StringUtils.hasText(peopleInfoRequestDTO.getName())) {
+            isolatedYouthPage = isolatedYouthRepository.findBySurveyProcessStepAndName(
+                    surveyProcessStep,
+                    peopleInfoRequestDTO.getName(),
+                    pageable
+            );
+        }
+
+        PeopleInfoCollector peopleInfoCollector = new PeopleInfoCollector(isolatedYouthPage);
+
+        return peopleInfoCollector.getResponseDto();
+    }
 
     @Transactional
     public SpeechResponseDTO getGeneralSummarize(SpeechRequestDTO requestDTO) {
