@@ -22,7 +22,7 @@ public class PersonalInfo {
     @Column(length = 20)
     private String phoneNumber;
 
-    private LocalDate brithDate;
+    private LocalDate birthDate;
 
     @Column(length = 20)
     private String emergencyContact;
