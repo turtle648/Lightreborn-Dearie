@@ -13,6 +13,25 @@ pipeline {
     }
 
     stages {
+        // 0. 브랜치 기반 ENV 자동 설정
+        stage('Decide Environment') {
+            steps {
+                script {
+                    def branch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                    def selectedEnv = params.ENV?.trim()?.toLowerCase()
+
+                    if (!selectedEnv || !(selectedEnv in ['develop', 'master'])) {
+                        selectedEnv = (branch == 'develop') ? 'develop' : 'master'
+                        echo "🔄 ENV auto-detected as: ${selectedEnv}"
+                    } else {
+                        echo "✅ ENV manually selected: ${selectedEnv}"
+                    }
+
+                    env.ENV = selectedEnv
+                }
+            }
+        }
+
         // 1. 먼저 .env 파일부터 읽음
         stage('Load .env File') {
             steps {
