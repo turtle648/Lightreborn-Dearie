@@ -8,13 +8,16 @@ import com.ssafy.backend.common.utils.enums.FileType;
 import com.ssafy.backend.common.utils.parser.RawFileParser;
 import com.ssafy.backend.promotion_network.entity.PromotionStatus;
 import com.ssafy.backend.promotion_network.entity.PromotionType;
+import com.ssafy.backend.promotion_network.model.response.PromotionDetailByRegionDTO;
 import com.ssafy.backend.promotion_network.model.response.PromotionNetworkResponseDTO;
 import com.ssafy.backend.promotion_network.model.response.PromotionResponseDTO;
 import com.ssafy.backend.promotion_network.model.response.PromotionSummaryResponse;
 import com.ssafy.backend.promotion_network.repository.PromotionStatusRepository;
 import com.ssafy.backend.promotion_network.repository.PromotionTypeRepository;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
+import com.ssafy.backend.youth_population.entity.YouthPopulation;
 import com.ssafy.backend.youth_population.repository.HangjungsRepository;
+import com.ssafy.backend.youth_population.repository.YouthPopulationRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +35,7 @@ import java.util.stream.Collectors;
 public class PromotionNetworkServiceImpl implements PromotionNetworkService {
 
     private final List<RawFileParser> rawFileParsers;
+    private final YouthPopulationRepository youthPopulationRepository;
     private RawFileParser fileParser;
     private final ObjectMapper objectMapper;
     private final HangjungsRepository hangjungsRepository;
@@ -141,8 +145,8 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
     }
 
     @Override
-    public List<PromotionResponseDTO> selectPromotions(int hangjungId) {
-        List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId((long) hangjungId);
+    public List<PromotionResponseDTO> selectPromotions(Long dongCode) {
+        List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId((long) dongCode);
         return list.stream().map(this::convertToDTO).toList();
     }
 
@@ -181,8 +185,8 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         return ratioMap;
     }
 
-    public PromotionSummaryResponse getPromotionSummary(int hangjungId) {
-        List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId((long) hangjungId);
+    public PromotionSummaryResponse getPromotionSummary(Long dongCode) {
+        List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId((long) dongCode);
         List<PromotionResponseDTO> dtoList = list.stream().map(this::convertToDTO).toList();
 
         Map<String, Double> typeRatio = calculatePromotionTypeRatio(dtoList);
@@ -191,6 +195,44 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         summary.setPromotions(dtoList);
         summary.setTypeRatio(typeRatio);
         return summary;
+    }
+
+
+    @Override
+    public PromotionDetailByRegionDTO getPromotionDetail(Long dongCode) throws IOException {
+        // 1. 홍보물 리스트 조회
+        List<PromotionStatus> statusList = promotionStatusRepository.findByHangjungsId(dongCode);
+        List<PromotionResponseDTO> dtoList = statusList.stream()
+                .map(this::convertToDTO)
+                .toList();
+
+        // 2. 유형별 개수 집계
+        Map<String, Integer> typeCountMap = new HashMap<>();
+        for (PromotionResponseDTO dto : dtoList) {
+            typeCountMap.merge(dto.getPromotionType(), 1, Integer::sum);
+        }
+
+        // 3. 청년 인구 수 및 비율
+        YouthPopulation yp = youthPopulationRepository.findLatestByHangjungCode(dongCode)
+                .orElseThrow(() -> new IllegalArgumentException("해당 행정동의 인구 데이터가 없습니다."));
+        int youthPopulation = yp.getYouthPopulation();
+        int totalYouthPopulation = youthPopulationRepository.sumAllYouthPopulation();
+        double youthRatio = (double) youthPopulation / totalYouthPopulation * 100;
+
+        // 4. 홍보물 / 청년 수
+        double promotionPerYouth = youthPopulation == 0 ? 0.0 :
+                (double) dtoList.size() / youthPopulation;
+
+        return PromotionDetailByRegionDTO.builder()
+                .region(yp.getHangjungs().getHangjungName())
+                .regionCode(yp.getHangjungs().getId())
+                .youthPopulation(youthPopulation)
+                .youthRatio(String.format("%.1f", youthRatio))
+                .promotionCount(dtoList.size())
+                .promotionPerYouth(Math.round(promotionPerYouth * 1000.0) / 1000.0) // 소수점 셋째자리
+                .promotionList(dtoList)
+                .promotionTypeDistribution(typeCountMap)
+                .build();
     }
 
 

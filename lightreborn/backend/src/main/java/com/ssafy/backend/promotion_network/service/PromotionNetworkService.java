@@ -1,5 +1,6 @@
 package com.ssafy.backend.promotion_network.service;
 
+import com.ssafy.backend.promotion_network.model.response.PromotionDetailByRegionDTO;
 import com.ssafy.backend.promotion_network.model.response.PromotionNetworkResponseDTO;
 import com.ssafy.backend.promotion_network.model.response.PromotionResponseDTO;
 import com.ssafy.backend.promotion_network.model.response.PromotionSummaryResponse;
@@ -20,7 +21,11 @@ public interface PromotionNetworkService {
      * */
     List<PromotionNetworkResponseDTO> parseAndMapFile(MultipartFile file) throws IOException;
 
-    List<PromotionResponseDTO> selectPromotions(int hangjungId);
+    List<PromotionResponseDTO> selectPromotions(Long dongCode);
 
-    PromotionSummaryResponse getPromotionSummary(int hangjungId);
+    PromotionSummaryResponse getPromotionSummary(Long dongCode);
+
+    PromotionDetailByRegionDTO getPromotionDetail(Long hangjungId) throws IOException;
 }
+
+

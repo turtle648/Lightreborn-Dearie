@@ -1,6 +1,7 @@
 package com.ssafy.backend.promotion_network.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
+import com.ssafy.backend.promotion_network.model.response.PromotionDetailByRegionDTO;
 import com.ssafy.backend.promotion_network.model.response.PromotionNetworkResponseDTO;
 import com.ssafy.backend.promotion_network.model.response.PromotionResponseDTO;
 import com.ssafy.backend.promotion_network.model.response.PromotionSummaryResponse;
@@ -48,10 +49,10 @@ public class PromotionNetworkController {
             @ApiResponse(responseCode = "400", description = "요청 값 오류"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    @GetMapping("/{hangjungId}/summary")
-    public ResponseEntity<BaseResponse<PromotionSummaryResponse>> getPromotionSummeryData(@PathVariable("hangjungId") int hangjungId){
+    @GetMapping("/{dong-code}/summary")
+    public ResponseEntity<BaseResponse<PromotionSummaryResponse>> getPromotionSummeryData(@PathVariable("dong-code") Long dongCode){
 
-        PromotionSummaryResponse result = promotionNetworkService.getPromotionSummary(hangjungId);
+        PromotionSummaryResponse result = promotionNetworkService.getPromotionSummary(dongCode);
 
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(201, "데이터를 성공적으로 불러왔습니다.", result));
     }
@@ -63,15 +64,23 @@ public class PromotionNetworkController {
             @ApiResponse(responseCode = "400", description = "요청 값 오류"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    @GetMapping(value = "/{hangjungId}")
-    public ResponseEntity<BaseResponse<List<PromotionResponseDTO>>> getPromotionData(@PathVariable("hangjungId") int hangjungId){
+    @GetMapping(value = "/{dong-code}")
+    public ResponseEntity<BaseResponse<List<PromotionResponseDTO>>> getPromotionData(@PathVariable("dong-code") Long dongCode){
 
-        List<PromotionResponseDTO> result = promotionNetworkService.selectPromotions(hangjungId);
+        List<PromotionResponseDTO> result = promotionNetworkService.selectPromotions(dongCode);
 
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(201, "데이터를 성공적으로 불러왔습니다.", result));
     }
 
 
+    @Operation(summary = "행정동 상세 홍보 통계 조회", description = "행정동의 홍보물, 유형 비율, 청년 인구 대비 수치 등 포함")
+    @GetMapping("/promotion-detail/{hangjungId}")
+    public ResponseEntity<BaseResponse<PromotionDetailByRegionDTO>> getPromotionDetail(
+            @PathVariable("dong-code") Long dongCode) throws IOException {
+
+        PromotionDetailByRegionDTO result = promotionNetworkService.getPromotionDetail(dongCode);
+        return ResponseEntity.ok(BaseResponse.success(200, "홍보 거점 상세 조회 성공", result));
+    }
 
 
 }
