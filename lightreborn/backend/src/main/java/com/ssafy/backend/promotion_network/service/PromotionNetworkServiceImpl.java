@@ -10,6 +10,7 @@ import com.ssafy.backend.promotion_network.entity.PromotionStatus;
 import com.ssafy.backend.promotion_network.entity.PromotionType;
 import com.ssafy.backend.promotion_network.model.response.PromotionNetworkResponseDTO;
 import com.ssafy.backend.promotion_network.model.response.PromotionResponseDTO;
+import com.ssafy.backend.promotion_network.model.response.PromotionSummaryResponse;
 import com.ssafy.backend.promotion_network.repository.PromotionStatusRepository;
 import com.ssafy.backend.promotion_network.repository.PromotionTypeRepository;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
@@ -160,6 +161,36 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         }
 
         return dto; // 연관 관계 주의
+    }
+
+    public Map<String, Double> calculatePromotionTypeRatio(List<PromotionResponseDTO> dtoList) {
+        int total = dtoList.size();
+
+        // 타입별 개수 집계
+        Map<String, Long> countMap = dtoList.stream()
+                .filter(dto -> dto.getPromotionType() != null)
+                .collect(Collectors.groupingBy(PromotionResponseDTO::getPromotionType, Collectors.counting()));
+
+        // 비율로 변환 (소수점 첫째 자리까지)
+        Map<String, Double> ratioMap = new HashMap<>();
+        for (Map.Entry<String, Long> entry : countMap.entrySet()) {
+            double ratio = (entry.getValue() * 100.0) / total;
+            ratioMap.put(entry.getKey(), Math.round(ratio * 10.0) / 10.0); // 반올림: 10.0 = 소수점 첫째자리
+        }
+
+        return ratioMap;
+    }
+
+    public PromotionSummaryResponse getPromotionSummary(int hangjungId) {
+        List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId((long) hangjungId);
+        List<PromotionResponseDTO> dtoList = list.stream().map(this::convertToDTO).toList();
+
+        Map<String, Double> typeRatio = calculatePromotionTypeRatio(dtoList);
+
+        PromotionSummaryResponse summary = new PromotionSummaryResponse();
+        summary.setPromotions(dtoList);
+        summary.setTypeRatio(typeRatio);
+        return summary;
     }
 
 

@@ -3,6 +3,7 @@ package com.ssafy.backend.promotion_network.controller;
 import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.promotion_network.model.response.PromotionNetworkResponseDTO;
 import com.ssafy.backend.promotion_network.model.response.PromotionResponseDTO;
+import com.ssafy.backend.promotion_network.model.response.PromotionSummaryResponse;
 import com.ssafy.backend.promotion_network.service.PromotionNetworkService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,12 +22,12 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("promotion-networks")
-@Tag(name="PromotionNetwork", description = "홍보 네트워크망 관련 API")
+@Tag(name="PromotionNetwork", description = "홍보 네트워크망 대시보드 데이터에 대한 기능들입니다.")
 public class PromotionNetworkController {
 
     private final PromotionNetworkService promotionNetworkService;
 
-    @Operation(summary = "홍보 네트워크망 API", description = "홍보 네트워크망 대시보드 데이터에 대한 기능들입니다.")
+    @Operation(summary = "홍보 네트워크망 API", description = "홍보 네트워크망 대시보드 데이터를 입력합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "홍보 네트워크망 데이터 업데이트 성공"),
             @ApiResponse(responseCode = "400", description = "요청 값 오류"),
@@ -40,12 +41,37 @@ public class PromotionNetworkController {
                 .body(BaseResponse.success(201, "데이터 업로드를 성공했습니다.", result));
     }
 
+
+    @Operation(summary = "홍보물 네트워크 페이지 데이터 통합 조회", description = "홍보물 네트워크에 대한 정보를 조회합니다")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "홍보물 정보 조회 성공"),
+            @ApiResponse(responseCode = "400", description = "요청 값 오류"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @GetMapping("/{hangjungId}/summary")
+    public ResponseEntity<BaseResponse<PromotionSummaryResponse>> getPromotionSummeryData(@PathVariable("hangjungId") int hangjungId){
+
+        PromotionSummaryResponse result = promotionNetworkService.getPromotionSummary(hangjungId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(201, "데이터를 성공적으로 불러왔습니다.", result));
+    }
+
+
+    @Operation(summary = "특정 행정동의 홍보물 리스트 조회", description = "홍보물에 대한 정보 리스트를 조회합니다")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "홍보물 정보 조회 성공"),
+            @ApiResponse(responseCode = "400", description = "요청 값 오류"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
     @GetMapping(value = "/{hangjungId}")
-    public ResponseEntity<BaseResponse<List<PromotionResponseDTO>>> promotionData(@PathVariable("hangjungId") int hangjungId){
+    public ResponseEntity<BaseResponse<List<PromotionResponseDTO>>> getPromotionData(@PathVariable("hangjungId") int hangjungId){
 
         List<PromotionResponseDTO> result = promotionNetworkService.selectPromotions(hangjungId);
 
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(201, "데이터 불러오기 성공", result));
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(201, "데이터를 성공적으로 불러왔습니다.", result));
     }
+
+
+
 
 }
