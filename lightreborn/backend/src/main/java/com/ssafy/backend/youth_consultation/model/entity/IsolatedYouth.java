@@ -14,7 +14,6 @@ public class IsolatedYouth {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 10)
     private String isolationLevel;
 
     @Column(length = 2)

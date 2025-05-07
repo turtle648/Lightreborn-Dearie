@@ -1,8 +1,10 @@
 package com.ssafy.backend.youth_consultation.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
+import com.ssafy.backend.youth_consultation.model.dto.request.AddScheduleRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
+import com.ssafy.backend.youth_consultation.model.dto.response.AddScheduleResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
@@ -38,9 +40,23 @@ public class YouthConsultationController {
             ) {
         PeopleInfoResponseDTO responseDTO = youthConsultationService.searchPeopleInfo(peopleInfoRequestDTO);
 
-        return ResponseEntity.ok().body(BaseResponse.success(200,"상담 대상자를 성공적으로 검색하였습니다.", responseDTO));
+        return ResponseEntity.ok().body(BaseResponse.success("상담 대상자를 성공적으로 검색하였습니다.", responseDTO));
     }
 
+
+    @PostMapping("/{youthId}/schedules")
+    @Operation(
+            summary = "상담 일정 추가",
+            description = "고립 청년 pk를 통해 상담 일정 추가합니다."
+    )
+    public ResponseEntity<BaseResponse<AddScheduleResponseDTO>> addSchedule(
+            @PathVariable Long youthId,
+            @RequestBody AddScheduleRequestDTO addScheduleRequestDTO
+            ) {
+        AddScheduleResponseDTO addScheduleResponseDTO = youthConsultationService.addSchedule(youthId, addScheduleRequestDTO);
+
+        return ResponseEntity.ok().body(BaseResponse.success("상담 일정을 성공적으로 추가하였습니다.", addScheduleResponseDTO));
+    }
 
     @PostMapping(
             value = "/isolated-youth",
