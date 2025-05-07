@@ -26,7 +26,6 @@ pipeline {
                     } else {
                         echo "✅ ENV manually selected: ${selectedEnv}"
                     }
-
                     env.ENV = selectedEnv
                 }
             }
