@@ -52,7 +52,7 @@ public class YouthConsultationController {
             ) {
         PeopleInfoResponseDTO responseDTO = youthConsultationService.searchPeopleInfo(peopleInfoRequestDTO);
 
-        return ResponseEntity.ok().body(BaseResponse.success(200,"상담 대상자를 성공적으로 가져왔습니다.", responseDTO));
+        return ResponseEntity.ok().body(BaseResponse.success(200,"상담 대상자를 성공적으로 검색하였습니다.", responseDTO));
     }
 
 
