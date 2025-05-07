@@ -10,6 +10,7 @@ import com.ssafy.backend.youth_population.entity.Hangjungs;
 import com.ssafy.backend.youth_population.entity.YouthPopulation;
 import com.ssafy.backend.youth_population.model.dto.response.YouthHouseholdRatioDTO;
 import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
+import com.ssafy.backend.youth_population.model.dto.response.YouthRegionDistributionDTO;
 import com.ssafy.backend.youth_population.model.dto.response.YouthStatsByRegionDTO;
 import com.ssafy.backend.youth_population.model.dto.vo.HangjungKey;
 import com.ssafy.backend.youth_population.repository.HangjungsRepository;
@@ -186,6 +187,27 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
                                 .build()
                 )
                 .build();
+    }
+
+    @Override
+    public List<YouthRegionDistributionDTO> getYouthDistributionAllRegions() throws IOException {
+        List<YouthPopulation> all = youthPopulationRepository.findAll();
+
+        // 가장 최신 날짜 데이터만 고려해 필터링
+        Map<String, YouthPopulation> latestByRegion = all.stream()
+                .collect(Collectors.toMap(
+                        yp -> yp.getHangjungs().getHangjungName(),
+                        yp -> yp,
+                        (yp1, yp2) -> yp1.getBaseDate().isAfter(yp2.getBaseDate()) ? yp1 : yp2
+                ));
+
+        return latestByRegion.values().stream().map(yp -> {
+            float ratio = (float) yp.getYouthPopulation() / 1000f;
+            return YouthRegionDistributionDTO.builder()
+                    .region(yp.getHangjungs().getHangjungName())
+                    .perPopulation(round(ratio))
+                    .build();
+        }).collect(Collectors.toList());
     }
 
     // 비율 계산 : 소수점 아래 한 자리 나타나게 반올림

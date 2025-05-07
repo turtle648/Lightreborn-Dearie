@@ -3,6 +3,7 @@ package com.ssafy.backend.youth_population.controller;
 import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.youth_population.model.dto.response.YouthHouseholdRatioDTO;
 import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
+import com.ssafy.backend.youth_population.model.dto.response.YouthRegionDistributionDTO;
 import com.ssafy.backend.youth_population.model.dto.response.YouthStatsByRegionDTO;
 import com.ssafy.backend.youth_population.service.YouthPopulationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -56,4 +58,12 @@ public class YouthPopulationController {
         YouthStatsByRegionDTO result = youthPopulationService.getYouthDistributionByDongCode(dongCode);
         return ResponseEntity.ok(BaseResponse.success(200, "청년 통계 조회를 성공했습니다.", result));
     }
+
+    @Operation(summary = "행정구역별 청년 인구 비율을 조회")
+    @GetMapping("/distribution")
+    public ResponseEntity<BaseResponse<Map<String, Object>>> getYouthDistributionAllRegions() throws IOException{
+        List<YouthRegionDistributionDTO> result = youthPopulationService.getYouthDistributionAllRegions();
+        return ResponseEntity.ok(BaseResponse.success(200, "지역별 청년 비율 조회를 성공했습니다.", Map.of("regionData", result)));
+    }
+
 }

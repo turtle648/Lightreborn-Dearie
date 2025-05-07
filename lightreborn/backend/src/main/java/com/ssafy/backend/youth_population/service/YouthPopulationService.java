@@ -2,6 +2,7 @@ package com.ssafy.backend.youth_population.service;
 
 import com.ssafy.backend.youth_population.model.dto.response.YouthHouseholdRatioDTO;
 import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
+import com.ssafy.backend.youth_population.model.dto.response.YouthRegionDistributionDTO;
 import com.ssafy.backend.youth_population.model.dto.response.YouthStatsByRegionDTO;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,4 +32,9 @@ public interface YouthPopulationService {
     * 선택한 행정동 코드로 청년 인구 비율 조회
     * */
     YouthStatsByRegionDTO getYouthDistributionByDongCode(Long dongCode) throws IOException;
+
+    /*
+    * 행정동 별 전체 청년 인구 분포 비율 조회
+    * */
+    List<YouthRegionDistributionDTO> getYouthDistributionAllRegions() throws IOException;
 }
