@@ -8,6 +8,7 @@ import com.ssafy.backend.common.utils.enums.FileType;
 import com.ssafy.backend.common.utils.parser.RawFileParser;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
 import com.ssafy.backend.youth_population.entity.YouthPopulation;
+import com.ssafy.backend.youth_population.model.dto.response.YouthHouseholdRatioDTO;
 import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
 import com.ssafy.backend.youth_population.model.dto.vo.HangjungKey;
 import com.ssafy.backend.youth_population.repository.HangjungsRepository;
@@ -140,5 +141,33 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
 
                     return ypDto;
                 }).toList();
+    }
+
+    @Override
+    public YouthHouseholdRatioDTO getYouthHouseholdRatioByDongCode(Long dongCode) {
+        YouthPopulation yp = youthPopulationRepository.findLatestByHangjungCode(dongCode)
+                .orElseThrow(() -> new IllegalArgumentException("해당 행정동의 인구 데이터가 없습니다."));
+
+        // 선택한 행정동의 청년 1인 가구 비율
+        float ratio = (float) yp.getYouthHouseholdCount() / yp.getYouthPopulation() * 100;
+        // 선택한 행정동의 청년 1인 가구 성비
+        float maleRatio = (float) yp.getYouthMaleHouseholdCount() / yp.getYouthMalePopulation() * 100;
+        float femaleRatio = (float) yp.getYouthFemaleHouseholdCount() / yp.getYouthFemalePopulation() * 100;
+
+        return YouthHouseholdRatioDTO.builder()
+                .youthSingleHouseholdRatio(
+                        YouthHouseholdRatioDTO.Ratio.builder()
+                                .unit("%")
+                                .value(round(ratio))
+                                .male(round(maleRatio))
+                                .female(round(femaleRatio))
+                                .build()
+                )
+                .build();
+    }
+
+    // 비율 계산 :
+    private float round(float value) {
+        return Math.round(value * 10f) / 10f;
     }
 }

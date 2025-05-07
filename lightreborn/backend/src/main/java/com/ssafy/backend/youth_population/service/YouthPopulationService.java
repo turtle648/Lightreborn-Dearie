@@ -1,5 +1,6 @@
 package com.ssafy.backend.youth_population.service;
 
+import com.ssafy.backend.youth_population.model.dto.response.YouthHouseholdRatioDTO;
 import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,4 +19,9 @@ public interface YouthPopulationService {
      * 업로드한 파일에 대한 파싱을 진행하는 함수
      * */
     List<YouthPopulationResponseDTO> parseAndMapFile(MultipartFile file) throws IOException;
+
+    /**
+     * 선택한 행정동 코드로 1인 가구 비율과 1인 가구 성비 조회
+     * */
+    YouthHouseholdRatioDTO getYouthHouseholdRatioByDongCode(Long dongCode) throws IOException;
 }

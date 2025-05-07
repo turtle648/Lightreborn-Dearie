@@ -1,6 +1,7 @@
 package com.ssafy.backend.youth_population.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
+import com.ssafy.backend.youth_population.model.dto.response.YouthHouseholdRatioDTO;
 import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
 import com.ssafy.backend.youth_population.service.YouthPopulationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,10 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -42,5 +40,12 @@ public class YouthPopulationController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(201, "데이터 업로드를 성공했습니다.", result));
+    }
+
+    @Operation(summary = "청년 1인 가구 비율 및 성비 조회")
+    @GetMapping("/single-household-ratio/{dong-code}")
+    public ResponseEntity<BaseResponse<YouthHouseholdRatioDTO>> getYouthHouseholdRatio(@PathVariable("dong-code") Long dongCode) throws IOException {
+        YouthHouseholdRatioDTO result = youthPopulationService.getYouthHouseholdRatioByDongCode(dongCode);
+        return ResponseEntity.ok(BaseResponse.success(200, "청년 1인 가구 비율 조회를 성공했습니다.", result));
     }
 }
