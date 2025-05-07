@@ -11,12 +11,15 @@ import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollecto
 import com.ssafy.backend.youth_consultation.model.collector.SurveyAnswerCollector;
 import com.ssafy.backend.youth_consultation.model.context.SurveyContext;
 import com.ssafy.backend.youth_consultation.model.context.TranscriptionContext;
+import com.ssafy.backend.youth_consultation.model.dto.request.AddScheduleRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
+import com.ssafy.backend.youth_consultation.model.dto.response.AddScheduleResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
 import com.ssafy.backend.youth_consultation.model.entity.*;
+import com.ssafy.backend.youth_consultation.model.state.CounselingConstants;
 import com.ssafy.backend.youth_consultation.model.state.SurveyStepConstants;
 import com.ssafy.backend.youth_consultation.repository.*;
 import jakarta.transaction.Transactional;
@@ -91,6 +94,26 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         PeopleInfoCollector peopleInfoCollector = new PeopleInfoCollector(isolatedYouthPage);
 
         return peopleInfoCollector.getResponseDto();
+    }
+
+    @Override
+    public AddScheduleResponseDTO addSchedule(Long id, AddScheduleRequestDTO addScheduleRequestDTO) {
+        IsolatedYouth isolatedYouth = isolatedYouthRepository.findById(id)
+                .orElseThrow(() ->
+                        new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_PERSON)
+                );
+
+        CounselingLog log = counselingLogRepository.save(
+                CounselingLog.builder()
+                        .consultation_date(addScheduleRequestDTO.getDate().atStartOfDay())
+                        .isolatedYouth(isolatedYouth)
+                        .counselingProcess(CounselingConstants.DEFAULT_STEP)
+                        .build()
+        );
+
+        return AddScheduleResponseDTO.builder()
+                .counseling(log)
+                .build();
     }
 
     @Transactional
