@@ -1,10 +1,12 @@
 package com.ssafy.backend.youth_consultation.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
+import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
+import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
-import com.ssafy.backend.youth_consultation.service.SpeechService;
+import com.ssafy.backend.youth_consultation.service.YouthConsultationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,7 +26,21 @@ import org.springframework.web.multipart.MultipartFile;
 @Tag(name = "YouthConsultation", description = "상담일지 관련 API")
 public class YouthConsultationController {
 
-    private final SpeechService speechService;
+    private final YouthConsultationService youthConsultationService;
+
+    @PostMapping("/people")
+    @Operation(
+            summary = "상담 대상자 이름으로 검색하기 (5명씩)",
+            description = "name 이 있을 때는 고립 청년을 이름으로 검색한 결과를 5명씩 페이지네이션 하여 가져옵니다 \nname이 없으면, 고립 청년을 5명씩 페이지네이션 하여 가져옵니다"
+    )
+    public ResponseEntity<BaseResponse<PeopleInfoResponseDTO>> searchIsolationYouthWithPagination(
+            @RequestBody PeopleInfoRequestDTO peopleInfoRequestDTO
+            ) {
+        PeopleInfoResponseDTO responseDTO = youthConsultationService.searchPeopleInfo(peopleInfoRequestDTO);
+
+        return ResponseEntity.ok().body(BaseResponse.success(200,"상담 대상자를 성공적으로 검색하였습니다.", responseDTO));
+    }
+
 
     @PostMapping(
             value = "/isolated-youth",
@@ -42,7 +58,7 @@ public class YouthConsultationController {
             )
             @RequestPart("file") MultipartFile file
             ) {
-        SurveyUploadDTO surveyUploadDTO = speechService.uploadIsolationYouthInfo(file);
+        SurveyUploadDTO surveyUploadDTO = youthConsultationService.uploadIsolationYouthInfo(file);
 
         return ResponseEntity.ok(BaseResponse.success("은둔 고립 청년 설문 데이터를 성공적으로 추가했습니다", surveyUploadDTO));
     }
@@ -63,7 +79,7 @@ public class YouthConsultationController {
             @ModelAttribute SpeechRequestDTO request
             ) {
 
-        SpeechResponseDTO response = speechService.getGeneralSummarize(request);
+        SpeechResponseDTO response = youthConsultationService.getGeneralSummarize(request);
 
         return ResponseEntity
                 .ok(BaseResponse.success(200, "음성 변환을 완료하였습니다", response));
