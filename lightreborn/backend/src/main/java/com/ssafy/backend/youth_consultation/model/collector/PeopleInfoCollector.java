@@ -1,5 +1,6 @@
 package com.ssafy.backend.youth_consultation.model.collector;
 
+import com.ssafy.backend.youth_consultation.model.dto.YouthInfoBriefDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
 import com.ssafy.backend.youth_consultation.model.entity.IsolatedYouth;
 import org.springframework.data.domain.Page;
@@ -17,18 +18,21 @@ public class PeopleInfoCollector {
         int currentPage = pages.getNumber();
         long totalElements = pages.getTotalElements();
         int totalPages = pages.getTotalPages();
-        List<String> names = pages.getContent()
+        List<YouthInfoBriefDTO> youthInfos = pages.getContent()
                 .stream()
                 .map(page ->
-                        page.getPersonalInfo()
-                                .getName())
+                        YouthInfoBriefDTO.builder()
+                                .id(page.getId())
+                                .name(page.getPersonalInfo().getName())
+                                .build()
+                )
                 .toList();
 
         return PeopleInfoResponseDTO.builder()
                 .currentPage(currentPage)
                 .totalElements(totalElements)
                 .totalPages(totalPages)
-                .youthInfo(names)
+                .youthInfos(youthInfos)
                 .build();
     }
 }

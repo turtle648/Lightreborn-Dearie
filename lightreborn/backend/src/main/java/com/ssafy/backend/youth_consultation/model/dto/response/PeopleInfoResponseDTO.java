@@ -1,5 +1,6 @@
 package com.ssafy.backend.youth_consultation.model.dto.response;
 
+import com.ssafy.backend.youth_consultation.model.dto.YouthInfoBriefDTO;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
@@ -15,5 +16,5 @@ public class PeopleInfoResponseDTO {
     int totalPages;
     long totalElements;
     int currentPage;
-    List<String> youthInfo;
+    List<YouthInfoBriefDTO> youthInfos;
 }

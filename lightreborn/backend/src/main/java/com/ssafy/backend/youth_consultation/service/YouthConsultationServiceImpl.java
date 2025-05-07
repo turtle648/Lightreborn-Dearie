@@ -31,6 +31,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -69,27 +70,23 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     private String ffmpegCmd;
 
     @Override
-    public PeopleInfoResponseDTO getPeopleInfo(int pageNum, int sizeNum) {
-        SurveyProcessStep surveyProcessStep = SurveyProcessStep.FINAL_SELECTION;
-        Pageable pageable = PageRequest.of(pageNum, sizeNum);
-
-        Page<IsolatedYouth> isolatedYouthPage = isolatedYouthRepository.findBySurveyProcessStep(surveyProcessStep, pageable);
-
-        PeopleInfoCollector peopleInfoCollector = new PeopleInfoCollector(isolatedYouthPage);
-
-        return peopleInfoCollector.getResponseDto();
-    }
-
-    @Override
     public PeopleInfoResponseDTO searchPeopleInfo(PeopleInfoRequestDTO peopleInfoRequestDTO) {
         SurveyProcessStep surveyProcessStep = SurveyStepConstants.DEFAULT_STEP;
         Pageable pageable = PageRequest.of(peopleInfoRequestDTO.getPageNum(), peopleInfoRequestDTO.getSizeNum());
 
-        Page<IsolatedYouth> isolatedYouthPage = isolatedYouthRepository.findBySurveyProcessStepAndName(
-                surveyProcessStep,
-                peopleInfoRequestDTO.getName(),
-                pageable
-        );
+        Page<IsolatedYouth> isolatedYouthPage = null;
+
+        if(!StringUtils.hasText(peopleInfoRequestDTO.getName())) {
+            isolatedYouthPage = isolatedYouthRepository.findBySurveyProcessStep(surveyProcessStep, pageable);
+        }
+
+        if(StringUtils.hasText(peopleInfoRequestDTO.getName())) {
+            isolatedYouthPage = isolatedYouthRepository.findBySurveyProcessStepAndName(
+                    surveyProcessStep,
+                    peopleInfoRequestDTO.getName(),
+                    pageable
+            );
+        }
 
         PeopleInfoCollector peopleInfoCollector = new PeopleInfoCollector(isolatedYouthPage);
 

@@ -28,24 +28,10 @@ public class YouthConsultationController {
 
     private final YouthConsultationService youthConsultationService;
 
-    @GetMapping("/people")
-    @Operation(
-            summary = "상담 대상자 가져오기 (5명씩)",
-            description = "고립 청년을 5명씩 페이지네이션 하여 가져옵니다"
-    )
-    public ResponseEntity<BaseResponse<PeopleInfoResponseDTO>> getIsolationYouthWithPagination(
-            @RequestParam(value = "page", defaultValue = "0") int pageNum,
-            @RequestParam(value = "size", defaultValue = "5") int sizeNum
-    ) {
-        PeopleInfoResponseDTO responseDTO = youthConsultationService.getPeopleInfo(pageNum, sizeNum);
-
-        return ResponseEntity.ok().body(BaseResponse.success(200,"상담 대상자를 성공적으로 가져왔습니다.", responseDTO));
-    }
-
     @PostMapping("/people")
     @Operation(
             summary = "상담 대상자 이름으로 검색하기 (5명씩)",
-            description = "고립 청년을 이름으로 검색한 결과를 5명씩 페이지네이션 하여 가져옵니다"
+            description = "name 이 있을 때는 고립 청년을 이름으로 검색한 결과를 5명씩 페이지네이션 하여 가져옵니다 \nname이 없으면, 고립 청년을 5명씩 페이지네이션 하여 가져옵니다"
     )
     public ResponseEntity<BaseResponse<PeopleInfoResponseDTO>> searchIsolationYouthWithPagination(
             @RequestBody PeopleInfoRequestDTO peopleInfoRequestDTO
