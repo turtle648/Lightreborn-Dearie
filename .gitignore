@@ -1,3 +1,8 @@
 cicd/
 .idea/
 !cicd/docker-compose.db.yml
+
+.nginx/certbot/conf/live/
+.nginx/certbot/conf/archive/
+.nginx/certbot/conf/accounts/
+.nginx/certbot/conf/*.pem
