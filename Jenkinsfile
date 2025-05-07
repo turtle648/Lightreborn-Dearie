@@ -102,6 +102,7 @@ pipeline {
                     spring.cloud.aws.credentials.secret-key=${envProps.S3_SECRET_KEY}
                     spring.cloud.aws.s3.bucket=${envProps.S3_BUCKET}
                     spring.cloud.aws.region.static=ap-northeast-2
+                    NEXT_PUBLIC_NAVER_CLIENT_ID=${envProps.NEXT_PUBLIC_NAVER_CLIENT_ID}
                     """.stripIndent().trim()
                     
                     writeFile file: envFilePath, text: newEnvContent
@@ -154,7 +155,8 @@ pipeline {
                         "spring.cloud.aws.credentials.access-key=${envProps.S3_ACCESS_KEY}",
                         "spring.cloud.aws.credentials.secret-key=${envProps.S3_SECRET_KEY}",
                         "spring.cloud.aws.s3.bucket=${envProps.S3_BUCKET}",
-                        "spring.cloud.aws.region.static=ap-northeast-2"
+                        "spring.cloud.aws.region.static=ap-northeast-2",
+                        "NEXT_PUBLIC_NAVER_CLIENT_ID=${envProps.NEXT_PUBLIC_NAVER_CLIENT_ID}"
                     ]) {
                         sh """
                             docker-compose --env-file ${envPath} -f ${composePath} up -d --build
