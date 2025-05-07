@@ -24,7 +24,7 @@ public interface YouthPopulationService {
      * 선택한 행정동 코드로 1인 가구 비율과 1인 가구 성비 조회
      * */
     YouthHouseholdRatioDTO getYouthHouseholdRatioByDongCode(Long dongCode) throws IOException;
-    
+
     /*
     * 선택한 행정동 코드로 청년 인구 비율 조회
     * */
@@ -39,4 +39,6 @@ public interface YouthPopulationService {
     * 통합 데이터 조회
     * */
     YouthDashboardSummaryDTO getInitialDashboardData() throws IOException;
+
+
 }

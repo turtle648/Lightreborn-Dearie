@@ -188,7 +188,7 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
 
     @Override
     public List<YouthRegionDistributionDTO> getYouthDistributionAllRegions() throws IOException {
-        List<YouthPopulation> all = youthPopulationRepository.findAll();
+        List<YouthPopulation> all = youthPopulationRepository.findLatestYouthPopulations();
 
         // 가장 최신 날짜 데이터만 고려해 필터링
         Map<String, YouthPopulation> latestByRegion = all.stream()
@@ -209,16 +209,10 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
 
     @Override
     public YouthDashboardSummaryDTO getInitialDashboardData() throws IOException {
-        List<YouthPopulation> all = youthPopulationRepository.findAll();
+        List<YouthPopulation> latestYouthPopulations = youthPopulationRepository.findLatestYouthPopulations();
 
-        Map<String, YouthPopulation> latestByRegion = all.stream()
-                .collect(Collectors.toMap(
-                        yp -> yp.getHangjungs().getHangjungName(),
-                        yp -> yp,
-                        (yp1, yp2) -> yp1.getBaseDate().isAfter(yp2.getBaseDate()) ? yp1 : yp2
-                ));
-
-        List<YouthRegionDistributionDTO> regionData = latestByRegion.values().stream().map(yp -> {
+        // 바로 stream 처리
+        List<YouthRegionDistributionDTO> regionData = latestYouthPopulations.stream().map(yp -> {
             float ratio = (float) yp.getYouthPopulation() / 1000f;
             return YouthRegionDistributionDTO.builder()
                     .region(yp.getHangjungs().getHangjungName())
@@ -230,7 +224,7 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
         float min = regionData.stream().map(YouthRegionDistributionDTO::getPerPopulation).min(Float::compare).orElse(0f);
 
         YouthPopulation central = youthPopulationRepository.findLatestByHangjungCode(48330250L)
-                .orElseThrow(() -> new IllegalArgumentException("중앙동 데이터가 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("행정동 코드 [48330250]에 해당하는 인구 데이터가 없습니다."));
 
         float youthRatio = (float) central.getYouthPopulation() / youthPopulationRepository.sumAllYouthPopulation() * 100;
 
@@ -260,6 +254,7 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
                         .build())
                 .build();
     }
+
 
     // 비율 계산 : 소수점 아래 한 자리 나타나게 반올림
     private float round(float value) {

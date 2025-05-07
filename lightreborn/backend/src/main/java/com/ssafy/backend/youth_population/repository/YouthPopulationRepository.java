@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -31,5 +32,17 @@ public interface YouthPopulationRepository extends JpaRepository<YouthPopulation
     @Query("SELECT SUM(yp.youthPopulation) FROM YouthPopulation yp")
     int sumAllYouthPopulation();
 
-
+    /*
+    * 각 행정동의 가장 최신 baseDate를 가진 YouthPopulation 조회
+    * */
+    @Query("""
+    SELECT yp FROM YouthPopulation yp
+    JOIN FETCH yp.hangjungs h
+    WHERE yp.baseDate = (
+        SELECT MAX(y.baseDate)
+        FROM YouthPopulation y
+        WHERE y.hangjungs.hangjungCode = h.hangjungCode
+    )
+    """)
+    List<YouthPopulation> findLatestYouthPopulations();
 }

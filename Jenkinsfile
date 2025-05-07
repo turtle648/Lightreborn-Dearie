@@ -13,6 +13,24 @@ pipeline {
     }
 
     stages {
+        // 0. 브랜치 기반 ENV 자동 설정
+        stage('Decide Environment') {
+            steps {
+                script {
+                    def branch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                    def selectedEnv = params.ENV?.trim()?.toLowerCase()
+
+                    if (!selectedEnv || !(selectedEnv in ['develop', 'master'])) {
+                        selectedEnv = (branch == 'develop') ? 'develop' : 'master'
+                        echo "🔄 ENV auto-detected as: ${selectedEnv}"
+                    } else {
+                        echo "✅ ENV manually selected: ${selectedEnv}"
+                    }
+                    env.ENV = selectedEnv
+                }
+            }
+        }
+
         // 1. 먼저 .env 파일부터 읽음
         stage('Load .env File') {
             steps {
@@ -84,6 +102,7 @@ pipeline {
                     spring.cloud.aws.credentials.secret-key=${envProps.S3_SECRET_KEY}
                     spring.cloud.aws.s3.bucket=${envProps.S3_BUCKET}
                     spring.cloud.aws.region.static=ap-northeast-2
+                    NEXT_PUBLIC_NAVER_CLIENT_ID=${envProps.NEXT_PUBLIC_NAVER_CLIENT_ID}
                     """.stripIndent().trim()
                     
                     writeFile file: envFilePath, text: newEnvContent
@@ -136,7 +155,8 @@ pipeline {
                         "spring.cloud.aws.credentials.access-key=${envProps.S3_ACCESS_KEY}",
                         "spring.cloud.aws.credentials.secret-key=${envProps.S3_SECRET_KEY}",
                         "spring.cloud.aws.s3.bucket=${envProps.S3_BUCKET}",
-                        "spring.cloud.aws.region.static=ap-northeast-2"
+                        "spring.cloud.aws.region.static=ap-northeast-2",
+                        "NEXT_PUBLIC_NAVER_CLIENT_ID=${envProps.NEXT_PUBLIC_NAVER_CLIENT_ID}"
                     ]) {
                         sh """
                             docker-compose --env-file ${envPath} -f ${composePath} up -d --build

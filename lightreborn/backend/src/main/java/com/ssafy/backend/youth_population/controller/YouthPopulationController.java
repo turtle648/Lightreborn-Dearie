@@ -64,7 +64,7 @@ public class YouthPopulationController {
     }
 
     @Operation(summary = "청년 인구 데이터 통합 조회")
-    @GetMapping("")
+    @GetMapping
     public ResponseEntity<BaseResponse<YouthDashboardSummaryDTO>> getDashboardSummary() throws IOException {
         YouthDashboardSummaryDTO result = youthPopulationService.getInitialDashboardData();
         return ResponseEntity.ok(BaseResponse.success(200, "청년 통합 통계 조회에 성공했습니다.", result));
