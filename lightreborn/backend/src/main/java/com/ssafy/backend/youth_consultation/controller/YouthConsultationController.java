@@ -4,6 +4,7 @@ import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.youth_consultation.model.dto.request.AddScheduleRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
+import com.ssafy.backend.youth_consultation.model.dto.request.UpdateCounselingLogRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.AddScheduleResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
@@ -99,5 +100,21 @@ public class YouthConsultationController {
 
         return ResponseEntity
                 .ok(BaseResponse.success(200, "음성 변환을 완료하였습니다", response));
+    }
+
+    @PatchMapping("/{counselingId}")
+    @Operation(
+            summary = "상담 일지 AI 코멘트 수정",
+            description = "상담 일지 pk를 통해 AI 코멘트에 대해서 수정 가능하다."
+    )
+    public ResponseEntity<BaseResponse<SpeechResponseDTO>> updateCounselingLog(
+            @PathVariable Long counselingId,
+            @RequestBody UpdateCounselingLogRequestDTO request
+    ) {
+
+        SpeechResponseDTO response = youthConsultationService.updateCounselingLog(counselingId, request);
+
+        return ResponseEntity
+                .ok(BaseResponse.success("상담 일지 AI 코멘트를 수정 완료 하였습니다.", response));
     }
 }

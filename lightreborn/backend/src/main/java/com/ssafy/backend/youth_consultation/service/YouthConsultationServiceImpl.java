@@ -14,6 +14,7 @@ import com.ssafy.backend.youth_consultation.model.context.TranscriptionContext;
 import com.ssafy.backend.youth_consultation.model.dto.request.AddScheduleRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
+import com.ssafy.backend.youth_consultation.model.dto.request.UpdateCounselingLogRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.AddScheduleResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
@@ -246,6 +247,40 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public SpeechResponseDTO updateCounselingLog(Long id, UpdateCounselingLogRequestDTO requestDTO) {
+        CounselingLog counselingLog = counselingLogRepository.findById(id)
+                .orElseThrow(() ->
+                        new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_COUNSELING)
+                );
+
+        String summary = StringUtils.hasText(requestDTO.getSummary()) ? requestDTO.getSummary(): counselingLog.getSummarize();
+        String client = StringUtils.hasText(requestDTO.getClient()) ? requestDTO.getClient(): counselingLog.getClientKeyword();
+        String counselor = StringUtils.hasText(requestDTO.getCounselor()) ? requestDTO.getCounselor(): counselingLog.getCounselorKeyword();
+        String memos = StringUtils.hasText(requestDTO.getMemos()) ? requestDTO.getMemos(): counselingLog.getMemoKeyword();
+
+        CounselingLog newLog = counselingLogRepository.save(
+                CounselingLog.builder()
+                        .id(id)
+                        .isolatedYouth(counselingLog.getIsolatedYouth())
+                        .fullScript(counselingLog.getFullScript())
+                        .voiceFileUrl(counselingLog.getVoiceFileUrl())
+                        .counselingProcess(CounselingConstants.COMPLETED)
+                        .summarize(summary)
+                        .clientKeyword(client)
+                        .counselorKeyword(counselor)
+                        .memoKeyword(memos)
+                        .build()
+        );
+
+        return SpeechResponseDTO.builder()
+                .summary(newLog.getSummarize())
+                .client(newLog.getClientKeyword())
+                .counselor(newLog.getCounselorKeyword())
+                .memos(newLog.getMemoKeyword())
+                .build();
     }
 
     private Map<String, SurveyQuestion> getQuestions() {
