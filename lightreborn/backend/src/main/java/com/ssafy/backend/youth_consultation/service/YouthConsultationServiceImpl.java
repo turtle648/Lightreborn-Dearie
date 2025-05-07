@@ -17,6 +17,7 @@ import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoRespons
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
 import com.ssafy.backend.youth_consultation.model.entity.*;
+import com.ssafy.backend.youth_consultation.model.state.SurveyStepConstants;
 import com.ssafy.backend.youth_consultation.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -81,7 +82,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
 
     @Override
     public PeopleInfoResponseDTO searchPeopleInfo(PeopleInfoRequestDTO peopleInfoRequestDTO) {
-        SurveyProcessStep surveyProcessStep = SurveyProcessStep.FINAL_SELECTION;
+        SurveyProcessStep surveyProcessStep = SurveyStepConstants.DEFAULT_STEP;
         Pageable pageable = PageRequest.of(peopleInfoRequestDTO.getPageNum(), peopleInfoRequestDTO.getSizeNum());
 
         Page<IsolatedYouth> isolatedYouthPage = isolatedYouthRepository.findBySurveyProcessStepAndName(
