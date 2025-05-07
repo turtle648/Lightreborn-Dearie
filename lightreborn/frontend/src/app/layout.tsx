@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { MswInitializer } from "@/components/MSWInitializer";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -13,9 +14,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className="antialiased"
-      >
+      <body className="antialiased">
+        {process.env.NEXT_PUBLIC_API_ENV === 'mock' && <MswInitializer />}
         {children}
       </body>
     </html>
