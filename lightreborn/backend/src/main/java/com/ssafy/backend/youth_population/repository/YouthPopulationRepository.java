@@ -24,4 +24,10 @@ public interface YouthPopulationRepository extends JpaRepository<YouthPopulation
     * */
     @Query("SELECT yp FROM YouthPopulation yp JOIN FETCH yp.hangjungs h WHERE h.hangjungCode = :dongCode ORDER BY yp.baseDate DESC LIMIT 1")
     Optional<YouthPopulation> findLatestByHangjungCode(@Param("dongCode") Long dongCode);
+
+    /*
+     * 양산시 전체 청년 인구 수
+     * */
+    @Query("SELECT SUM(yp.youthPopulation) FROM YouthPopulation yp")
+    int sumAllYouthPopulation();
 }

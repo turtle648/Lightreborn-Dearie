@@ -3,6 +3,7 @@ package com.ssafy.backend.youth_population.controller;
 import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.youth_population.model.dto.response.YouthHouseholdRatioDTO;
 import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
+import com.ssafy.backend.youth_population.model.dto.response.YouthStatsByRegionDTO;
 import com.ssafy.backend.youth_population.service.YouthPopulationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -47,5 +48,12 @@ public class YouthPopulationController {
     public ResponseEntity<BaseResponse<YouthHouseholdRatioDTO>> getYouthHouseholdRatio(@PathVariable("dong-code") Long dongCode) throws IOException {
         YouthHouseholdRatioDTO result = youthPopulationService.getYouthHouseholdRatioByDongCode(dongCode);
         return ResponseEntity.ok(BaseResponse.success(200, "청년 1인 가구 비율 조회를 성공했습니다.", result));
+    }
+
+    @Operation(summary = "행정동의 청년 인구 비율 조회", description = "행정동의 청년 인구 수 / 양산 시 전체 청년 인구 수")
+    @GetMapping("/distribution/{dong-code}")
+    public ResponseEntity<BaseResponse<YouthStatsByRegionDTO>> getYouthDistributionByRegion(@PathVariable("dong-code") Long dongCode) throws IOException {
+        YouthStatsByRegionDTO result = youthPopulationService.getYouthDistributionByDongCode(dongCode);
+        return ResponseEntity.ok(BaseResponse.success(200, "청년 통계 조회를 성공했습니다.", result));
     }
 }

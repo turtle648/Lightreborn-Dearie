@@ -10,6 +10,7 @@ import com.ssafy.backend.youth_population.entity.Hangjungs;
 import com.ssafy.backend.youth_population.entity.YouthPopulation;
 import com.ssafy.backend.youth_population.model.dto.response.YouthHouseholdRatioDTO;
 import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
+import com.ssafy.backend.youth_population.model.dto.response.YouthStatsByRegionDTO;
 import com.ssafy.backend.youth_population.model.dto.vo.HangjungKey;
 import com.ssafy.backend.youth_population.repository.HangjungsRepository;
 import com.ssafy.backend.youth_population.repository.YouthPopulationRepository;
@@ -166,7 +167,28 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
                 .build();
     }
 
-    // 비율 계산 :
+    @Override
+    public YouthStatsByRegionDTO getYouthDistributionByDongCode(Long dongCode) throws IOException {
+        YouthPopulation yp = youthPopulationRepository.findLatestByHangjungCode(dongCode)
+                .orElseThrow(() -> new IllegalArgumentException("해당 행정동의 인구 데이터가 없습니다."));
+
+        // 전체 양산시 청년 인구 수
+        int dongYouthPop = yp.getYouthPopulation();
+        int totalYouthPop = youthPopulationRepository.sumAllYouthPopulation();
+        float ratio = (float) dongYouthPop / totalYouthPop * 100;
+
+        return YouthStatsByRegionDTO.builder()
+                .region(yp.getHangjungs().getHangjungName())
+                .youthPopulationRatio(
+                        YouthStatsByRegionDTO.Ratio.builder()
+                                .unit("%")
+                                .value(round(ratio))
+                                .build()
+                )
+                .build();
+    }
+
+    // 비율 계산 : 소수점 아래 한 자리 나타나게 반올림
     private float round(float value) {
         return Math.round(value * 10f) / 10f;
     }
