@@ -8,10 +8,7 @@ import com.ssafy.backend.common.utils.enums.FileType;
 import com.ssafy.backend.common.utils.parser.RawFileParser;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
 import com.ssafy.backend.youth_population.entity.YouthPopulation;
-import com.ssafy.backend.youth_population.model.dto.response.YouthHouseholdRatioDTO;
-import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
-import com.ssafy.backend.youth_population.model.dto.response.YouthRegionDistributionDTO;
-import com.ssafy.backend.youth_population.model.dto.response.YouthStatsByRegionDTO;
+import com.ssafy.backend.youth_population.model.dto.response.*;
 import com.ssafy.backend.youth_population.model.dto.vo.HangjungKey;
 import com.ssafy.backend.youth_population.repository.HangjungsRepository;
 import com.ssafy.backend.youth_population.repository.YouthPopulationRepository;
@@ -208,6 +205,60 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
                     .perPopulation(round(ratio))
                     .build();
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    public YouthDashboardSummaryDTO getInitialDashboardData() throws IOException {
+        List<YouthPopulation> all = youthPopulationRepository.findAll();
+
+        Map<String, YouthPopulation> latestByRegion = all.stream()
+                .collect(Collectors.toMap(
+                        yp -> yp.getHangjungs().getHangjungName(),
+                        yp -> yp,
+                        (yp1, yp2) -> yp1.getBaseDate().isAfter(yp2.getBaseDate()) ? yp1 : yp2
+                ));
+
+        List<YouthRegionDistributionDTO> regionData = latestByRegion.values().stream().map(yp -> {
+            float ratio = (float) yp.getYouthPopulation() / 1000f;
+            return YouthRegionDistributionDTO.builder()
+                    .region(yp.getHangjungs().getHangjungName())
+                    .perPopulation(round(ratio))
+                    .build();
+        }).toList();
+
+        float max = regionData.stream().map(YouthRegionDistributionDTO::getPerPopulation).max(Float::compare).orElse(0f);
+        float min = regionData.stream().map(YouthRegionDistributionDTO::getPerPopulation).min(Float::compare).orElse(0f);
+
+        YouthPopulation central = youthPopulationRepository.findLatestByHangjungCode(48330250L)
+                .orElseThrow(() -> new IllegalArgumentException("중앙동 데이터가 없습니다."));
+
+        float youthRatio = (float) central.getYouthPopulation() / youthPopulationRepository.sumAllYouthPopulation() * 100;
+
+        YouthHouseholdRatioDTO.Ratio householdRatio = getYouthHouseholdRatioByDongCode(48330250L).getYouthSingleHouseholdRatio();
+        YouthStatsByRegionDTO.HouseholdRatio convertedHouseholdRatio = YouthStatsByRegionDTO.HouseholdRatio.builder()
+                .unit(householdRatio.getUnit())
+                .value(householdRatio.getValue())
+                .male(householdRatio.getMale())
+                .female(householdRatio.getFemale())
+                .build();
+
+        return YouthDashboardSummaryDTO.builder()
+                .ratioByAdministrativeDistrict(YouthDashboardSummaryDTO.RatioByAdministrativeDistrict.builder()
+                        .baseDate(central.getBaseDate())
+                        .unitLabel("천명당 비율 (%)")
+                        .regionData(regionData)
+                        .maxValue(round(max))
+                        .minValue(round(min))
+                        .build())
+                .youthStatsByRegion(YouthStatsByRegionDTO.builder()
+                        .region(central.getHangjungs().getHangjungName())
+                        .youthPopulationRatio(YouthStatsByRegionDTO.Ratio.builder()
+                                .unit("%")
+                                .value(round(youthRatio))
+                                .build())
+                        .youthSingleHouseholdRatio(convertedHouseholdRatio)
+                        .build())
+                .build();
     }
 
     // 비율 계산 : 소수점 아래 한 자리 나타나게 반올림

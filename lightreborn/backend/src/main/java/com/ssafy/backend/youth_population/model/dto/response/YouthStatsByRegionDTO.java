@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class YouthStatsByRegionDTO {
     private String region;
     private Ratio youthPopulationRatio;
+    private HouseholdRatio youthSingleHouseholdRatio;
 
     @Getter
     @Builder
@@ -20,5 +21,16 @@ public class YouthStatsByRegionDTO {
     public static class Ratio {
         private String unit; 
         private float value; // 행정동 내 청년 인구 비율
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class HouseholdRatio {
+        private String unit;
+        private float value;
+        private float male;
+        private float female;
     }
 }

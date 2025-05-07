@@ -1,10 +1,7 @@
 package com.ssafy.backend.youth_population.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
-import com.ssafy.backend.youth_population.model.dto.response.YouthHouseholdRatioDTO;
-import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
-import com.ssafy.backend.youth_population.model.dto.response.YouthRegionDistributionDTO;
-import com.ssafy.backend.youth_population.model.dto.response.YouthStatsByRegionDTO;
+import com.ssafy.backend.youth_population.model.dto.response.*;
 import com.ssafy.backend.youth_population.service.YouthPopulationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -64,6 +61,13 @@ public class YouthPopulationController {
     public ResponseEntity<BaseResponse<Map<String, Object>>> getYouthDistributionAllRegions() throws IOException{
         List<YouthRegionDistributionDTO> result = youthPopulationService.getYouthDistributionAllRegions();
         return ResponseEntity.ok(BaseResponse.success(200, "지역별 청년 비율 조회를 성공했습니다.", Map.of("regionData", result)));
+    }
+
+    @Operation(summary = "청년 인구 데이터 통합 조회")
+    @GetMapping("")
+    public ResponseEntity<BaseResponse<YouthDashboardSummaryDTO>> getDashboardSummary() throws IOException {
+        YouthDashboardSummaryDTO result = youthPopulationService.getInitialDashboardData();
+        return ResponseEntity.ok(BaseResponse.success(200, "청년 통합 통계 조회에 성공했습니다.", result));
     }
 
 }

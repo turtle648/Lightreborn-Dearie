@@ -1,9 +1,6 @@
 package com.ssafy.backend.youth_population.service;
 
-import com.ssafy.backend.youth_population.model.dto.response.YouthHouseholdRatioDTO;
-import com.ssafy.backend.youth_population.model.dto.response.YouthPopulationResponseDTO;
-import com.ssafy.backend.youth_population.model.dto.response.YouthRegionDistributionDTO;
-import com.ssafy.backend.youth_population.model.dto.response.YouthStatsByRegionDTO;
+import com.ssafy.backend.youth_population.model.dto.response.*;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -37,4 +34,9 @@ public interface YouthPopulationService {
     * 행정동 별 전체 청년 인구 분포 비율 조회
     * */
     List<YouthRegionDistributionDTO> getYouthDistributionAllRegions() throws IOException;
+
+    /*
+    * 통합 데이터 조회
+    * */
+    YouthDashboardSummaryDTO getInitialDashboardData() throws IOException;
 }
