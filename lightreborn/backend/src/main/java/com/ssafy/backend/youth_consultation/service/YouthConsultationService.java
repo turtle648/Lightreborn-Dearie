@@ -3,6 +3,7 @@ package com.ssafy.backend.youth_consultation.service;
 import com.ssafy.backend.youth_consultation.model.dto.request.AddScheduleRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
+import com.ssafy.backend.youth_consultation.model.dto.request.UpdateCounselingLogRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.AddScheduleResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
@@ -14,4 +15,5 @@ public interface YouthConsultationService {
     AddScheduleResponseDTO addSchedule(Long id, AddScheduleRequestDTO addScheduleRequestDTO);
     SpeechResponseDTO getGeneralSummarize(SpeechRequestDTO responseDTO);
     SurveyUploadDTO uploadIsolationYouthInfo(MultipartFile file);
+    SpeechResponseDTO updateCounselingLog(Long id, UpdateCounselingLogRequestDTO requestDTO);
 }
