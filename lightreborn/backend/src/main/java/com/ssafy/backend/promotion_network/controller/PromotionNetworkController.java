@@ -1,10 +1,7 @@
 package com.ssafy.backend.promotion_network.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
-import com.ssafy.backend.promotion_network.model.response.PromotionDetailByRegionDTO;
-import com.ssafy.backend.promotion_network.model.response.PromotionNetworkResponseDTO;
-import com.ssafy.backend.promotion_network.model.response.PromotionResponseDTO;
-import com.ssafy.backend.promotion_network.model.response.PromotionSummaryResponse;
+import com.ssafy.backend.promotion_network.model.response.*;
 import com.ssafy.backend.promotion_network.service.PromotionNetworkService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -19,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -63,13 +61,22 @@ public class PromotionNetworkController {
     }
 
 
-    @Operation(summary = "행정동 청년인구당 홍보물 비율", description = "행정동의 홍보물, 유형 비율, 청년 인구 대비 수치 등 포함")
-    @GetMapping("/{dong-code}")
-    public ResponseEntity<BaseResponse<Double>> getPromotionDetail(
+    @Operation(summary = "각 행정동의 청년인구당 홍보물 비율", description = "행정동의 홍보물비율 대비 청년 인구 수치")
+    @GetMapping("/")
+    public ResponseEntity<BaseResponse<List<PromotionPerYouthDto>>> getPromotionPerPopulation() throws IOException {
+
+        List<PromotionPerYouthDto> result = promotionNetworkService.calculatePromotionPerYouth();
+        return ResponseEntity.ok(BaseResponse.success(201, "홍보물 비율 조회 성공", result));
+    }
+
+
+    @Operation(summary = "행정동의 홍보물 유형 비율", description = "행정동의 홍보물별 유형 비율")
+    @GetMapping("/{dong-code}/ratio")
+    public ResponseEntity<BaseResponse<Map<String, Double>>> getPromotionRatio(
             @PathVariable("dong-code") Long dongCode) throws IOException {
 
-        Double result = promotionNetworkService.calculatePromotionPerYouth(dongCode);
-        return ResponseEntity.ok(BaseResponse.success(200, "홍보 거점 상세 조회 성공", result));
+        Map<String, Double> result = promotionNetworkService.calculatePromotionTypeRatio(dongCode);
+        return ResponseEntity.ok(BaseResponse.success(201, "행정동의 홍보물 유형 비율 조회 성공", result));
     }
 
 

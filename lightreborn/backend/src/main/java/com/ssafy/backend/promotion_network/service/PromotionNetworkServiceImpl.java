@@ -8,10 +8,7 @@ import com.ssafy.backend.common.utils.enums.FileType;
 import com.ssafy.backend.common.utils.parser.RawFileParser;
 import com.ssafy.backend.promotion_network.entity.PromotionStatus;
 import com.ssafy.backend.promotion_network.entity.PromotionType;
-import com.ssafy.backend.promotion_network.model.response.PromotionDetailByRegionDTO;
-import com.ssafy.backend.promotion_network.model.response.PromotionNetworkResponseDTO;
-import com.ssafy.backend.promotion_network.model.response.PromotionResponseDTO;
-import com.ssafy.backend.promotion_network.model.response.PromotionSummaryResponse;
+import com.ssafy.backend.promotion_network.model.response.*;
 import com.ssafy.backend.promotion_network.repository.PromotionStatusRepository;
 import com.ssafy.backend.promotion_network.repository.PromotionTypeRepository;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
@@ -168,7 +165,11 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         return dto; // 연관 관계 주의
     }
 
-    public Map<String, Double> calculatePromotionTypeRatio(List<PromotionResponseDTO> dtoList) {
+    @Override
+    public Map<String, Double> calculatePromotionTypeRatio(Long dongCode) {
+
+        List<PromotionResponseDTO> dtoList = selectPromotions(dongCode);
+
         int total = dtoList.size();
 
         // 타입별 개수 집계
@@ -192,35 +193,42 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId(hangjungId);
         List<PromotionResponseDTO> dtoList = list.stream().map(this::convertToDTO).toList();
 
-        Map<String, Double> typeRatio = calculatePromotionTypeRatio(dtoList);
+        Map<String, Double> typeRatio = calculatePromotionTypeRatio(dongCode);
 
         PromotionSummaryResponse summary = new PromotionSummaryResponse();
         summary.setPromotions(dtoList);
         summary.setTypeRatio(typeRatio);
-        summary.setPopulationPerPromotions(calculatePromotionPerYouth(dongCode));
+        summary.setPopulationPerPromotions(calculatePromotionPerYouth());
         return summary;
     }
 
     @Override
-    public double calculatePromotionPerYouth(Long dongCode) {
+    public List<PromotionPerYouthDto> calculatePromotionPerYouth() {
 
-        // 행정동 id 를 행정동Code로 변환
-        Long hangjungId = hangjungsRepository.findHangjungsIdByHangjungCode(dongCode.toString());
+        List<PromotionPerYouthDto> result = new ArrayList<>();
 
-        // 1. 홍보물 개수
-        int promotionCount = promotionStatusRepository.findByHangjungsId(hangjungId).size();
-        System.out.println("❤️홍보물 개수 = " + promotionCount);
+        List<Hangjungs> allHangjungs = hangjungsRepository.findAll();
 
-        // 2. 청년 인구 수
-        YouthPopulation yp = youthPopulationRepository.findLatestByHangjungCode(dongCode)
-                .orElseThrow(() -> new IllegalArgumentException("해당 동의 청년 인구 정보가 없습니다."));
-        int youthPop = yp.getYouthPopulation();
-        System.out.println("❤️청년 인구 수 = " + youthPop);
+        for (Hangjungs h : allHangjungs) {
+            Long dongCode = Long.parseLong(h.getHangjungCode());
+            Long hangjungId = h.getId();
 
-        // 3. 백분율 계산
-        if (youthPop == 0) return 0.0;
-        double ratio = (promotionCount * 100.0) / youthPop;
-        return Math.round(ratio * 10.0) / 10.0;  // 소수점 첫째 자리 반올림
+            // 1. 홍보물 개수
+            int promotionCount = promotionStatusRepository.findByHangjungsId(hangjungId).size();
+
+            // 2. 청년 인구 수
+            Optional<YouthPopulation> opt = youthPopulationRepository.findLatestByHangjungCode(dongCode);
+            if (opt.isEmpty()) continue;
+
+            int youthPop = opt.get().getYouthPopulation();
+
+            // 3. 비율 계산
+            double ratio = (youthPop == 0) ? 0.0 : (promotionCount * 100.0) / youthPop;
+            double rounded = Math.round(ratio * 10.0) / 10.0;
+
+            result.add(new PromotionPerYouthDto(dongCode, h.getHangjungName(), rounded));
+        }
+            return result;
     }
 
 

@@ -1,13 +1,11 @@
 package com.ssafy.backend.promotion_network.service;
 
-import com.ssafy.backend.promotion_network.model.response.PromotionDetailByRegionDTO;
-import com.ssafy.backend.promotion_network.model.response.PromotionNetworkResponseDTO;
-import com.ssafy.backend.promotion_network.model.response.PromotionResponseDTO;
-import com.ssafy.backend.promotion_network.model.response.PromotionSummaryResponse;
+import com.ssafy.backend.promotion_network.model.response.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public interface PromotionNetworkService {
     /**
@@ -25,9 +23,9 @@ public interface PromotionNetworkService {
 
     PromotionSummaryResponse getPromotionSummary(Long dongCode);
 
-//    PromotionDetailByRegionDTO getPromotionDetail(Long hangjungId) throws IOException;
+    Map<String, Double> calculatePromotionTypeRatio(Long donCode);
 
-    double calculatePromotionPerYouth(Long dongCode);
+    List<PromotionPerYouthDto> calculatePromotionPerYouth();
 }
 
 
