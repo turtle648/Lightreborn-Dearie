@@ -2,7 +2,7 @@ import axios from "axios";
 
 // 인증 API 요청 = 쿠키 전송 필요  
 export const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'api/dashboard',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://whereisENV',
   timeout : 10000, 
   headers : {
     'Content-Type' : 'application/json',
@@ -38,9 +38,10 @@ api.interceptors.response.use(
 
 // 공공 API 요청  = 쿠키 전송 없이 요청  
 export const publicApi = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'api/dashboard',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://whereisENV',
   timeout : 10000, 
   headers : {
     'Content-Type' : 'application/json',
   }, 
+  withCredentials : true, // 쿠키 전송 허용  - JWT 토큰 인증 방식에서 사용하는 쿠키 전달 방식 ( vs Bearer 토큰 방식)
 });

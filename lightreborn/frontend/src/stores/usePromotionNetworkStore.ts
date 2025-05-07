@@ -12,7 +12,7 @@ interface PromotionNetworkStore {
   promotionNetwork: PromotionNetwork[];
 }
 
-export const usePromotionNetworkStore = create<PromotionNetworkStore>((set) => ({
+export const usePromotionNetworkStore = create<PromotionNetworkStore>(() => ({
   promotionNetwork: [],
   
 }));    
