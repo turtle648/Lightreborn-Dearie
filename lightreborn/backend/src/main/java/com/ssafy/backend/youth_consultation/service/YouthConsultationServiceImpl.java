@@ -11,6 +11,7 @@ import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollecto
 import com.ssafy.backend.youth_consultation.model.collector.SurveyAnswerCollector;
 import com.ssafy.backend.youth_consultation.model.context.SurveyContext;
 import com.ssafy.backend.youth_consultation.model.context.TranscriptionContext;
+import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
@@ -72,6 +73,22 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         Pageable pageable = PageRequest.of(pageNum, sizeNum);
 
         Page<IsolatedYouth> isolatedYouthPage = isolatedYouthRepository.findBySurveyProcessStep(surveyProcessStep, pageable);
+
+        PeopleInfoCollector peopleInfoCollector = new PeopleInfoCollector(isolatedYouthPage);
+
+        return peopleInfoCollector.getResponseDto();
+    }
+
+    @Override
+    public PeopleInfoResponseDTO searchPeopleInfo(PeopleInfoRequestDTO peopleInfoRequestDTO) {
+        SurveyProcessStep surveyProcessStep = SurveyProcessStep.FINAL_SELECTION;
+        Pageable pageable = PageRequest.of(peopleInfoRequestDTO.getPageNum(), peopleInfoRequestDTO.getSizeNum());
+
+        Page<IsolatedYouth> isolatedYouthPage = isolatedYouthRepository.findBySurveyProcessStepAndName(
+                surveyProcessStep,
+                peopleInfoRequestDTO.getName(),
+                pageable
+        );
 
         PeopleInfoCollector peopleInfoCollector = new PeopleInfoCollector(isolatedYouthPage);
 

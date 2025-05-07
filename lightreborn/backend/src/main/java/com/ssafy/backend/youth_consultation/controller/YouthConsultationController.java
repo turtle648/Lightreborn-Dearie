@@ -1,6 +1,7 @@
 package com.ssafy.backend.youth_consultation.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
+import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
 import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
@@ -37,9 +38,23 @@ public class YouthConsultationController {
             @RequestParam(value = "size", defaultValue = "5") int sizeNum
     ) {
         PeopleInfoResponseDTO responseDTO = youthConsultationService.getPeopleInfo(pageNum, sizeNum);
-        log.info("responseDTO {}", responseDTO);
+
         return ResponseEntity.ok().body(BaseResponse.success(200,"상담 대상자를 성공적으로 가져왔습니다.", responseDTO));
     }
+
+    @PostMapping("/people")
+    @Operation(
+            summary = "상담 대상자 이름으로 검색하기 (5명씩)",
+            description = "고립 청년을 이름으로 검색한 결과를 5명씩 페이지네이션 하여 가져옵니다"
+    )
+    public ResponseEntity<BaseResponse<PeopleInfoResponseDTO>> searchIsolationYouthWithPagination(
+            @RequestBody PeopleInfoRequestDTO peopleInfoRequestDTO
+            ) {
+        PeopleInfoResponseDTO responseDTO = youthConsultationService.searchPeopleInfo(peopleInfoRequestDTO);
+
+        return ResponseEntity.ok().body(BaseResponse.success(200,"상담 대상자를 성공적으로 가져왔습니다.", responseDTO));
+    }
+
 
     @PostMapping(
             value = "/isolated-youth",
