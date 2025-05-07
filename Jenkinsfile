@@ -76,6 +76,9 @@ pipeline {
                     LIGHT_DB_PASSWORD=${envProps.LIGHT_DB_PASSWORD}
                     LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}
                     LIGHT_JWT_SECRET=${envProps.LIGHT_JWT_SECRET}
+                    spring.kafka.bootstrap-servers=${envProps.KAFKA_BOOTSTRAP_SERVERS}
+                    spring.kafka.topic.name=${envProps.KAFKA_TOPIC_NAME}
+                    spring.kafka.consumer.group-id=${envProps.KAFKA_CONSUMER_GROUP_ID}
                     OPENAI_API_KEY=${envProps.OPENAI_API_KEY}
                     spring.cloud.aws.credentials.access-key=${envProps.S3_ACCESS_KEY}
                     spring.cloud.aws.credentials.secret-key=${envProps.S3_SECRET_KEY}
@@ -126,6 +129,9 @@ pipeline {
                         "LIGHT_DB_PASSWORD=${envProps.LIGHT_DB_PASSWORD}",
                         "LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}",
                         "LIGHT_JWT_SECRET=${envProps.LIGHT_JWT_SECRET}",
+                        "KAFKA_BOOTSTRAP_SERVERS=${envProps.KAFKA_BOOTSTRAP_SERVERS}",
+                        "KAFKA_TOPIC_NAME=${envProps.KAFKA_TOPIC_NAME}",
+                        "KAFKA_CONSUMER_GROUP_ID=${envProps.KAFKA_CONSUMER_GROUP_ID}",
                         "OPENAI_API_KEY=${envProps.OPENAI_API_KEY}",
                         "spring.cloud.aws.credentials.access-key=${envProps.S3_ACCESS_KEY}",
                         "spring.cloud.aws.credentials.secret-key=${envProps.S3_SECRET_KEY}",
