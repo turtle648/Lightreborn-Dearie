@@ -11,5 +11,5 @@ import java.util.Map;
 public class PromotionSummaryResponse {
     private List<PromotionResponseDTO> promotions;
     private Map<String, Double> typeRatio;
-    private List<PromotionPerYouthDto> populationPerPromotions;
+    private List<PromotionPerYouthDto> promotionPerYouth;
 }

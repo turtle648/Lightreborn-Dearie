@@ -13,8 +13,10 @@ import com.ssafy.backend.promotion_network.repository.PromotionStatusRepository;
 import com.ssafy.backend.promotion_network.repository.PromotionTypeRepository;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
 import com.ssafy.backend.youth_population.entity.YouthPopulation;
+import com.ssafy.backend.youth_population.model.dto.response.YouthStatsByRegionDTO;
 import com.ssafy.backend.youth_population.repository.HangjungsRepository;
 import com.ssafy.backend.youth_population.repository.YouthPopulationRepository;
+import com.ssafy.backend.youth_population.service.YouthPopulationService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,7 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
 
     private final List<RawFileParser> rawFileParsers;
     private final YouthPopulationRepository youthPopulationRepository;
+    private final YouthPopulationService youthPopulationService;
     private RawFileParser fileParser;
     private final ObjectMapper objectMapper;
     private final HangjungsRepository hangjungsRepository;
@@ -151,13 +154,15 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
     // entity -> DTO로 형변환
     private PromotionResponseDTO convertToDTO(PromotionStatus status) {
         PromotionResponseDTO dto = new PromotionResponseDTO();
+        dto.setPlaceName(status.getPlace_name());
         dto.setAddress(status.getAddress());
         dto.setIsPublished(status.getIsPublished());
         dto.setCreatedAt(status.getCreatedAt());
+        dto.setPromotionInformationId(status.getPromotionInformation().getId());
 
         // 문자열로 매핑
         if (status.getPromotionType() != null) {
-            dto.setPromotionType(status.getPromotionType().getType()); // 예: 약국
+            dto.setPromotionType(status.getPromotionType().getType()); // 예: 현수막
         } else {
             dto.setPromotionType(null); // 혹시모를 예외 처리
         }
@@ -198,38 +203,41 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         PromotionSummaryResponse summary = new PromotionSummaryResponse();
         summary.setPromotions(dtoList);
         summary.setTypeRatio(typeRatio);
-        summary.setPopulationPerPromotions(calculatePromotionPerYouth());
+        summary.setPromotionPerYouth(calculatePromotionPerYouth());
         return summary;
     }
 
     @Override
-    public List<PromotionPerYouthDto> calculatePromotionPerYouth() {
-
+    public List<PromotionPerYouthDto> calculatePromotionPerYouth(){
         List<PromotionPerYouthDto> result = new ArrayList<>();
-
         List<Hangjungs> allHangjungs = hangjungsRepository.findAll();
 
         for (Hangjungs h : allHangjungs) {
             Long dongCode = Long.parseLong(h.getHangjungCode());
             Long hangjungId = h.getId();
 
-            // 1. 홍보물 개수
             int promotionCount = promotionStatusRepository.findByHangjungsId(hangjungId).size();
+//            System.out.println("❤️총 홍보물 개수 : " + promotionCount);
 
-            // 2. 청년 인구 수
-            Optional<YouthPopulation> opt = youthPopulationRepository.findLatestByHangjungCode(dongCode);
-            if (opt.isEmpty()) continue;
+            try {
+                YouthStatsByRegionDTO youthStats = youthPopulationService.getYouthDistributionByDongCode(dongCode);
+                float youthRatio = youthStats.getYouthPopulationRatio().getValue();
+//                System.out.println("❤️청년인구 비율 : " + youthRatio);
 
-            int youthPop = opt.get().getYouthPopulation();
+                if (youthRatio == 0) continue;
 
-            // 3. 비율 계산
-            double ratio = (youthPop == 0) ? 0.0 : (promotionCount * 100.0) / youthPop;
-            double rounded = Math.round(ratio * 10.0) / 10.0;
+                double ratio = (promotionCount / youthRatio) * 100;
+                double rounded = Math.round(ratio * 10.0) / 10.0;
 
-            result.add(new PromotionPerYouthDto(dongCode, h.getHangjungName(), rounded));
+                result.add(new PromotionPerYouthDto(dongCode, h.getHangjungName(), rounded));
+
+            } catch (IOException e) {
+                // 예외 발생 시 로그 출력 후 해당 행정동은 스킵
+                System.err.println("IOException on dongCode: " + dongCode);
+            }
         }
-            return result;
-    }
 
+        return result;
+    }
 
 }
