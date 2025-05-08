@@ -8,11 +8,15 @@ import com.ssafy.backend.common.utils.enums.FileType;
 import com.ssafy.backend.common.utils.parser.RawFileParser;
 import com.ssafy.backend.promotion_network.entity.PromotionStatus;
 import com.ssafy.backend.promotion_network.entity.PromotionType;
-import com.ssafy.backend.promotion_network.model.response.PromotionNetworkResponseDTO;
+import com.ssafy.backend.promotion_network.model.response.*;
 import com.ssafy.backend.promotion_network.repository.PromotionStatusRepository;
 import com.ssafy.backend.promotion_network.repository.PromotionTypeRepository;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
+import com.ssafy.backend.youth_population.entity.YouthPopulation;
+import com.ssafy.backend.youth_population.model.dto.response.YouthStatsByRegionDTO;
 import com.ssafy.backend.youth_population.repository.HangjungsRepository;
+import com.ssafy.backend.youth_population.repository.YouthPopulationRepository;
+import com.ssafy.backend.youth_population.service.YouthPopulationService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +34,8 @@ import java.util.stream.Collectors;
 public class PromotionNetworkServiceImpl implements PromotionNetworkService {
 
     private final List<RawFileParser> rawFileParsers;
+    private final YouthPopulationRepository youthPopulationRepository;
+    private final YouthPopulationService youthPopulationService;
     private RawFileParser fileParser;
     private final ObjectMapper objectMapper;
     private final HangjungsRepository hangjungsRepository;
@@ -137,4 +143,153 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
                     return psDto;
                 }).toList();
     }
+
+    @Override
+    public List<PromotionResponseDTO> selectPromotions(Long dongCode) {
+        Long hangjungId = hangjungsRepository.findHangjungsIdByHangjungCode(dongCode.toString());
+        System.out.println("❤️행정동 아이디 : " + hangjungId);
+        List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId(hangjungId);
+
+        list.forEach(p -> System.out.println("📌홍보물: " + p.getAddress() + ", " + p.getPromotionType().getType()));
+
+        return list.stream().map(this::convertToDTO).toList();
+    }
+
+    // entity -> DTO로 형변환
+    private PromotionResponseDTO convertToDTO(PromotionStatus status) {
+        PromotionResponseDTO dto = new PromotionResponseDTO();
+        dto.setPlaceName(status.getPlace_name());
+        dto.setAddress(status.getAddress());
+        dto.setIsPublished(status.getIsPublished());
+        dto.setCreatedAt(status.getCreatedAt());
+        dto.setPromotionPlaceType(status.getPromotionPlaceType() != null ? status.getPromotionPlaceType().getPlace_type() : null);
+        dto.setPromotionInformationId(status.getPromotionInformation() != null ? status.getPromotionInformation().getId() : null);
+        dto.setPromotionType(status.getPromotionType().getType());
+//
+//        // 문자열로 매핑
+//        if (status.getPromotionType() != null) {
+//            dto.setPromotionType(status.getPromotionType().getType()); // 예: 현수막
+//        } else {
+//            dto.setPromotionType(null); // 혹시모를 예외 처리
+//        }
+
+        return dto; // 연관 관계 주의
+    }
+
+    @Override
+    public Map<String, Double> calculatePromotionTypeRatio(Long dongCode) {
+
+        List<PromotionResponseDTO> dtoList = selectPromotions(dongCode);
+
+        int total = dtoList.size();
+
+        // 타입별 개수 집계
+        Map<String, Long> countMap = dtoList.stream()
+                .filter(dto -> dto.getPromotionType() != null)
+                .collect(Collectors.groupingBy(PromotionResponseDTO::getPromotionType, Collectors.counting()));
+
+        // 비율로 변환 (소수점 첫째 자리까지)
+        Map<String, Double> ratioMap = new HashMap<>();
+        for (Map.Entry<String, Long> entry : countMap.entrySet()) {
+            double ratio = (entry.getValue() * 100.0) / total;
+            ratioMap.put(entry.getKey(), Math.round(ratio * 10.0) / 10.0); // 반올림: 10.0 = 소수점 첫째자리
+        }
+
+        if (total == 0) return ratioMap;
+
+        return ratioMap;
+    }
+
+    @Override
+    public Map<String, Double> calculatePromotionPlaceTypeRatio(Long dongCode) {
+
+        List<PromotionResponseDTO> dtoList = selectPromotions(dongCode);
+
+        int total = dtoList.size();
+
+        // 타입별 개수 집계
+        Map<String, Long> countMap = dtoList.stream()
+                .filter(dto -> dto.getPromotionPlaceType() != null)
+                .collect(Collectors.groupingBy(PromotionResponseDTO::getPromotionPlaceType, Collectors.counting()));
+
+        // 비율로 변환 (소수점 첫째 자리까지)
+        Map<String, Double> ratioMap = new HashMap<>();
+        for (Map.Entry<String, Long> entry : countMap.entrySet()) {
+            double ratio = (entry.getValue() * 100.0) / total;
+            ratioMap.put(entry.getKey(), Math.round(ratio * 10.0) / 10.0); // 반올림: 10.0 = 소수점 첫째자리
+        }
+
+        if (total == 0) return ratioMap;
+
+        return ratioMap;
+    }
+
+    public PromotionSummaryResponse getPromotionSummary(Long dongCode) {
+        Long hangjungId = hangjungsRepository.findHangjungsIdByHangjungCode(dongCode.toString());
+
+        List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId(hangjungId);
+        List<PromotionResponseDTO> dtoList = list.stream().map(this::convertToDTO).toList();
+
+        Map<String, Double> promotionPlaceTypeRatio = calculatePromotionPlaceTypeRatio(dongCode);
+
+        PromotionSummaryResponse summary = new PromotionSummaryResponse();
+        summary.setPromotions(dtoList);
+        summary.setPromotionPlaceTypeRatio(promotionPlaceTypeRatio);
+        summary.setPromotionPerYouth(calculatePromotionPerYouth());
+        return summary;
+    }
+
+    @Override
+    public List<PromotionPerYouthDto> calculatePromotionPerYouth(){
+        List<PromotionPerYouthDto> result = new ArrayList<>();
+        List<Hangjungs> allHangjungs = hangjungsRepository.findAll();
+
+        for (Hangjungs h : allHangjungs) {
+            Long dongCode = Long.parseLong(h.getHangjungCode());
+            Long hangjungId = h.getId();
+
+            int promotionCount = promotionStatusRepository.findByHangjungsId(hangjungId).size();
+//            System.out.println("❤️총 홍보물 개수 : " + promotionCount);
+
+            try {
+                YouthStatsByRegionDTO youthStats = youthPopulationService.getYouthDistributionByDongCode(dongCode);
+                float youthRatio = youthStats.getYouthPopulationRatio().getValue();
+//                System.out.println("❤️청년인구 비율 : " + youthRatio);
+
+                if (youthRatio == 0) {
+                    log.warn("청년 인구 비율이 0인 행정동: {}", h.getHangjungName());
+                    continue;
+                }
+
+                double ratio = (promotionCount / youthRatio) * 100;
+                double rounded = Math.round(ratio * 10.0) / 10.0;
+
+                result.add(new PromotionPerYouthDto(dongCode, h.getHangjungName(), rounded));
+
+            } catch (IOException e) {
+                // 예외 발생 시 로그 출력 후 해당 행정동은 스킵
+                System.err.println("IOException on dongCode: " + dongCode);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public List<PromotionExportDTO> selectPromotionExportData(Long dongCode) {
+
+        Long hangjungId = hangjungsRepository.findHangjungsIdByHangjungCode(dongCode.toString());
+        List<PromotionStatus> entities = promotionStatusRepository.findByHangjungsId(hangjungId);
+
+        return entities.stream().map(p -> {
+            PromotionExportDTO dto = new PromotionExportDTO();
+            dto.setPlaceName(p.getPlace_name());
+            dto.setAddress(p.getAddress());
+            dto.setCreatedAt(p.getCreatedAt());
+            dto.setPromotionType(p.getPromotionType().getType());
+            dto.setPromotionPlaceType(p.getPromotionPlaceType() != null ? p.getPromotionPlaceType().getPlace_type() : "미지정");
+            dto.setPromotionInformationContent(p.getPromotionInformation().getContent());
+            return dto;
+        }).toList();
+    }
+
 }

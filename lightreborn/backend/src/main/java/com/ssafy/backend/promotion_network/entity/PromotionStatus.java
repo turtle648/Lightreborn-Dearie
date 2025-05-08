@@ -24,6 +24,8 @@ public class PromotionStatus {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String place_name;
+
     private String address;
 
     private Double latitude;
@@ -42,11 +44,27 @@ public class PromotionStatus {
     @JoinColumn(name= "promotion_type_id")
     private PromotionType promotionType;
 
+    @ManyToOne(fetch=FetchType.LAZY)
+    @JoinColumn(name= "promotion_information_id")
+    private PromotionInformation promotionInformation;
+
+    @ManyToOne(fetch=FetchType.LAZY)
+    @JoinColumn(name= "promotion_place_type")
+    private PromotionPlaceType promotionPlaceType;
+
     public void assignHangjungs(Hangjungs hangjungs) {
         this.hangjungs = hangjungs;
     }
 
     public void assignPromotionType(PromotionType promotionType) {
         this.promotionType = promotionType;
+    }
+
+    public void assignPromotionInformation(PromotionInformation promotionInformation) {
+        this.promotionInformation = promotionInformation;
+    }
+
+    public void assignPromotionPlaceType(PromotionPlaceType promotionPlaceType) {
+        this.promotionPlaceType = promotionPlaceType;
     }
 }
