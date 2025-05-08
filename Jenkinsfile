@@ -116,7 +116,7 @@ pipeline {
                 script {
                     def frontendEnv = """
                     NEXT_PUBLIC_NAVER_CLIENT_ID=${envProps.NEXT_PUBLIC_NAVER_CLIENT_ID}
-                    NEXT_PUBLIC_API_URL=/lightreborn/api
+                    NEXT_PUBLIC_API_URL=/
                     """.stripIndent().trim()
 
                     writeFile file: "${env.WORKSPACE}/lightreborn/frontend/.env.production", text: frontendEnv
