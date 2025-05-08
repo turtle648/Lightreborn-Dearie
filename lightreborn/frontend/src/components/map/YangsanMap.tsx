@@ -5,10 +5,107 @@ import { useEffect, useRef, useState } from 'react';
 import { useMapStore } from '@/stores/useMapStore';
 import { DongInfo } from '@/utils/dongCodeMap';
 
-const YangsanMap = () => {
+// 마커 데이터 타입 정의
+export interface MarkerPoint {
+  name: string;
+  latitude: number;
+  longitude: number;
+  type?: string; // 마커 유형 (예: '홍보거점', '복지관' 등)
+}
+
+interface YangsanMapProps {
+  points?: MarkerPoint[]; // 지도에 표시할 마커 포인트 데이터
+  showMarkers?: boolean; // 마커 표시 여부
+  markerColor?: string; // 마커 색상
+  onMarkerClick?: (point: MarkerPoint) => void; // 마커 클릭 이벤트 핸들러
+}
+
+const YangsanMap = ({ 
+  points = [], 
+  showMarkers = true,
+  markerColor = colors.primary.main,
+  onMarkerClick
+}: YangsanMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const { selectedDongCode, setSelectedDongCode } = useMapStore();
+  const [naverMap, setNaverMap] = useState<any>(null);
+  const [markers, setMarkers] = useState<any[]>([]);
+
+  // 마커 객체들을 관리하기 위한 ref
+  const markersRef = useRef<any[]>([]);
+
+  // 마커 생성 및 업데이트 함수
+  const updateMarkers = (map: any, markerPoints: MarkerPoint[]) => {
+    if (!map) return;
+    
+    // 기존 마커 제거
+    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current = [];
+    
+    if (!showMarkers || markerPoints.length === 0) return;
+    
+    const { naver } = window as any;
+    
+    // 새 마커 생성
+    markerPoints.forEach((point, index) => {
+      const position = new naver.maps.LatLng(point.latitude, point.longitude);
+      
+      // 마커 아이콘 설정
+      const markerOptions = {
+        position,
+        map,
+        icon: {
+          content: `
+            <div style="
+              width: 12px;
+              height: 12px;
+              background-color: ${markerColor};
+              border: 2px solid white;
+              border-radius: 50%;
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            "></div>
+          `,
+          anchor: new naver.maps.Point(6, 6) // 아이콘 중앙 위치 조정
+        },
+        zIndex: 100,
+        title: point.name
+      };
+      
+      const marker = new naver.maps.Marker(markerOptions);
+      
+      // 마커 클릭 이벤트
+      if (onMarkerClick) {
+        naver.maps.Event.addListener(marker, 'click', () => {
+          onMarkerClick(point);
+        });
+      }
+      
+      // 마커에 툴팁 추가
+      const infoWindow = new naver.maps.InfoWindow({
+        content: `<div style="padding: 8px; font-size: 12px; background: white; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">${point.name}</div>`,
+        borderWidth: 0,
+        disableAnchor: true,
+        backgroundColor: 'transparent',
+      });
+      
+      // 마커 호버 이벤트
+      naver.maps.Event.addListener(marker, 'mouseover', () => {
+        infoWindow.open(map, marker);
+      });
+      
+      naver.maps.Event.addListener(marker, 'mouseout', () => {
+        infoWindow.close();
+      });
+      
+      markersRef.current.push(marker);
+    });
+  };
+
+  // 마커 데이터가 변경되면 마커 업데이트
+  useEffect(() => {
+    updateMarkers(naverMap, points);
+  }, [naverMap, points, showMarkers, markerColor]);
 
   useEffect(() => {
     const initMap = async () => {
@@ -17,7 +114,7 @@ const YangsanMap = () => {
       // 지도 스타일 정의
       const mapOptions = {
         zoom: 11,
-        center: new naver.maps.LatLng(35.39, 129.04), // 양산시 중심 좌표
+        center: new naver.maps.LatLng(35.39 , 129.04), // 양산시 중심 좌표
         mapTypeId: naver.maps.MapTypeId.TERRAIN,
         baseTileOpacity: 0.7,
         mapDataControl: false,
@@ -26,7 +123,7 @@ const YangsanMap = () => {
         mapTypeControl: false,
         zoomControl: false,
         scrollWheel: false, // 확대/축소 비활성화
-        draggable: false, // 드래그 이동 비활성화
+        draggable: true, // 드래그 이동 활성화
         keyboardShortcuts: false, // 키보드 이벤트 비활성화 (화살표 키로 이동 방지)
         disableDoubleClickZoom: true, // 더블클릭 확대 비활성화
         pinchZoom: false, // 핀치 줌 비활성화 (터치 디바이스)
@@ -51,6 +148,7 @@ const YangsanMap = () => {
       };
 
       const map = new naver.maps.Map(mapRef.current, mapOptions);
+      setNaverMap(map); // 지도 객체 저장
 
       // 전체 지도 범위
       const worldBounds = new naver.maps.LatLngBounds(
@@ -228,7 +326,6 @@ const YangsanMap = () => {
           
           console.log(`선택된 지역: ${regionName}, 코드: ${regionCode}`);
         });
-
       };
 
       // 양산시 구 경계 데이터 로드
@@ -239,6 +336,11 @@ const YangsanMap = () => {
         }
         const geojson = await response.json();
         startDataLayer(geojson);
+        
+        // 마커 초기화
+        if (points.length > 0 && showMarkers) {
+          updateMarkers(map, points);
+        }
       } catch (error) {
         console.error('양산시 구 경계 데이터 로드 실패:', error);
       }
@@ -258,7 +360,7 @@ const YangsanMap = () => {
   }, [selectedRegion, selectedDongCode, setSelectedDongCode]);
 
   return (
-    <div className="map-container" style={{ position: 'relative', width: '100%', height: '80vh' }}>
+    <div className="map-container" style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={mapRef} id="map" style={{ 
         width: '100%', 
         height: '100%', 
@@ -283,6 +385,11 @@ const YangsanMap = () => {
         <div style={{ fontSize: '13px', color: colors.text.secondary }}>
           {selectedRegion ? `선택된 지역: ${selectedRegion}` : '지역을 클릭하여 선택하세요'}
         </div>
+        {points.length > 0 && (
+          <div style={{ fontSize: '13px', color: colors.text.secondary, marginTop: '4px' }}>
+            표시된 마커: {points.length}개
+          </div>
+        )}
       </div>
     </div>
   );

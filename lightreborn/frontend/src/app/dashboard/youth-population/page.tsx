@@ -123,6 +123,7 @@ export default function YouthPopulationPage() {
     { name: '삼성동', value: 10.2 },
     { name: '강서동', value: 8.7 },
     { name: '소주동', value: 7.5 },
+    { name: '평산동', value: 3.2 },
     { name: '중앙동', value: 9.1 },
     { name: '덕계동', value: 8.9 },
     { name: '서창동', value: 8.3 },
@@ -136,7 +137,7 @@ export default function YouthPopulationPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card title="행정동 선택">
-          <div className="h-80">
+          <div className="h-125 w-full">
             <YangsanMap />
           </div>
         </Card>
