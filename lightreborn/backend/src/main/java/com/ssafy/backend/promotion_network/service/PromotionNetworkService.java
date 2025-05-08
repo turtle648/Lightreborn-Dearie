@@ -28,6 +28,8 @@ public interface PromotionNetworkService {
     Map<String, Double> calculatePromotionPlaceTypeRatio(Long donCode);
 
     List<PromotionPerYouthDto> calculatePromotionPerYouth();
+
+    List<PromotionExportDTO> selectPromotionExportData(Long donCode);
 }
 
 

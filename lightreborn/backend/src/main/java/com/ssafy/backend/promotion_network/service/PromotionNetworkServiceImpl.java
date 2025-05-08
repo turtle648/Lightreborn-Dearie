@@ -269,4 +269,22 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         return result;
     }
 
+    @Override
+    public List<PromotionExportDTO> selectPromotionExportData(Long dongCode) {
+
+        Long hangjungId = hangjungsRepository.findHangjungsIdByHangjungCode(dongCode.toString());
+        List<PromotionStatus> entities = promotionStatusRepository.findByHangjungsId(hangjungId);
+
+        return entities.stream().map(p -> {
+            PromotionExportDTO dto = new PromotionExportDTO();
+            dto.setPlaceName(p.getPlace_name());
+            dto.setAddress(p.getAddress());
+            dto.setCreatedAt(p.getCreatedAt());
+            dto.setPromotionType(p.getPromotionType().getType());
+            dto.setPromotionPlaceType(p.getPromotionPlaceType() != null ? p.getPromotionPlaceType().getPlace_type() : "미지정");
+            dto.setPromotionInformationContent(p.getPromotionInformation().getContent());
+            return dto;
+        }).toList();
+    }
+
 }
