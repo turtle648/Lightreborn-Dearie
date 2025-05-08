@@ -1,10 +1,7 @@
 package com.ssafy.backend.youth_consultation.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
-import com.ssafy.backend.youth_consultation.model.dto.request.AddScheduleRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.request.UpdateCounselingLogRequestDTO;
+import com.ssafy.backend.youth_consultation.model.dto.request.*;
 import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.service.YouthConsultationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +9,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -41,6 +39,20 @@ public class YouthConsultationController {
 
         return ResponseEntity.ok().body(BaseResponse.success("상담 대상자를 성공적으로 검색하였습니다.", responseDTO));
     }
+
+    @PostMapping("/statistics")
+    @Operation(
+            summary = "월별/일별 상담 일지 리스트 가져오기",
+            description = "월별 상담 일지 리스트 가져옵니다."
+    )
+    public ResponseEntity<BaseResponse<GetCounselingLogResponseDTO>> getMonthlyCounselingLog (
+            @RequestBody @Valid GetMonthlyCounselingLogDTO request
+            ) {
+        GetCounselingLogResponseDTO responseDTO = youthConsultationService.getMonthlyCounselingLog(request);
+
+        return ResponseEntity.ok().body(BaseResponse.success("월별/일별 상담일지를 성공적으로 검색하였습니다.", responseDTO));
+    }
+
 
     @PostMapping("/people")
     @Operation(

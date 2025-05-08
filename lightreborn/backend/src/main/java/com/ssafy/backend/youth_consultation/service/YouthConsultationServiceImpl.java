@@ -11,10 +11,7 @@ import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollecto
 import com.ssafy.backend.youth_consultation.model.collector.SurveyAnswerCollector;
 import com.ssafy.backend.youth_consultation.model.context.SurveyContext;
 import com.ssafy.backend.youth_consultation.model.context.TranscriptionContext;
-import com.ssafy.backend.youth_consultation.model.dto.request.AddScheduleRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.request.UpdateCounselingLogRequestDTO;
+import com.ssafy.backend.youth_consultation.model.dto.request.*;
 import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.model.entity.*;
 import com.ssafy.backend.youth_consultation.model.state.CounselingConstants;
@@ -41,6 +38,7 @@ import software.amazon.awssdk.services.s3.S3Utilities;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +84,39 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                 .totalPages(counselingLogPage.getTotalPages())
                 .totalElements(counselingLogPage.getTotalElements())
                 .counselingLogs(counselingLogPage.getContent())
+                .build();
+    }
+
+    @Override
+    public GetCounselingLogResponseDTO getMonthlyCounselingLog(GetMonthlyCounselingLogDTO request) {
+        LocalDate now = LocalDate.now();
+        LocalDateTime start = now.withDayOfMonth(1).atStartOfDay();
+        LocalDateTime end = start.plusMonths(1).minusNanos(1);
+
+        if (StringUtils.hasText(request.getDate())) {
+            LocalDate parsedDate = LocalDate.parse(request.getDate());
+            start = parsedDate.atStartOfDay();
+            end = start.plusDays(1).minusNanos(1);
+        }
+
+        if (request.getYear() != null && request.getMonth() != null) {
+            start = LocalDate.of(request.getYear(), request.getMonth(), 1).atStartOfDay();
+            end = start.plusMonths(1).minusNanos(1);
+        }
+
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
+
+        Page<CounselingLog> counselingLog = counselingLogRepository.findAllByConsultationDateBetween(
+                start,
+                end,
+                pageable
+        );
+
+        return GetCounselingLogResponseDTO.builder()
+                .currentPage(counselingLog.getNumber())
+                .totalPages(counselingLog.getTotalPages())
+                .totalElements(counselingLog.getTotalElements())
+                .counselingLogs(counselingLog.getContent())
                 .build();
     }
 
@@ -166,7 +197,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                         .personalInfo(isolatedYouth.getPersonalInfo())
                         .economicActivityRecent(isolatedYouth.getEconomicActivityRecent())
                         .isolationLevel(isolatedYouth.getIsolationLevel())
-                        .surveyProcessStep(SurveyProcessStep.SELF_DIAGNOSIS)
+                        .surveyProcessStep(SurveyProcessStep.COUNSELING)
                         .build()
         );
 
