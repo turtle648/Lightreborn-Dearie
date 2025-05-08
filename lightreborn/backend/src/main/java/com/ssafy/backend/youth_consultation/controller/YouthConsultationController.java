@@ -300,6 +300,19 @@ public class YouthConsultationController {
         return ResponseEntity.ok(BaseResponse.success(200, "올해 월별 상담 정보를 얻었습니다.", response));
     }
 
+    @GetMapping(value = "/{personalInfoId}")
+    @Operation(
+            summary = "개인 상담 일지",
+            description = "특정 내담자의 상담 일지 요약 데이터를 얻습니다."
+    )
+    public ResponseEntity<BaseResponse<CounselingSummaryResponseDTO>> getPersonalCounselingLogSummary(@PathVariable Long personalInfoId) {
+
+        CounselingSummaryResponseDTO response = youthConsultationService.getPersonalCounselingLogSummary(personalInfoId);
+
+        return ResponseEntity.ok(BaseResponse.success(200, "내담자의 상담 정보를 얻었습니다.", response));
+    }
+
+
     @GetMapping(value = "/isolated-youths")
     @Operation(
             summary = "상담 리스트",

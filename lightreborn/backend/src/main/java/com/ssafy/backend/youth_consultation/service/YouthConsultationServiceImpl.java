@@ -354,6 +354,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                                 .build()
                 );
 
+
                 SurveyVersion newSurveyVersion = surveyVersionRepository.save(
                         SurveyVersion.builder()
                                 .personalInfo(savedPersonalInfo)
@@ -458,6 +459,11 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     public Page<PreSupportIsolatedYouthResponseDTO> getPresupportList(Pageable pageable) {
         return isolatedYouthRepository.findAll(pageable)
                 .map(this::toDto);
+    }
+
+    @Override
+    public CounselingSummaryResponseDTO getPersonalCounselingLogSummary(Long personalInfoId) {
+        return null;
     }
 
     private PreSupportIsolatedYouthResponseDTO toDto(IsolatedYouth iy)
