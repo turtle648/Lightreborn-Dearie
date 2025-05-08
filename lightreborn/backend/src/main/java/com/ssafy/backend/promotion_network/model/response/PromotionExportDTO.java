@@ -9,13 +9,11 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true) //연관관계 필드 설정을 위해 추가
-public class PromotionNetworkResponseDTO {
-    private Long id;
+public class PromotionExportDTO {
+    private String placeName;
     private String address;
-    private Double latitude;
-    private Double longitude;
-    private Boolean isPublish;
-    private LocalDate changedAt;
-    private Long hangjungId;
-    private Long promotionTypeId;
+    private LocalDate createdAt;
+    private String promotionType;
+    private String promotionPlaceType;
+    private String promotionInformationContent;
 }

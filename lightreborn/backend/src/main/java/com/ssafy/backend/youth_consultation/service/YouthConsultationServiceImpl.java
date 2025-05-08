@@ -45,6 +45,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.time.format.DateTimeFormatter;
@@ -429,6 +430,44 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                 .previousMonthlyCount(prevYearCounts)
                 .build();
     }
+
+    private int calculateAge(PersonalInfo pi) {
+        return Period.between(pi.getBirthDate(), LocalDate.now()).getYears();
+    }
+
+    @Override
+    public Page<IsolatedYouthResponseDTO> getList(Pageable pageable) {
+        return counselingLogRepository.findAll(pageable)
+                .map(this::toIsolatedDto);
+    }
+
+    private IsolatedYouthResponseDTO toIsolatedDto(CounselingLog log)
+    {
+        PersonalInfo pi = log.getIsolatedYouth().getPersonalInfo();
+        int age = calculateAge(pi);
+
+        return new IsolatedYouthResponseDTO(
+                pi.getName(),
+                age,
+                log.getIsolatedYouth().getIsolationLevel(),
+                log.getConsultationDate(),
+                log.getMemoKeyword());
+    }
+
+    @Override
+    public Page<PreSupportIsolatedYouthResponseDTO> getPresupportList(Pageable pageable) {
+        return isolatedYouthRepository.findAll(pageable)
+                .map(this::toDto);
+    }
+
+    private PreSupportIsolatedYouthResponseDTO toDto(IsolatedYouth iy)
+    {
+        PersonalInfo pi = iy.getPersonalInfo();
+        int age = calculateAge(pi);
+
+        return new PreSupportIsolatedYouthResponseDTO(pi.getName(), age, iy.getSurveyProcessStep());
+    }
+
 
     private List<Integer> convertToMonthlyArray(List<Object[]> rawCounts){
         List<Integer> monthly = IntStream.range(0, 12).boxed().map(i -> 0).collect(Collectors.toList());

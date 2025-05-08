@@ -2,7 +2,10 @@ package com.ssafy.backend.youth_consultation.service;
 
 import com.ssafy.backend.youth_consultation.model.dto.request.*;
 import com.ssafy.backend.youth_consultation.model.dto.response.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
+
 
 public interface YouthConsultationService {
     GetCounselingLogsResponseDTO getCounselingLog(int pageNum, int sizeNum);
@@ -28,4 +31,8 @@ public interface YouthConsultationService {
      * @return 현재 연도와 이전 연도의 월별 상담 건수를 포함한 DTO
      */
     YearlyConsultationDTO getYearlyConsultationSummary();
+
+    Page<IsolatedYouthResponseDTO> getList(Pageable pageable);
+
+    Page<PreSupportIsolatedYouthResponseDTO> getPresupportList(Pageable pageable);
 }

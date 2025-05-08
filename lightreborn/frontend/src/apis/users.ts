@@ -3,7 +3,9 @@ import { api, publicApi } from "./index";
 // 로그인 
 export const login = async (data : {id : string, password : string}) => {
   try {
-    const response = await publicApi.post("/auth/login", data);
+    const response = await publicApi.post("/auth/login", data, {
+      withCredentials: true,
+    });
     return response.data
   } catch (error) { // 에러 처리 
     console.error("users.ts/login error : ", error)
@@ -13,7 +15,9 @@ export const login = async (data : {id : string, password : string}) => {
 
 // 로그아웃 
 export const logout = async () => {
-  const response = await api.post("/auth/logout");
+  const response = await api.post("/auth/logout", {}, {
+    withCredentials: true,
+  });
   return response.data;
 };
 

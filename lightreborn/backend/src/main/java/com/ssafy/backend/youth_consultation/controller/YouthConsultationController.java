@@ -13,6 +13,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.SortDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -293,6 +299,38 @@ public class YouthConsultationController {
 
         return ResponseEntity.ok(BaseResponse.success(200, "올해 월별 상담 정보를 얻었습니다.", response));
     }
+
+    @GetMapping(value = "/isolated-youths")
+    @Operation(
+            summary = "상담 리스트",
+            description = "은둔 고립 청년 정보(이름, 연령, 점수 등)리스트를 반환하는 함수"
+    )
+    public ResponseEntity<BaseResponse<Page<IsolatedYouthResponseDTO>>> list(
+            @ParameterObject
+            @SortDefault.SortDefaults({
+                    @SortDefault(sort = "consultationDate", direction = Sort.Direction.DESC),
+                    @SortDefault(sort = "isolatedYouth.personalInfo.name", direction = Sort.Direction.ASC)
+            })
+            @PageableDefault(size = 7)
+            Pageable pageable) {
+
+        Page<IsolatedYouthResponseDTO> response = youthConsultationService.getList(pageable);
+
+        return ResponseEntity.ok(BaseResponse.success(200, "고립청년들의 정보를 얻었습니다.", response));
+    }
+
+    @GetMapping(value = "/isolated-youths/pre-support")
+    @Operation(
+            summary = "은둔 고립 청년 발굴 및 선정 데이터",
+            description = "은둔 고립 청년 발굴 및 선정 절차에 있는 청년들의 데이터를 조회하는 함수"
+    )
+    public ResponseEntity<BaseResponse<Page<PreSupportIsolatedYouthResponseDTO>>> preSupportList(@ParameterObject @PageableDefault(sort = "personalInfo.name", direction = Sort.Direction.ASC, size = 7) Pageable pageable) {
+
+        Page<PreSupportIsolatedYouthResponseDTO> response = youthConsultationService.getPresupportList(pageable);
+
+        return ResponseEntity.ok(BaseResponse.success(200, "은둔 고립 청년 발굴 및 선정 절차 정보를 얻었습니다.", response));
+    }
+
 
     @PatchMapping("/{counselingId}")
     @Operation(
