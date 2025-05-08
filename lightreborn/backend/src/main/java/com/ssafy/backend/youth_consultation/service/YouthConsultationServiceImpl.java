@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ssafy.backend.common.utils.parser.ExcelUtils;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationErrorCode;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationException;
 import com.ssafy.backend.youth_consultation.model.collector.PeopleInfoCollector;
@@ -20,6 +21,7 @@ import com.ssafy.backend.youth_consultation.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,11 +38,17 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Utilities;
 
+import javax.sql.DataSource;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,6 +71,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     private final PersonalInfoRepository personalInfoRepository;
     private final SurveyAnswerRepository surveyAnswerRepository;
     private final SurveyVersionRepository surveyVersionRepository;
+    private final DataSource dataSource;
 
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
@@ -133,6 +142,60 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         return GetCounselingLogResponseDTO.builder()
                 .counselingLog(counselingLog)
                 .build();
+    }
+
+    @Override
+    public ExportCounselingLogResponseDTO exportCounselingLogToExcel() {
+        String query = """
+                        SELECT
+                            cl.id AS "상담ID",
+                            cl.consultation_date AS "상담일자",
+                            cl.summarize AS "요약",
+                            cl.client_keyword AS "내담자키워드",
+                            cl.counselor_keyword AS "상담사키워드",
+                            cl.memo_keyword AS "메모키워드",
+                            cl.process_step AS "진행단계",
+                            cl.voice_file_url AS "음성파일URL",
+                            iy.id AS "청년ID",
+                            iy.economic_level AS "경제수준",
+                            iy.isolation_level AS "고립수준",
+                            iy.isolated_score AS "고립점수",
+                            iy.economic_activity_recent AS "최근경제활동",
+                            iy.process_step AS "청년진행단계",
+                            pi.name AS "청년이름",
+                            pi.phone_number AS "전화번호",
+                            pi.emergency_contact AS "비상연락처",
+                            COALESCE(pi.brith_date, pi.birth_date) AS "생년월일"
+                        FROM counseling_log cl
+                        JOIN isolated_youths iy ON cl.isolated_youth_id = iy.id
+                        JOIN personal_info pi ON iy.personal_info_id = pi.id
+                        ORDER BY cl.id DESC
+                        """;
+
+        LocalDateTime time = LocalDateTime.now();
+        String sheetName = "상담일지_" + time.format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query);
+             Workbook workbook = ExcelUtils.resultSetToWorkbook(rs, sheetName);
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+            workbook.write(outputStream);
+            byte[] fileContent = outputStream.toByteArray();
+
+            return ExportCounselingLogResponseDTO.builder()
+                    .fileContent(fileContent)
+                    .fileName(sheetName + ".xlsx")
+                    .contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    .fileSize(fileContent.length)
+                    .generatedAt(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                    .build();
+
+        } catch (Exception e) {
+            log.error("[Excel 다운로드 실패]", e);
+            throw new RuntimeException("Excel 다운로드 중 오류가 발생했습니다.", e);
+        }
     }
 
     @Override
