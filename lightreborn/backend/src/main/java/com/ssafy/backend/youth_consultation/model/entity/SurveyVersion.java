@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDate;
+
 @Slf4j
 @ToString
 @Entity
@@ -23,4 +25,9 @@ public class SurveyVersion {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "personal_info_id")
     private PersonalInfo personalInfo;
+
+    private LocalDate surveyDate;
+
+    @OneToOne(mappedBy = "surveyVersion", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private SurveyScaleScores scaleScores;
 }
