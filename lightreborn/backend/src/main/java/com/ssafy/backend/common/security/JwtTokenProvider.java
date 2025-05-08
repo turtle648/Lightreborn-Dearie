@@ -54,7 +54,8 @@ public class JwtTokenProvider {
 //                .secure(!isDev ? true : false)
                 .path("/")
                 .maxAge(EXPIRATION_TIME)
-                .sameSite(isDev ? "Lax" : "None")
+                .sameSite("Lax")
+//                .sameSite(isDev ? "Lax" : "None")
                 .build();
     }
 
