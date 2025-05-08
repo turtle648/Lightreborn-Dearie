@@ -74,12 +74,12 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     private String ffmpegCmd;
 
     @Override
-    public GetCounselingLogResponseDTO getCounselingLog(int pageNum, int sizeNum) {
+    public GetCounselingLogsResponseDTO getCounselingLog(int pageNum, int sizeNum) {
         Pageable pageable = PageRequest.of(pageNum, sizeNum, Sort.by("consultationDate").descending());
 
         Page<CounselingLog> counselingLogPage = counselingLogRepository.findAll(pageable);
 
-        return GetCounselingLogResponseDTO.builder()
+        return GetCounselingLogsResponseDTO.builder()
                 .currentPage(counselingLogPage.getNumber())
                 .totalPages(counselingLogPage.getTotalPages())
                 .totalElements(counselingLogPage.getTotalElements())
@@ -88,7 +88,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     }
 
     @Override
-    public GetCounselingLogResponseDTO getMonthlyCounselingLog(GetMonthlyCounselingLogDTO request) {
+    public GetCounselingLogsResponseDTO getMonthlyCounselingLog(GetMonthlyCounselingLogDTO request) {
         LocalDate now = LocalDate.now();
         LocalDateTime start = now.withDayOfMonth(1).atStartOfDay();
         LocalDateTime end = start.plusMonths(1).minusNanos(1);
@@ -112,11 +112,25 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                 pageable
         );
 
-        return GetCounselingLogResponseDTO.builder()
+        return GetCounselingLogsResponseDTO.builder()
                 .currentPage(counselingLog.getNumber())
                 .totalPages(counselingLog.getTotalPages())
                 .totalElements(counselingLog.getTotalElements())
                 .counselingLogs(counselingLog.getContent())
+                .build();
+    }
+
+    @Override
+    public GetCounselingLogResponseDTO getCounselingLogById(Long id) {
+        CounselingLog counselingLog = counselingLogRepository.findById(id)
+                .orElseThrow(() ->
+                        new YouthConsultationException(
+                                YouthConsultationErrorCode.NO_MATCH_COUNSELING
+                        )
+                );
+
+        return GetCounselingLogResponseDTO.builder()
+                .counselingLog(counselingLog)
                 .build();
     }
 
