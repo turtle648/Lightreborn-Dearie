@@ -10,19 +10,44 @@ import { useRouter } from "next/navigation";
 export default function LoginForm() {
   const [id, setId] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuthStore()
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    login({ id, password })
-    router.push("/dashboard/youth-population")
+    setError("")
+    setIsLoading(true)
+    
+    try {
+      await login({ id, password })
+      // 로그인 성공 시에만 페이지 이동
+      router.push("/dashboard/youth-population")
+    } catch (error) {
+      // 로그인 실패 시 에러 메시지 표시
+      console.error("로그인 실패:", error)
+      setError("아이디 또는 비밀번호가 올바르지 않습니다.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    signup({ id, password, role: 1 })
-    router.push("/login")
+    setError("")
+    setIsLoading(true)
+    
+    try {
+      await signup({ id, password, role: 1 })
+      // 회원가입 성공 시 로그인 페이지로 이동
+      router.push("/login")
+    } catch (error) {
+      console.error("회원가입 실패:", error)
+      setError("회원가입에 실패했습니다. 다시 시도해 주세요.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -37,6 +62,7 @@ export default function LoginForm() {
             className="w-full px-4 py-3 rounded-md bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6B9AFF]"
             value={id}
             onChange={(e) => setId(e.target.value)}
+            disabled={isLoading}
           />
         </div>
 
@@ -47,17 +73,37 @@ export default function LoginForm() {
             className="w-full px-4 py-3 rounded-md bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6B9AFF]"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
           />
         </div>
 
-        <Button variant="outline" fullWidth={true} size="lg" onClick={handleSubmit}>
-          로그인
-        </Button>
+        {/* 에러 메시지 표시 */}
+        {error && (
+          <div className="text-red-500 text-sm py-1">
+            {error}
+          </div>
+        )}
 
-      </form>
-        <Button variant="outline" fullWidth={true} size="lg" onClick={handleSignup}>
-          회원가입
+        <Button 
+          variant="outline" 
+          fullWidth={true} 
+          size="lg" 
+          onClick={handleSubmit}
+          disabled={isLoading}
+        >
+          {isLoading ? "로그인 중..." : "로그인"}
         </Button>
+      </form>
+      
+      <Button 
+        variant="outline" 
+        fullWidth={true} 
+        size="lg" 
+        onClick={handleSignup}
+        disabled={isLoading}
+      >
+        {isLoading ? "처리 중..." : "회원가입"}
+      </Button>
     </div>
   )
 }

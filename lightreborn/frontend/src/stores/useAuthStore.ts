@@ -27,6 +27,7 @@ const useAuthStore = create<AuthStore>((set) => ({
       set({ isLoggedIn: true, user: response.result, isAuthenticated: true });
     } catch (error) {
       console.log("useAuthStore.login error : ", error);
+      throw error;
     }
   },
   logout: async () => {
