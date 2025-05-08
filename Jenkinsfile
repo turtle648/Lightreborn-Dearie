@@ -319,6 +319,7 @@ pipeline {
                 sh """
                     echo "🧹 보안상 민감한 파일 정리 중..."
                     find . -name ".env" -type f -delete 2>/dev/null || true
+                    find . -name ".env.production" -type f -delete 2>/dev/null || true
                     rm -f payload.json 2>/dev/null || true
                 """
             }

@@ -1,10 +1,7 @@
 package com.ssafy.backend.youth_consultation.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
-import com.ssafy.backend.youth_consultation.model.dto.request.AddScheduleRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.request.UpdateCounselingLogRequestDTO;
+import com.ssafy.backend.youth_consultation.model.dto.request.*;
 import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.service.YouthConsultationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +9,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -33,14 +31,47 @@ public class YouthConsultationController {
             summary = "상담 일지 리스트 가져오기 (5개씩)",
             description = "상담 일지 리스트 가져옵니다. default size는 5입니다."
     )
-    public ResponseEntity<BaseResponse<GetCounselingLogResponseDTO>> searchIsolationYouthWithPagination(
+    public ResponseEntity<BaseResponse<GetCounselingLogsResponseDTO>> searchIsolationYouthWithPagination(
             @RequestParam(value = "page", defaultValue = "0") int pageNum,
             @RequestParam(value = "size", defaultValue = "5") int sizeNum
     ) {
-        GetCounselingLogResponseDTO responseDTO = youthConsultationService.getCounselingLog(pageNum, sizeNum);
+        GetCounselingLogsResponseDTO responseDTO = youthConsultationService.getCounselingLog(pageNum, sizeNum);
 
         return ResponseEntity.ok().body(BaseResponse.success("상담 대상자를 성공적으로 검색하였습니다.", responseDTO));
     }
+
+    @PostMapping("/statistics")
+    @Operation(
+            summary = "월별/일별 상담 일지 리스트 가져오기",
+            description = "월별 상담 일지 리스트 가져옵니다."
+    )
+    public ResponseEntity<BaseResponse<GetCounselingLogsResponseDTO>> getMonthlyCounselingLog (
+            @RequestBody @Valid GetMonthlyCounselingLogDTO request
+            ) {
+        GetCounselingLogsResponseDTO responseDTO = youthConsultationService.getMonthlyCounselingLog(request);
+
+        return ResponseEntity.ok().body(BaseResponse.success("월별/일별 상담일지를 성공적으로 검색하였습니다.", responseDTO));
+    }
+
+    @GetMapping("/{counselingId}")
+    @Operation(
+            summary = "상담 일지 상세 정보 가져오기",
+            description = "상담 일지 pk를 통해 특정 상담 일정에 대한 상세 조회를 할 수 있습니다."
+    )
+    public ResponseEntity<BaseResponse<GetCounselingLogResponseDTO>> getCounselingLogById (
+            @PathVariable(value = "counselingId") Long counselingId
+    ) {
+        GetCounselingLogResponseDTO responseDTO = youthConsultationService.getCounselingLogById(counselingId);
+
+        return ResponseEntity.ok()
+                .body(
+                        BaseResponse.success(
+                                counselingId + "에 대한 상담 일지 상세 정보를 성공적으로 가져 왔습니다.",
+                                responseDTO
+                        )
+                );
+    }
+
 
     @PostMapping("/people")
     @Operation(

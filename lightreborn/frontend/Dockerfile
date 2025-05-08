@@ -10,6 +10,9 @@ COPY package.json package-lock.json ./
 # 의존성 설치 (package-lock.json을 100% 따름)
 RUN npm ci
 
+# env 파일 복사
+COPY .env.production .env.production
+
 # 전체 프로젝트 복사
 COPY . .
 
