@@ -8,14 +8,19 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @RestController
@@ -106,28 +111,43 @@ public class YouthConsultationController {
                 );
     }
 
-//    @GetMapping("/files")
-//    @Operation(
-//            summary = "전체 상담 일지 데이터 다운로드",
-//            description = """
-//                    📋 **전체 상담 일지 데이터를 CSV 파일로 다운로드합니다.**
-//
-//                    🔹 **형식**
-//                    - 파일 형식: `CSV`
-//                    - 컬럼: 상담 ID, 상담 일자, 고립 청년 이름 등
-//
-//                    🔸 **용도**
-//                    - 상담일지 관리 - 은둔고립청년 상담일지 다운로드
-//
-//                    등에서 상담일지를 CSV 파일로 다운로드 하기 위한 API 입니다.
-//                    """
-//    )
-//    public ResponseEntity<BaseResponse<ExportCounselingLogResponseDTO>> searchIsolationYouthWithPagination() {
-//        ExportCounselingLogResponseDTO responseDTO = youthConsultationService.exportCounselingLogToCSV();
-//
-//        return ResponseEntity.ok().body(BaseResponse.success("상담 대상자를 성공적으로 검색하였습니다.", responseDTO));
-//    }
-//
+    @GetMapping("/export-excel")
+    @Operation(
+            summary = "전체 상담 일지 데이터 Excel 다운로드",
+            description = """
+                📋 **전체 상담 일지 데이터를 Excel 파일로 다운로드합니다.**
+
+                🔹 **형식**
+                - 파일 형식: `XLSX`
+                - 컬럼: 상담 ID, 상담 일자, 고립 청년 이름 등
+
+                🔸 **용도**
+                - 상담일지 관리 - 은둔고립청년 상담일지 다운로드
+                """,
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Excel 파일 다운로드 성공",
+                            content = @Content(
+                                    mediaType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                    schema = @Schema(type = "string", format = "binary")
+                            )
+                    )
+            }
+    )
+    public ResponseEntity<byte[]> exportCounselingLogToExcel() {
+        ExportCounselingLogResponseDTO dto = youthConsultationService.exportCounselingLogToExcel();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=" + URLEncoder.encode(dto.getFileName(),
+                                StandardCharsets.UTF_8
+                        ).replace("+", "%20"))
+                .contentType(MediaType.parseMediaType(dto.getContentType()))
+                .contentLength(dto.getFileSize())
+                .body(dto.getFileContent());
+    }
+
 
     @PostMapping("/people")
     @Operation(

@@ -8,6 +8,7 @@ public interface YouthConsultationService {
     GetCounselingLogsResponseDTO getCounselingLog(int pageNum, int sizeNum);
     GetCounselingLogsResponseDTO getMonthlyCounselingLog(GetMonthlyCounselingLogDTO request);
     GetCounselingLogResponseDTO getCounselingLogById(Long id);
+    ExportCounselingLogResponseDTO exportCounselingLogToExcel();
     PeopleInfoResponseDTO searchPeopleInfo(PeopleInfoRequestDTO peopleInfoRequestDTO);
     AddScheduleResponseDTO addSchedule(Long id, AddScheduleRequestDTO addScheduleRequestDTO);
     SpeechResponseDTO getGeneralSummarize(SpeechRequestDTO responseDTO);
