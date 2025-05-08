@@ -15,5 +15,6 @@ public class PromotionResponseDTO {
     private Boolean isPublished;
     private LocalDate createdAt;
     private String promotionType;
+    private String promotionPlaceType;
     private Long promotionInformationId;
 }

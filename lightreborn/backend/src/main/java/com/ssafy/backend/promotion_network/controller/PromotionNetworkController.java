@@ -79,5 +79,13 @@ public class PromotionNetworkController {
         return ResponseEntity.ok(BaseResponse.success(201, "행정동의 홍보물 유형 비율 조회 성공", result));
     }
 
+    @Operation(summary = "행정동의 홍보물 비치장소 비율", description = "행정동의 홍보물이 어느 장소에 위치 했는지에 대한 비율")
+    @GetMapping("/{dong-code}/placeRatio")
+    public ResponseEntity<BaseResponse<Map<String, Double>>> getPromotionPlaceRatio(
+            @PathVariable("dong-code") Long dongCode) throws IOException {
+
+        Map<String, Double> result = promotionNetworkService.calculatePromotionPlaceTypeRatio(dongCode);
+        return ResponseEntity.ok(BaseResponse.success(201, "행정동의 홍보물 유형 비율 조회 성공", result));
+    }
 
 }

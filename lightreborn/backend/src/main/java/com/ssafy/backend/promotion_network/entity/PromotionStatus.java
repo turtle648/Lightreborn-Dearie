@@ -48,6 +48,10 @@ public class PromotionStatus {
     @JoinColumn(name= "promotion_information_id")
     private PromotionInformation promotionInformation;
 
+    @ManyToOne(fetch=FetchType.LAZY)
+    @JoinColumn(name= "promotion_place_type")
+    private PromotionPlaceType promotionPlaceType;
+
     public void assignHangjungs(Hangjungs hangjungs) {
         this.hangjungs = hangjungs;
     }
@@ -58,5 +62,9 @@ public class PromotionStatus {
 
     public void assignPromotionInformation(PromotionInformation promotionInformation) {
         this.promotionInformation = promotionInformation;
+    }
+
+    public void assignPromotionPlaceType(PromotionPlaceType promotionPlaceType) {
+        this.promotionPlaceType = promotionPlaceType;
     }
 }

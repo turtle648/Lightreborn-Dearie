@@ -147,7 +147,11 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
     @Override
     public List<PromotionResponseDTO> selectPromotions(Long dongCode) {
         Long hangjungId = hangjungsRepository.findHangjungsIdByHangjungCode(dongCode.toString());
+        System.out.println("❤️행정동 아이디 : " + hangjungId);
         List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId(hangjungId);
+
+        list.forEach(p -> System.out.println("📌홍보물: " + p.getAddress() + ", " + p.getPromotionType().getType()));
+
         return list.stream().map(this::convertToDTO).toList();
     }
 
@@ -158,14 +162,17 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         dto.setAddress(status.getAddress());
         dto.setIsPublished(status.getIsPublished());
         dto.setCreatedAt(status.getCreatedAt());
+        dto.setPromotionPlaceType(status.getPromotionPlaceType().getPlace_type());
         dto.setPromotionInformationId(status.getPromotionInformation().getId());
-
-        // 문자열로 매핑
-        if (status.getPromotionType() != null) {
-            dto.setPromotionType(status.getPromotionType().getType()); // 예: 현수막
-        } else {
-            dto.setPromotionType(null); // 혹시모를 예외 처리
-        }
+        dto.setPromotionPlaceType(status.getPromotionPlaceType().getPlace_type());
+        dto.setPromotionType(status.getPromotionType().getType());
+//
+//        // 문자열로 매핑
+//        if (status.getPromotionType() != null) {
+//            dto.setPromotionType(status.getPromotionType().getType()); // 예: 현수막
+//        } else {
+//            dto.setPromotionType(null); // 혹시모를 예외 처리
+//        }
 
         return dto; // 연관 관계 주의
     }
@@ -192,17 +199,39 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         return ratioMap;
     }
 
+    @Override
+    public Map<String, Double> calculatePromotionPlaceTypeRatio(Long dongCode) {
+
+        List<PromotionResponseDTO> dtoList = selectPromotions(dongCode);
+
+        int total = dtoList.size();
+
+        // 타입별 개수 집계
+        Map<String, Long> countMap = dtoList.stream()
+                .filter(dto -> dto.getPromotionPlaceType() != null)
+                .collect(Collectors.groupingBy(PromotionResponseDTO::getPromotionPlaceType, Collectors.counting()));
+
+        // 비율로 변환 (소수점 첫째 자리까지)
+        Map<String, Double> ratioMap = new HashMap<>();
+        for (Map.Entry<String, Long> entry : countMap.entrySet()) {
+            double ratio = (entry.getValue() * 100.0) / total;
+            ratioMap.put(entry.getKey(), Math.round(ratio * 10.0) / 10.0); // 반올림: 10.0 = 소수점 첫째자리
+        }
+
+        return ratioMap;
+    }
+
     public PromotionSummaryResponse getPromotionSummary(Long dongCode) {
         Long hangjungId = hangjungsRepository.findHangjungsIdByHangjungCode(dongCode.toString());
 
         List<PromotionStatus> list = promotionStatusRepository.findByHangjungsId(hangjungId);
         List<PromotionResponseDTO> dtoList = list.stream().map(this::convertToDTO).toList();
 
-        Map<String, Double> typeRatio = calculatePromotionTypeRatio(dongCode);
+        Map<String, Double> promotionPlaceTypeRatio = calculatePromotionPlaceTypeRatio(dongCode);
 
         PromotionSummaryResponse summary = new PromotionSummaryResponse();
         summary.setPromotions(dtoList);
-        summary.setTypeRatio(typeRatio);
+        summary.setPromotionPlaceTypeRatio(promotionPlaceTypeRatio);
         summary.setPromotionPerYouth(calculatePromotionPerYouth());
         return summary;
     }

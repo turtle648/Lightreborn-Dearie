@@ -10,6 +10,6 @@ import java.util.Map;
 @Setter
 public class PromotionSummaryResponse {
     private List<PromotionResponseDTO> promotions;
-    private Map<String, Double> typeRatio;
+    private Map<String, Double> promotionPlaceTypeRatio;
     private List<PromotionPerYouthDto> promotionPerYouth;
 }
