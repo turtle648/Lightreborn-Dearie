@@ -111,6 +111,21 @@ pipeline {
             }
         }
 
+        stage('Generate frontend .env.production') {
+            steps {
+                script {
+                    def frontendEnv = """
+                    NEXT_PUBLIC_NAVER_CLIENT_ID=${envProps.NEXT_PUBLIC_NAVER_CLIENT_ID}
+                    NEXT_PUBLIC_API_URL=/lightreborn/api
+                    """.stripIndent().trim()
+
+                    writeFile file: "${env.WORKSPACE}/lightreborn/frontend/.env.production", text: frontendEnv
+                    echo "✅ frontend용 .env.production 생성 완료"
+                }
+            }
+        }
+
+
         // 3. 기존 컨테이너 정리
         stage('Clean up Existing Containers') {
             steps {
