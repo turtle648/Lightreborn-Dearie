@@ -15,5 +15,5 @@ public interface HangjungsRepository extends JpaRepository<Hangjungs, Long> {
     Optional<Hangjungs> findByHangjungCode(String hangjungCode);
 
     @Query("SELECT h.id FROM Hangjungs h WHERE h.hangjungCode = :hangjungCode")
-    Long findHangjungsIdByHangjungCode(@Param("code") String hangjungCode);
+    Long findHangjungsIdByHangjungCode(@Param("hangjungCode") String hangjungCode);
 }

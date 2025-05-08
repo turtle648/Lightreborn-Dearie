@@ -162,9 +162,8 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         dto.setAddress(status.getAddress());
         dto.setIsPublished(status.getIsPublished());
         dto.setCreatedAt(status.getCreatedAt());
-        dto.setPromotionPlaceType(status.getPromotionPlaceType().getPlace_type());
-        dto.setPromotionInformationId(status.getPromotionInformation().getId());
-        dto.setPromotionPlaceType(status.getPromotionPlaceType().getPlace_type());
+        dto.setPromotionPlaceType(status.getPromotionPlaceType() != null ? status.getPromotionPlaceType().getPlace_type() : null);
+        dto.setPromotionInformationId(status.getPromotionInformation() != null ? status.getPromotionInformation().getId() : null);
         dto.setPromotionType(status.getPromotionType().getType());
 //
 //        // 문자열로 매핑
@@ -196,6 +195,8 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
             ratioMap.put(entry.getKey(), Math.round(ratio * 10.0) / 10.0); // 반올림: 10.0 = 소수점 첫째자리
         }
 
+        if (total == 0) return ratioMap;
+
         return ratioMap;
     }
 
@@ -217,6 +218,8 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
             double ratio = (entry.getValue() * 100.0) / total;
             ratioMap.put(entry.getKey(), Math.round(ratio * 10.0) / 10.0); // 반올림: 10.0 = 소수점 첫째자리
         }
+
+        if (total == 0) return ratioMap;
 
         return ratioMap;
     }
@@ -253,7 +256,10 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
                 float youthRatio = youthStats.getYouthPopulationRatio().getValue();
 //                System.out.println("❤️청년인구 비율 : " + youthRatio);
 
-                if (youthRatio == 0) continue;
+                if (youthRatio == 0) {
+                    log.warn("청년 인구 비율이 0인 행정동: {}", h.getHangjungName());
+                    continue;
+                }
 
                 double ratio = (promotionCount / youthRatio) * 100;
                 double rounded = Math.round(ratio * 10.0) / 10.0;
@@ -265,7 +271,6 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
                 System.err.println("IOException on dongCode: " + dongCode);
             }
         }
-
         return result;
     }
 
