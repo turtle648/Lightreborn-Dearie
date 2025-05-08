@@ -11,12 +11,10 @@ import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollecto
 import com.ssafy.backend.youth_consultation.model.collector.SurveyAnswerCollector;
 import com.ssafy.backend.youth_consultation.model.context.SurveyContext;
 import com.ssafy.backend.youth_consultation.model.context.TranscriptionContext;
-import com.ssafy.backend.youth_consultation.model.dto.request.PeopleInfoRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.request.SpeechRequestDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.PeopleInfoResponseDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.SpeechResponseDTO;
-import com.ssafy.backend.youth_consultation.model.dto.response.SurveyUploadDTO;
+import com.ssafy.backend.youth_consultation.model.dto.request.*;
+import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.model.entity.*;
+import com.ssafy.backend.youth_consultation.model.state.CounselingConstants;
 import com.ssafy.backend.youth_consultation.model.state.SurveyStepConstants;
 import com.ssafy.backend.youth_consultation.repository.*;
 import jakarta.transaction.Transactional;
@@ -26,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -38,11 +37,16 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Utilities;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Year;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @Slf4j
@@ -70,6 +74,53 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     private String ffmpegCmd;
 
     @Override
+    public GetCounselingLogResponseDTO getCounselingLog(int pageNum, int sizeNum) {
+        Pageable pageable = PageRequest.of(pageNum, sizeNum, Sort.by("consultationDate").descending());
+
+        Page<CounselingLog> counselingLogPage = counselingLogRepository.findAll(pageable);
+
+        return GetCounselingLogResponseDTO.builder()
+                .currentPage(counselingLogPage.getNumber())
+                .totalPages(counselingLogPage.getTotalPages())
+                .totalElements(counselingLogPage.getTotalElements())
+                .counselingLogs(counselingLogPage.getContent())
+                .build();
+    }
+
+    @Override
+    public GetCounselingLogResponseDTO getMonthlyCounselingLog(GetMonthlyCounselingLogDTO request) {
+        LocalDate now = LocalDate.now();
+        LocalDateTime start = now.withDayOfMonth(1).atStartOfDay();
+        LocalDateTime end = start.plusMonths(1).minusNanos(1);
+
+        if (StringUtils.hasText(request.getDate())) {
+            LocalDate parsedDate = LocalDate.parse(request.getDate());
+            start = parsedDate.atStartOfDay();
+            end = start.plusDays(1).minusNanos(1);
+        }
+
+        if (request.getYear() != null && request.getMonth() != null) {
+            start = LocalDate.of(request.getYear(), request.getMonth(), 1).atStartOfDay();
+            end = start.plusMonths(1).minusNanos(1);
+        }
+
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
+
+        Page<CounselingLog> counselingLog = counselingLogRepository.findAllByConsultationDateBetween(
+                start,
+                end,
+                pageable
+        );
+
+        return GetCounselingLogResponseDTO.builder()
+                .currentPage(counselingLog.getNumber())
+                .totalPages(counselingLog.getTotalPages())
+                .totalElements(counselingLog.getTotalElements())
+                .counselingLogs(counselingLog.getContent())
+                .build();
+    }
+
+    @Override
     public PeopleInfoResponseDTO searchPeopleInfo(PeopleInfoRequestDTO peopleInfoRequestDTO) {
         SurveyProcessStep surveyProcessStep = SurveyStepConstants.DEFAULT_STEP;
         Pageable pageable = PageRequest.of(peopleInfoRequestDTO.getPageNum(), peopleInfoRequestDTO.getSizeNum());
@@ -91,6 +142,26 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         PeopleInfoCollector peopleInfoCollector = new PeopleInfoCollector(isolatedYouthPage);
 
         return peopleInfoCollector.getResponseDto();
+    }
+
+    @Override
+    public AddScheduleResponseDTO addSchedule(Long id, AddScheduleRequestDTO addScheduleRequestDTO) {
+        IsolatedYouth isolatedYouth = isolatedYouthRepository.findById(id)
+                .orElseThrow(() ->
+                        new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_PERSON)
+                );
+
+        CounselingLog log = counselingLogRepository.save(
+                CounselingLog.builder()
+                        .consultationDate(addScheduleRequestDTO.getDate().atStartOfDay())
+                        .isolatedYouth(isolatedYouth)
+                        .counselingProcess(CounselingConstants.DEFAULT_STEP)
+                        .build()
+        );
+
+        return AddScheduleResponseDTO.builder()
+                .counseling(log)
+                .build();
     }
 
     @Transactional
@@ -126,7 +197,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                         .personalInfo(isolatedYouth.getPersonalInfo())
                         .economicActivityRecent(isolatedYouth.getEconomicActivityRecent())
                         .isolationLevel(isolatedYouth.getIsolationLevel())
-                        .surveyProcessStep(SurveyProcessStep.SELF_DIAGNOSIS)
+                        .surveyProcessStep(SurveyProcessStep.COUNSELING)
                         .build()
         );
 
@@ -201,7 +272,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                                 .name(personalInfoCollector.getName())
                                 .phoneNumber(personalInfoCollector.getPhoneNumber())
                                 .emergencyContact(personalInfoCollector.getEmergencyContent())
-                                .brithDate(personalInfoCollector.getBirthDate())
+                                .birthDate(personalInfoCollector.getBirthDate())
                                 .build()
                 );
 
@@ -223,6 +294,109 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public ConsultationResponseDTO getConsultationSummaryStats() {
+
+        //1. 누적 통계
+        List<IsolatedYouthRepository.CategoryCount> stats = isolatedYouthRepository.countByIsolationLevel();
+
+        long total = stats.stream()
+                .mapToLong(IsolatedYouthRepository.CategoryCount::getCount)
+                .sum();
+
+        Map<String,Long> byCategory = stats.stream()
+                .collect(Collectors.toMap(
+                        IsolatedYouthRepository.CategoryCount::getCategory,
+                        IsolatedYouthRepository.CategoryCount::getCount
+                ));
+
+        //2. 최근 3개월 신규 등록
+        //2-1. 최근 3개월 상담자 정보 호출
+        LocalDate cutoff = LocalDate.now().minusMonths(3);
+        List<IsolatedYouthRepository.MonthCount> raw = isolatedYouthRepository.countRecentRegistrations(cutoff);
+
+        //2-2. 최근 3개월 달 리스트 생성
+        List<Integer> months = IntStream.rangeClosed(0, 2)
+                .mapToObj(i -> LocalDate.now().minusMonths(2-i).getMonthValue())
+                .toList();
+
+        //2-3. MonthlyConsultationDto로 매핑하면서, 해당 월에 대한 정보가 없으면 0으로 채우기
+        List<MonthlyConsultationDTO> recent = months.stream()
+                .map(m -> {
+                    long cnt = raw.stream()
+                            .filter(r -> r.getMonth().equals(m))
+                            .mapToLong(IsolatedYouthRepository.MonthCount::getCount)
+                            .findFirst()
+                            .orElse(0L);
+                    return new MonthlyConsultationDTO(m, cnt);
+                })
+                .toList();
+
+        return new ConsultationResponseDTO(total, byCategory, recent);
+    }
+
+    @Override
+    public YearlyConsultationDTO getYearlyConsultationSummary() {
+        int currYear = Year.now().getValue();
+        int prevYear = currYear - 1;
+
+        List<Integer> currentYearCounts = convertToMonthlyArray(isolatedYouthRepository.countMonthByYear(currYear));
+        List<Integer> prevYearCounts = convertToMonthlyArray(isolatedYouthRepository.countMonthByYear(prevYear));
+
+        return YearlyConsultationDTO.builder()
+                .currentYear(currYear)
+                .currentMonthlyCount(currentYearCounts)
+                .previousYear(prevYear)
+                .previousMonthlyCount(prevYearCounts)
+                .build();
+    }
+
+    private List<Integer> convertToMonthlyArray(List<Object[]> rawCounts){
+        List<Integer> monthly = IntStream.range(0, 12).boxed().map(i -> 0).collect(Collectors.toList());
+
+        for(Object[] row : rawCounts){
+            int month = ((Number) row[0]).intValue();
+            int cnt = ((Number) row[1]).intValue();
+            monthly.set(month - 1,cnt);
+        }
+
+        return monthly;
+    }
+
+    public SpeechResponseDTO updateCounselingLog(Long id, UpdateCounselingLogRequestDTO requestDTO) {
+        CounselingLog counselingLog = counselingLogRepository.findById(id)
+                .orElseThrow(() ->
+                        new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_COUNSELING)
+                );
+
+        String summary = StringUtils.hasText(requestDTO.getSummary()) ? requestDTO.getSummary(): counselingLog.getSummarize();
+        String client = StringUtils.hasText(requestDTO.getClient()) ? requestDTO.getClient(): counselingLog.getClientKeyword();
+        String counselor = StringUtils.hasText(requestDTO.getCounselor()) ? requestDTO.getCounselor(): counselingLog.getCounselorKeyword();
+        String memos = StringUtils.hasText(requestDTO.getMemos()) ? requestDTO.getMemos(): counselingLog.getMemoKeyword();
+
+        CounselingLog newLog = counselingLogRepository.save(
+                CounselingLog.builder()
+                        .id(id)
+                        .consultationDate(counselingLog.getConsultationDate())
+                        .isolatedYouth(counselingLog.getIsolatedYouth())
+                        .fullScript(counselingLog.getFullScript())
+                        .voiceFileUrl(counselingLog.getVoiceFileUrl())
+                        .counselingProcess(CounselingConstants.COMPLETED)
+                        .summarize(summary)
+                        .clientKeyword(client)
+                        .counselorKeyword(counselor)
+                        .memoKeyword(memos)
+                        .build()
+        );
+
+        return SpeechResponseDTO.builder()
+                .summary(newLog.getSummarize())
+                .client(newLog.getClientKeyword())
+                .counselor(newLog.getCounselorKeyword())
+                .memos(newLog.getMemoKeyword())
+                .build();
     }
 
     private Map<String, SurveyQuestion> getQuestions() {

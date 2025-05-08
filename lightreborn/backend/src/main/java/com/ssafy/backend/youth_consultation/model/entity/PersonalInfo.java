@@ -1,7 +1,10 @@
 package com.ssafy.backend.youth_consultation.model.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
@@ -22,7 +25,7 @@ public class PersonalInfo {
     @Column(length = 20)
     private String phoneNumber;
 
-    private LocalDate brithDate;
+    private LocalDate birthDate;
 
     @Column(length = 20)
     private String emergencyContact;
