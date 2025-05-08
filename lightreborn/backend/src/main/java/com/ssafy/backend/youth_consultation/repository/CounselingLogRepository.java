@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface CounselingLogRepository extends JpaRepository<CounselingLog, Long> {
+    @EntityGraph(attributePaths = {"isolatedYouth", "isolatedYouth.personalInfo"})
     Optional<CounselingLog> findById(Long id);
 
     @EntityGraph(attributePaths = {"isolatedYouth", "isolatedYouth.personalInfo"})
