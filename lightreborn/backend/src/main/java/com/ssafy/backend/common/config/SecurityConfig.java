@@ -69,7 +69,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001", "https://j12e101.p.ssafy.io", "https://j12e101.p.ssafy.io:3001"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001", "https://k12s309.p.ssafy.io", "https://k12s309.p.ssafy.io:3001"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
