@@ -111,7 +111,7 @@ pipeline {
             }
         }
 
-        // generate env - frontend
+        // generate env - lightreborn-frontend
         stage('Generate frontend .env.production') {
             steps {
                 script {
@@ -121,7 +121,21 @@ pipeline {
                     """.stripIndent().trim()
 
                     writeFile file: "${env.WORKSPACE}/lightreborn/frontend/.env.production", text: frontendEnv
-                    echo "✅ frontend용 .env.production 생성 완료"
+                    echo "✅ lightreborn frontend용 .env.production 생성 완료"
+                }
+            }
+        }
+
+        // generate env - dearie-frontend
+        stage('Generate frontend .env.dearie.production') {
+            steps {
+                script {
+                    def frontendEnv = """
+                    NEXT_PUBLIC_API_URL=/api/app/
+                    """.stripIndent().trim()
+
+                    writeFile file: "${env.WORKSPACE}/dearie/frontend/.env.dearie.production", text: frontendEnv
+                    echo "✅ dearie frontend용 .env.dearie.production 생성 완료"
                 }
             }
         }
@@ -291,6 +305,7 @@ pipeline {
                     echo "🧹 보안상 민감한 파일 정리 중..."
                     find . -name ".env" -type f -delete 2>/dev/null || true
                     find . -name ".env.production" -type f -delete 2>/dev/null || true
+                    find . -name ".env.dearie.production" -type f -delete 2>/dev/null || true
                     rm -f payload.json 2>/dev/null || true
                 """
             }
