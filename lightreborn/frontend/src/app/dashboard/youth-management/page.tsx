@@ -14,22 +14,7 @@ export default function YouthConsultationPage() {
   //   fetchConsultationData()
   // }, [fetchConsultationData])
 
-  // 현재 월의 날짜 생성
-  const getDaysInMonth = () => {
-    const date = new Date()
-    const year = date.getFullYear()
-    const month = date.getMonth()
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
-
-    const days = []
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(new Date(year, month, i))
-    }
-
-    return days
-  }
-
-  const days = getDaysInMonth()
+  
   const currentDate = new Date()
   const currentDay = currentDate.getDate()
 

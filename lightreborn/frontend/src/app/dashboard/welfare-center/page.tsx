@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { Card } from "@/components/common/Card"
-import Button from "@/components/common/Button"
 import { colors } from "@/constants/colors"
 import YangsanMap, { MarkerPoint } from "@/components/map/YangsanMap"
 import { useDongInfo } from "@/hooks/useDongInfo"
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
+import BarChart from "@/components/common/rechart/BarChart"
+import Sheet from "@/components/common/Sheet"
 // import { WelfareMap } from "@/components/welfareCenter/WelfareMap"
 // import { useWelfareCenterStore } from "@/stores/useWelfareCenterStore"
 
@@ -231,139 +231,53 @@ export default function WelfareCenterPage() {
           </Card>
 
           <Card title="양산시 평균대비 행정동 내 협력기관 현황" subTitle="양산시 평균과 선택된 행정동의 협력기관 수를 비교합니다.">
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={[
-                    { name: '양산시 평균', value: 3.2, color: colors.chart.lightGray },
-                    { name: selectedDongName || '지역 선택', value: isSelected ? selectedDongRatio : 0, color: colors.chart.blue }
-                  ]}
-                  layout="vertical"
-                  margin={{ top: 20, right: 30, left: 70, bottom: 5 }}
-                >
-                  <XAxis type="number" domain={[0, 'dataMax + 1']} />
-                  <YAxis 
-                    dataKey="name"
-                    type="category"
-                    width={60}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip formatter={(value) => [`${value}개`, '협력기관 수']} />
-                  <Bar dataKey="value" name="협력기관 수">
-                    {(isSelected 
-                      ? [
-                        { name: '양산시 평균', value: 3.2, color: colors.chart.orange },
-                        { name: selectedDongName, value: selectedDongRatio, color: colors.chart.blue }
-                      ] 
-                      : [
-                        { name: '양산시 평균', value: 3.2, color: colors.chart.orange },
-                        { name: '지역 선택', value: 0, color: colors.chart.lightGray }
-                      ]
-                    ).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <BarChart
+              data={[
+                { name: '양산시 평균', value: 3.2, color: colors.chart.orange },
+                { name: selectedDongName || '지역 선택', value: isSelected ? selectedDongRatio : 0, color: colors.chart.blue }
+              ]}
+              layout="vertical"
+              height={250}
+              valueUnit="개"
+              valueName="협력기관 수"
+              tooltipFormatter={(value) => [`${value}개`, '협력기관 수']}
+              barSize={50}
+            />
           </Card>
         </div>
       </div>
 
       <Card title="행정동별 청년인구 대비 협력기관 현황" subTitle="청년 1000명당 협력기관 수를 행정동별로 나타냅니다.">
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={centerRatioData}
-              margin={{
-                top: 20,
-                right: 10,
-                left: 10,
-                bottom: 40
-              }}
-            >
-              <XAxis 
-                dataKey="region" 
-                tick={{ fontSize: 12 }}
-                height={40}
-                interval={0}
-                angle={-45}
-                textAnchor="end"
-              />
-              <YAxis 
-                tickFormatter={(value) => `${value}개`}
-                domain={[0, 'dataMax + 1']}
-              />
-              <Tooltip 
-                formatter={(value) => [`${value}개`, '협력기관 수']}
-                labelFormatter={(label) => `${label}`}
-              />
-              <Bar dataKey="ratio" name="협력기관 수">
-                {centerRatioData.map((entry) => (
-                  <Cell 
-                    key={`cell-${entry.region}`} 
-                    fill={entry.region === selectedDongName ? colors.chart.blue : colors.chart.lightGray} 
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <BarChart
+          data={centerRatioData.map(entry => ({
+            name: entry.region,
+            value: entry.ratio,
+            color: entry.region === selectedDongName ? colors.chart.blue : colors.chart.lightGray
+          }))}
+          height={250}
+          valueUnit="개"
+          valueName="협력기관 수"
+          tooltipFormatter={(value) => [`${value}개`, '협력기관 수']}
+          marginBottom={40}
+        />
       </Card>
 
-      <Card
+      <Sheet
         title={isSelected ? `${selectedDongName} 협력기관 현황` : "전체 협력기관 현황"}
-        headerRight={
-          <Button variant="primary" size="sm">
-            다운로드
-          </Button>
-        }
-      >
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  기관 분류
-                </th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  기관명
-                </th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  행정동
-                </th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  주소
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                    데이터를 불러오는 중입니다...
-                  </td>
-                </tr>
-              ) : filteredWelfareCenters.length > 0 ? (
-                filteredWelfareCenters.map((center) => (
-                  <tr key={center.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{center.type}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{center.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{center.dongName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{center.address}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                    {isSelected ? `${selectedDongName}에 등록된 협력기관이 없습니다.` : '협력기관 데이터가 없습니다.'}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+        viewType="table"
+        data={filteredWelfareCenters}
+        columns={[
+          { key: 'type', title: '기관 분류' },
+          { key: 'name', title: '기관명' },
+          { key: 'dongName', title: '행정동' },
+          { key: 'address', title: '주소' }
+        ]}
+        onDownload={() => console.log('협력기관 현황 다운로드')}
+        isLoading={isLoading}
+        rowKey="id"
+        onRowClick={(record) => console.log('선택된 기관:', record.name)}
+        emptyMessage={isSelected ? `${selectedDongName}에 등록된 협력기관이 없습니다.` : '협력기관 데이터가 없습니다.'}
+      />
     </div>
   )
 }

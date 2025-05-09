@@ -30,7 +30,6 @@ const YangsanMap = ({
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const { selectedDongCode, setSelectedDongCode } = useMapStore();
   const [naverMap, setNaverMap] = useState<any>(null);
-  const [markers, setMarkers] = useState<any[]>([]);
 
   // 마커 객체들을 관리하기 위한 ref
   const markersRef = useRef<any[]>([]);
