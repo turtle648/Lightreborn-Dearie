@@ -298,22 +298,24 @@ pipeline {
 
         success {
             script {
-                echo '🎉 Build 성공 → Stable 이미지 태깅 및 푸시'
-                sh '''
-                    # backend
-                    docker tag dearie-backend dearie-backend:stable
-                    docker tag lightreborn-backend lightreborn-backend:stable
+                if (params.ENV == 'master') {
+                    echo '🎉 Build 성공 → Stable 이미지 태깅 및 푸시'
+                    sh '''
+                        # backend
+                        docker tag dearie-backend dearie-backend:stable
+                        docker tag lightreborn-backend lightreborn-backend:stable
 
-                    # frontend
-                    docker tag dearie-frontend dearie-frontend:stable
-                    docker tag lightreborn-frontend lightreborn-frontend:stable
+                        # frontend
+                        docker tag dearie-frontend dearie-frontend:stable
+                        docker tag lightreborn-frontend lightreborn-frontend:stable
 
-                    # push all
-                    docker push dearie-backend:stable
-                    docker push lightreborn-backend:stable
-                    docker push dearie-frontend:stable
-                    docker push lightreborn-frontend:stable
-                '''
+                        # push all
+                        docker push dearie-backend:stable
+                        docker push lightreborn-backend:stable
+                        docker push dearie-frontend:stable
+                        docker push lightreborn-frontend:stable
+                    '''
+                }
             }
         }
 
