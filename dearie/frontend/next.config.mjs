@@ -20,7 +20,7 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/sw.js',
+        source: 'dearie/sw.js',
         headers: [
           {
             key: 'Cache-Control',
@@ -28,12 +28,12 @@ const nextConfig = {
           },
           {
             key: 'Service-Worker-Allowed',
-            value: '/',
+            value: '/dearie',
           },
         ],
       },
       {
-        source: '/manifest.json',
+        source: 'dearie/manifest.json',
         headers: [
           {
             key: 'Content-Type',
