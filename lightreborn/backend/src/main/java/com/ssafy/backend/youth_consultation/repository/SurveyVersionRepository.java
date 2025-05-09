@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface SurveyVersionRepository extends JpaRepository<SurveyVersion, Long> {
+    Optional<SurveyVersion> findById(Long id);
+
     @EntityGraph(attributePaths = "scaleScores")
     Optional<SurveyVersion> findTopByPersonalInfoOrderByVersionDesc(@Param("personalInfo") PersonalInfo personalInfo);
 

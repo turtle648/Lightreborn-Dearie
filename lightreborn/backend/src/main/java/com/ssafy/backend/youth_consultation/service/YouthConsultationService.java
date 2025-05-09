@@ -37,4 +37,6 @@ public interface YouthConsultationService {
     Page<PreSupportIsolatedYouthResponseDTO> getPresupportList(Pageable pageable);
 
     CounselingSummaryResponseDTO getPersonalCounselingLogSummary(Long personalInfoId);
+
+    SurveyResponseSummaryDTO getSurveyResponseSummaryInfo(Long personalInfoId, Long versionId);
 }
