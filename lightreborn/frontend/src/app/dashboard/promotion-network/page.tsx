@@ -302,7 +302,7 @@ export default function PromotionNetworkPage() {
             onDownload={() => console.log('홍보 거점 데이터 다운로드')}
             isLoading={isLoading} 
             rowKey="id"
-            onRowClick={(record) => console.log("선택한 홍보물 정보:", record?.name)}
+            onRowClick={(record) => console.log("선택한 홍보물 정보:", record)}
             emptyMessage={isSelected ? `${selectedDongName} 행정동에 홍보물이 없습니다.` : "지역을 선택하면 홍보물 설치 현황이 표시됩니다."}
           />
 
