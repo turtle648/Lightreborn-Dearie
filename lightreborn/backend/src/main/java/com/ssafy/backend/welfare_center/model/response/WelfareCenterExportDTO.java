@@ -7,13 +7,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true) //연관관계 필드 설정을 위해 추가
-public class WelfareCenterResponseDTO {
-    private Long id;
-    private String address;
-    private String organizationName;
-    private String type;
-    private String phoneNumber;
-    private Double latitude;
-    private Double longitude;
-    private Long hangjungId;
+public class WelfareCenterExportDTO {
+    private String organizationName; // 기관명
+    private String type;             // 기관 분류
+    private String address;          // 주소
+    private String phoneNumber;      // 전화번호
 }
