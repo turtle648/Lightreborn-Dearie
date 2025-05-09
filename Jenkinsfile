@@ -60,7 +60,7 @@ pipeline {
             }
         }
         
-        // 2. generate env
+        // 2. generate env - backend
         stage('Generate .env') {
             steps {
                 script {
@@ -111,6 +111,7 @@ pipeline {
             }
         }
 
+        // generate env - frontend
         stage('Generate frontend .env.production') {
             steps {
                 script {
@@ -181,37 +182,7 @@ pipeline {
             }
         }
         
-        // 5. 컨테이너 상태 확인 및 안정화 대기
-        // stage('Wait for Containers') {
-        //     steps {
-        //         script {
-        //             echo "⏳ 컨테이너 안정화 대기 중..."
-        //             sh """
-        //                 # 15초 대기
-        //                 sleep 15
-                        
-        //                 # 컨테이너 상태 확인
-        //                 docker ps
-                        
-        //                 # 백엔드 컨테이너 헬스체크
-        //                 for i in 1 2 3 4 5 6; do
-        //                     if docker ps | grep -E "dearie-backend|lightreborn-backend" | grep -q Running; then
-        //                         echo "✅ 백엔드 컨테이너가 실행 중입니다"
-        //                         break
-        //                     fi
-        //                     echo "백엔드 컨테이너 확인 중... (\$i/6)"
-        //                     sleep 5
-        //                 done
-                        
-        //                 # 로그 확인
-        //                 docker logs dearie-backend --tail 20 || true
-        //                 docker logs lightreborn-backend --tail 20 || true
-        //             """
-        //         }
-        //     }
-        // }
-        
-        // 6. Flyway 데이터 마이그레이션
+        // 5. Flyway 데이터 마이그레이션
         stage('Flyway Check and Migration') {
             steps {
                 script {
@@ -327,15 +298,22 @@ pipeline {
 
         success {
             script {
-                if (params.ENV == 'master') {
-                    echo '🎉 Build 성공 → Stable 이미지 태깅 및 푸시'
-                    sh '''
-                        docker tag dearie-backend dearie-backend:stable
-                        docker tag lightreborn-backend lightreborn-backend:stable
-                        docker push dearie-backend:stable
-                        docker push lightreborn-backend:stable
-                    '''
-                }
+                echo '🎉 Build 성공 → Stable 이미지 태깅 및 푸시'
+                sh '''
+                    # backend
+                    docker tag dearie-backend dearie-backend:stable
+                    docker tag lightreborn-backend lightreborn-backend:stable
+
+                    # frontend
+                    docker tag dearie-frontend dearie-frontend:stable
+                    docker tag lightreborn-frontend lightreborn-frontend:stable
+
+                    # push all
+                    docker push dearie-backend:stable
+                    docker push lightreborn-backend:stable
+                    docker push dearie-frontend:stable
+                    docker push lightreborn-frontend:stable
+                '''
             }
         }
 
@@ -344,16 +322,28 @@ pipeline {
                 if (params.ENV == 'master') {
                     echo '⛔ 실패 → 이전 stable 이미지로 롤백 시도'
                     sh '''
+                        # stop & remove
                         docker stop dearie-backend || true
                         docker stop lightreborn-backend || true
+                        docker stop dearie-frontend || true
+                        docker stop lightreborn-frontend || true
+
                         docker rm dearie-backend || true
                         docker rm lightreborn-backend || true
+                        docker rm dearie-frontend || true
+                        docker rm lightreborn-frontend || true
+
+                        # pull stable
                         docker pull dearie-backend:stable
                         docker pull lightreborn-backend:stable
-                        
-                        # 올바른 네트워크 이름 사용
+                        docker pull dearie-frontend:stable
+                        docker pull lightreborn-frontend:stable
+
+                        # run rollback
                         docker run -d --name dearie-backend --network dearie-net -p 8082:8082 dearie-backend:stable
                         docker run -d --name lightreborn-backend --network lightreborn-net -p 8081:8081 lightreborn-backend:stable
+                        docker run -d --name dearie-frontend --network dearie-net  -p 3001:3001 dearie-frontend:stable
+                        docker run -d --name lightreborn-frontend --network lightreborn-net -p 3000:3000 lightreborn-frontend:stable
                     '''
                 }
             }
