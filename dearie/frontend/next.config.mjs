@@ -20,7 +20,7 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: 'dearie/sw.js',
+        source: '/dearie/sw.js',
         headers: [
           {
             key: 'Cache-Control',
@@ -33,7 +33,7 @@ const nextConfig = {
         ],
       },
       {
-        source: 'dearie/manifest.json',
+        source: '/dearie/manifest.json',
         headers: [
           {
             key: 'Content-Type',
