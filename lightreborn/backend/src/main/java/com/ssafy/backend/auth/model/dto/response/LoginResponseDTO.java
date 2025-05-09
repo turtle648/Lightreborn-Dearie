@@ -7,4 +7,5 @@ import lombok.Getter;
 @Builder
 public class LoginResponseDTO {
     private String id;
+    private String name;
 }
