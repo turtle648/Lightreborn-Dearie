@@ -15,7 +15,7 @@ const nextConfig = {
     optimizeCss: true,
     scrollRestoration: true,
   },
-  basePath: '/dearie/',
+  basePath: '/dearie',
   // PWA 관련 헤더 설정
   async headers() {
     return [
