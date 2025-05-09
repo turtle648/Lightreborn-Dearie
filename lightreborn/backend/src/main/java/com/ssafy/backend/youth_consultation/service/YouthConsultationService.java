@@ -13,8 +13,8 @@ public interface YouthConsultationService {
     GetCounselingLogResponseDTO getCounselingLogById(Long id);
     ExportCounselingLogResponseDTO exportCounselingLogToExcel();
     PeopleInfoResponseDTO searchPeopleInfo(PeopleInfoRequestDTO peopleInfoRequestDTO);
-    AddScheduleResponseDTO addSchedule(Long id, AddScheduleRequestDTO addScheduleRequestDTO);
-    SpeechResponseDTO getGeneralSummarize(SpeechRequestDTO responseDTO);
+    AddScheduleResponseDTO addSchedule(String userId, Long id, AddScheduleRequestDTO addScheduleRequestDTO);
+    SpeechResponseDTO getGeneralSummarize(String loginUser, SpeechRequestDTO responseDTO);
     SurveyUploadDTO uploadIsolationYouthInfo(MultipartFile file);
     SpeechResponseDTO updateCounselingLog(Long id, UpdateCounselingLogRequestDTO requestDTO);
 

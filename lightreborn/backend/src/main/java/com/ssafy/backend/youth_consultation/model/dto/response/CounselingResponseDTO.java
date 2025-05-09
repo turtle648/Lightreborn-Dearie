@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class CounselingResponseDTO {
     private Long counselingId;
     private String type;
-//    private String counselor;
+    private String counselor;
     private LocalDateTime consultationDate;
     private String memoKeyword;
 }

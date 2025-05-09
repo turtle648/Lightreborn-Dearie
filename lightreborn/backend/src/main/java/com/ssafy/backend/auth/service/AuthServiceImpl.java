@@ -28,7 +28,10 @@ public class AuthServiceImpl implements AuthService{
             throw new AuthException(AuthErrorCode.PASSWORD_NOT_MATCH);
         }
 
-        return LoginResponseDTO.builder().id(user.getUserId()).build();
+        return LoginResponseDTO.builder()
+                .id(user.getUserId())
+                .name(user.getName())
+                .build();
     }
 
     @Override
@@ -39,13 +42,14 @@ public class AuthServiceImpl implements AuthService{
                     throw new AuthException(AuthErrorCode.USER_ALREADY_EXISTS);
                 });
 
-        User user = new User();
-
-        user.setUserId(signUpDTO.getId());
-        user.setPassword(passwordEncoder.encode(signUpDTO.getPassword()));
-        user.setRole(signUpDTO.getRole());
-
-        userRepository.save(user);
+        userRepository.save(
+                User.builder()
+                        .userId(signUpDTO.getId())
+                        .name(signUpDTO.getName())
+                        .role(signUpDTO.getRole())
+                        .password(passwordEncoder.encode(signUpDTO.getPassword()))
+                        .build()
+        );
     }
 
     @Override
@@ -58,6 +62,9 @@ public class AuthServiceImpl implements AuthService{
 
         log.info("[AuthServiceImpl] 사용자를 찾았습니다: {}", user);
 
-        return LoginResponseDTO.builder().id(user.getUserId()).build();
+        return LoginResponseDTO.builder()
+                .id(user.getUserId())
+                .name(user.getName())
+                .build();
     }
 }

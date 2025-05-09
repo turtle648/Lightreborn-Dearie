@@ -30,4 +30,9 @@ public class SurveyVersion {
 
     @OneToOne(mappedBy = "surveyVersion", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private SurveyScaleScores scaleScores;
+
+    @PrePersist
+    protected void onCreate() {
+        this.surveyDate = LocalDate.now();
+    }
 }
