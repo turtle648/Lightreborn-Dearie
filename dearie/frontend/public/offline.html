@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오프라인 - Dearie</title>
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(to right, #f8d5cb, #f1b29f, #e89a84);
+      color: #333;
+      text-align: center;
+    }
+    .container {
+      max-width: 90%;
+      padding: 2rem;
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+    p {
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 1.5rem;
+    }
+    .button {
+      background-color: #f1b29f;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 2rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background-color 0.3s;
+    }
+    .button:hover {
+      background-color: #e89a84;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20,20 L80,20 C85,20 90,25 90,30 L90,80 C90,85 85,90 80,90 L20,90 C15,90 10,85 10,80 L10,30 C10,25 15,20 20,20 Z" fill="#f1b29f" />
+      <path d="M50,20 L50,90 C40,85 30,85 20,90 L20,20 C30,25 40,25 50,20 Z" fill="#f8d5cb" />
+      <path d="M50,20 L50,90 C60,85 70,85 80,90 L80,20 C70,25 60,25 50,20 Z" fill="#f1b29f" />
+    </svg>
+    <h1>인터넷 연결이 끊겼습니다</h1>
+    <p>현재 오프라인 상태입니다. 인터넷 연결을 확인하고 다시 시도해주세요.</p>
+    <a href="/" class="button">새로고침</a>
+  </div>
+</body>
+</html>
