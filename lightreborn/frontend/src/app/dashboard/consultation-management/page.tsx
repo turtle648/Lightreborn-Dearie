@@ -51,47 +51,12 @@ export default function ConsultationManagementPage() {
     return days
   }
 
-  const formatMonth = (date: Date) => {
-    return `${date.getFullYear()}년 ${date.getMonth() + 1}월`
-  }
-
-  const formatMonthEn = (date: Date) => {
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ]
-    return `${months[date.getMonth()]} ${date.getFullYear()}`
-  }
-
-  const formatMonthShort = (date: Date) => {
-    return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}`
-  }
-
   const prevMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
   }
 
   const nextMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
-  }
-
-  const isToday = (day: number) => {
-    const today = new Date()
-    return (
-      day === today.getDate() &&
-      currentMonth.getMonth() === today.getMonth() &&
-      currentMonth.getFullYear() === today.getFullYear()
-    )
   }
 
   const isHighlighted = (day: number) => {

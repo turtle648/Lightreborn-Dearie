@@ -12,7 +12,7 @@ interface WelfareCenterStore {
   welfareCenter: WelfareCenter[];
 }
 
-export const useWelfareCenterStore = create<WelfareCenterStore>((_set) => ({
+export const useWelfareCenterStore = create<WelfareCenterStore>(() => ({
   welfareCenter: [],
 }));    
 

@@ -10,7 +10,7 @@ interface YouthConsultationStore {
   youthConsultation: YouthConsultation[];
 }
 
-export const useYouthConsultationStore = create<YouthConsultationStore>((_set) => ({
+export const useYouthConsultationStore = create<YouthConsultationStore>(() => ({
   youthConsultation: [],
 }));  
 

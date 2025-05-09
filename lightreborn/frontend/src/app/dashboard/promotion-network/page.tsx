@@ -5,8 +5,8 @@ import YangsanMap, { MarkerPoint } from "@/components/map/YangsanMap"
 import { colors } from "@/constants/colors"
 import { useDongInfo } from "@/hooks/useDongInfo"
 import { useState, useEffect } from "react"
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
-import Button from "@/components/common/Button"
+import BarChart from "@/components/common/rechart/BarChart"
+import Sheet from "@/components/common/Sheet"
 
 // 홍보 유형 코드 -> 이름 매핑
 const promotionTypeNames: Record<number, string> = {
@@ -210,35 +210,19 @@ export default function PromotionNetworkPage() {
 
   // 홍보 유형별 분포 차트
   const renderPromotionTypeChart = () => {
-    if (!promotionTypeData) return null
+    if (!promotionTypeData) return null;
     
     return (
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={promotionTypeData}
-            margin={{ top: 10, right: 10, left: 10, bottom: 40 }}
-          >
-            <XAxis 
-              dataKey="name"
-              tick={{ fontSize: 12 }}
-              height={40}
-              interval={0}
-              angle={-45}
-              textAnchor="end"
-            />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="value" name="개수">
-              {promotionTypeData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    )
-  }
+      <BarChart
+        data={promotionTypeData}
+        height={250}
+        valueName="개수"
+        tooltipFormatter={(value, name) => [`${value}개`, name]}
+        marginBottom={40}
+        hideAxis={false}
+      />
+    );
+  };
 
   // 행정동별 홍보 거점 수 데이터 (내림차순 정렬)
   const regionPromotionData = data?.promotionNetworkStatus.regionData
@@ -290,87 +274,38 @@ export default function PromotionNetworkPage() {
           </div>
 
           <Card title="전체 행정동별 홍보 거점 수" subTitle="양산시 행정동별 홍보 거점 개수를 보여줍니다.">
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={regionPromotionData}
-                  margin={{ top: 20, right: 10, left: 10, bottom: 40 }}
-                >
-                  <XAxis 
-                    dataKey="name"
-                    tick={{ fontSize: 12 }}
-                    height={40}
-                    interval={0}
-                    angle={-45}
-                    textAnchor="end"
-                  />
-                  <YAxis 
-                    domain={[0, 'dataMax + 5']}
-                  />
-                  <Tooltip 
-                    formatter={(value) => [`${value}개`, '홍보물 수']}
-                    labelFormatter={(label) => `${label}`}
-                  />
-                  <Bar dataKey="value" name="홍보물 수">
-                    {regionPromotionData.map((entry) => (
-                      <Cell 
-                        key={`cell-${entry.regionCode}`} 
-                        fill={entry.name === selectedDongName ? colors.chart.blue : colors.chart.lightGray} 
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <BarChart
+              data={regionPromotionData.map(entry => ({
+                name: entry.name,
+                value: entry.value,
+                color: entry.name === selectedDongName ? colors.chart.blue : colors.chart.lightGray
+              }))}
+              height={250}
+              valueUnit="개"
+              valueName="홍보물 수"
+              tooltipFormatter={(value) => [`${value}개`, '홍보물 수']}
+              marginBottom={40}
+            />
           </Card>
           
-          <Card 
+          <Sheet
             title="홍보물 설치 현황" 
-            headerRight={
-              <Button variant="primary" size="sm">
-                다운로드
-              </Button>
-            }
-          >
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      장소명
-                    </th>
-                    <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      장소 유형
-                    </th>
-                    <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      홍보물 유형
-                    </th>
-                    <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      주소
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {data?.promotionDetailByRegion?.promotionInstallations ? (
-                    data.promotionDetailByRegion.promotionInstallations.map((item) => (
-                      <tr key={item.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">{item.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{item.type}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{item.materialType}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{item.address}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                        지역을 선택하면 홍보물 설치 현황이 표시됩니다.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+            subTitle="홍보물 설치 현황을 보여줍니다."
+            viewType="table"
+            data={data?.promotionDetailByRegion?.promotionInstallations || []}
+            columns={[
+              { key: 'name', title: '장소명' },
+              { key: 'type', title: '장소 유형' },
+              { key: 'materialType', title: '홍보물 유형' },
+              { key: 'address', title: '주소' },
+            ]}
+            onDownload={() => console.log('홍보 거점 데이터 다운로드')}
+            isLoading={isLoading} 
+            rowKey="id"
+            onRowClick={(record) => console.log("선택한 홍보물 정보:", record?.name)}
+            emptyMessage={isSelected ? `${selectedDongName} 행정동에 홍보물이 없습니다.` : "지역을 선택하면 홍보물 설치 현황이 표시됩니다."}
+          />
+
         </>
       )}
     </div>
