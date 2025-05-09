@@ -18,9 +18,10 @@ interface DoughnutChartProps {
   showTooltip?: boolean
   emptyColor?: string
   centerText?: boolean
+  className?: string
 }
 
-export const DoughnutChart = ({
+export default function DoughnutChart({
   data,
   titleText,
   valueText,
@@ -28,16 +29,17 @@ export const DoughnutChart = ({
   borderWidth = 16,
   showTooltip = true,
   emptyColor = colors.chart.lightGray,
-  centerText = true
-}: DoughnutChartProps) => {
+  centerText = true,
+  className = ''
+}: DoughnutChartProps) {
   if (!data) {
     return (
-      <div className="flex items-center justify-center py-4">
-        <div 
+      <div className={`flex items-center justify-center py-4 ${className}`}>
+        <div
           className="rounded-full flex items-center justify-center"
-          style={{ 
-            width: size, 
-            height: size, 
+          style={{
+            width: size,
+            height: size,
             border: `${borderWidth}px solid ${emptyColor}`
           }}
         >
@@ -54,12 +56,12 @@ export const DoughnutChart = ({
   const innerRadius = outerRadius - borderWidth
   
   return (
-    <div className="flex items-center justify-center py-4">
+    <div className={`flex items-center justify-center py-4 ${className}`}>
       <div className="relative" style={{ width: size, height: size }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             {showTooltip && (
-              <Tooltip 
+              <Tooltip
                 formatter={(value, name) => [`${value}%`, name]}
                 itemStyle={{ color: colors.text.primary }}
               />
@@ -84,7 +86,7 @@ export const DoughnutChart = ({
         
         {/* 가운데 텍스트 오버레이 */}
         {centerText && (
-          <div 
+          <div
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
           >
             <div className="text-center">
@@ -98,4 +100,3 @@ export const DoughnutChart = ({
   )
 }
 
-export default DoughnutChart

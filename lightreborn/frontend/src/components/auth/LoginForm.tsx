@@ -28,9 +28,8 @@ export default function LoginForm() {
       // 로그인 실패 시 에러 메시지 표시
       console.error("로그인 실패:", error)
       setError("아이디 또는 비밀번호가 올바르지 않습니다.")
-    } finally {
-      setIsLoading(false)
-    }
+    } 
+    setIsLoading(false)
   }
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -45,9 +44,8 @@ export default function LoginForm() {
     } catch (error) {
       console.error("회원가입 실패:", error)
       setError("회원가입에 실패했습니다. 다시 시도해 주세요.")
-    } finally {
-      setIsLoading(false)
-    }
+    } 
+    setIsLoading(false)
   }
 
   return (
