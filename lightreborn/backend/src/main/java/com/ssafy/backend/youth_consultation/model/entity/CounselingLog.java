@@ -1,5 +1,6 @@
 package com.ssafy.backend.youth_consultation.model.entity;
 
+import com.ssafy.backend.auth.model.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,6 +35,10 @@ public class CounselingLog {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "isolated_youth_id")
     private IsolatedYouth isolatedYouth;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @PrePersist
     protected void onCreate() {

@@ -87,7 +87,7 @@ public class YouthConsultationController {
         return ResponseEntity.ok().body(BaseResponse.success("월별/일별 상담일지를 성공적으로 검색하였습니다.", responseDTO));
     }
 
-    @GetMapping("/{counselingId}")
+    @GetMapping("/counseling/{counselingId}")
     @Operation(
             summary = "상담 일지 상세 정보 가져오기",
             description = """
@@ -300,6 +300,27 @@ public class YouthConsultationController {
         return ResponseEntity.ok(BaseResponse.success(200, "올해 월별 상담 정보를 얻었습니다.", response));
     }
 
+    @GetMapping(value = "/{personalInfoId}")
+    @Operation(
+            summary = "개인 상담 일지",
+            description = """
+                    📋 **특정 내담자의 상담 일지 요약 데이터를 얻습니다 **
+            
+                    🔹 **요청 경로**
+                    - `youthId`: 상담 대상자의 고유 ID
+                        
+                    🔸 **용도**
+                    - 4-1-1. 관리 청년 상세 정보 화면
+                    등 에서 필요한 정보를 가져오기 위한 API 입니다.
+                    """
+    )
+    public ResponseEntity<BaseResponse<CounselingSummaryResponseDTO>> getPersonalCounselingLogSummary(@PathVariable Long personalInfoId) {
+        CounselingSummaryResponseDTO response = youthConsultationService.getPersonalCounselingLogSummary(personalInfoId);
+
+        return ResponseEntity.ok(BaseResponse.success(200, "내담자의 상담 정보를 얻었습니다.", response));
+    }
+
+
     @GetMapping(value = "/isolated-youths")
     @Operation(
             summary = "상담 리스트",
@@ -332,7 +353,7 @@ public class YouthConsultationController {
     }
 
 
-    @PatchMapping("/{counselingId}")
+    @PatchMapping("/counseling/{counselingId}")
     @Operation(
             summary = "상담 일지 AI 코멘트 수정",
             description = """

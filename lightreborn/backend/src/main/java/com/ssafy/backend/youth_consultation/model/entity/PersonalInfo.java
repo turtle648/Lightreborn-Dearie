@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.Period;
 
 @Entity
 @Table(name = "personal_info")
@@ -29,4 +30,10 @@ public class PersonalInfo {
 
     @Column(length = 20)
     private String emergencyContact;
+
+    @Transient
+    public int getAge() {
+        if (birthDate == null) return 0;
+        return Period.between(birthDate, LocalDate.now()).getYears();
+    }
 }

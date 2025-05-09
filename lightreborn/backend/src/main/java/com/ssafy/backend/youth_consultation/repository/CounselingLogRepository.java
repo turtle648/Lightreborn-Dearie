@@ -1,6 +1,7 @@
 package com.ssafy.backend.youth_consultation.repository;
 
 import com.ssafy.backend.youth_consultation.model.entity.CounselingLog;
+import com.ssafy.backend.youth_consultation.model.entity.IsolatedYouth;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -15,6 +16,8 @@ public interface CounselingLogRepository extends JpaRepository<CounselingLog, Lo
 
     @EntityGraph(attributePaths = {"isolatedYouth", "isolatedYouth.personalInfo"})
     Page<CounselingLog> findAll(Pageable pageable);
+
+    Page<CounselingLog> findAllByIsolatedYouth(IsolatedYouth isolatedYouth, Pageable pageable);
 
     @EntityGraph(attributePaths = {"isolatedYouth", "isolatedYouth.personalInfo"})
     Page<CounselingLog> findAllByConsultationDateBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
