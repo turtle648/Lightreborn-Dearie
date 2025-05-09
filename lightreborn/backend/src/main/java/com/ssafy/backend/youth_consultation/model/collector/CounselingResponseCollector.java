@@ -27,6 +27,7 @@ public class CounselingResponseCollector {
                             .type(type)
                             .memoKeyword(log.getMemoKeyword())
                             .consultationDate(log.getConsultationDate())
+                            .counselor(log.getUser().getName())
                             .build();
                 })
                 .toList();

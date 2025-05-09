@@ -22,6 +22,7 @@ import org.springframework.data.web.SortDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -230,10 +231,11 @@ public class YouthConsultationController {
                     """
     )
     public ResponseEntity<BaseResponse<AddScheduleResponseDTO>> addSchedule(
+            @AuthenticationPrincipal String userId,
             @PathVariable Long youthId,
             @RequestBody AddScheduleRequestDTO addScheduleRequestDTO
             ) {
-        AddScheduleResponseDTO addScheduleResponseDTO = youthConsultationService.addSchedule(youthId, addScheduleRequestDTO);
+        AddScheduleResponseDTO addScheduleResponseDTO = youthConsultationService.addSchedule(userId, youthId, addScheduleRequestDTO);
 
         return ResponseEntity.ok().body(BaseResponse.success("상담 일정을 성공적으로 추가하였습니다.", addScheduleResponseDTO));
     }
@@ -298,10 +300,11 @@ public class YouthConsultationController {
             )
     )
     public ResponseEntity<BaseResponse<SpeechResponseDTO>> uploadRecordFile(
+            @AuthenticationPrincipal String userId,
             @ModelAttribute SpeechRequestDTO request
             ) {
 
-        SpeechResponseDTO response = youthConsultationService.getGeneralSummarize(request);
+        SpeechResponseDTO response = youthConsultationService.getGeneralSummarize(userId, request);
 
         return ResponseEntity
                 .ok(BaseResponse.success(200, "음성 변환을 완료하였습니다", response));

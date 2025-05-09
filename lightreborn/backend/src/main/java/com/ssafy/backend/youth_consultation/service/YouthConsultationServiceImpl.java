@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ssafy.backend.auth.exception.AuthErrorCode;
+import com.ssafy.backend.auth.exception.AuthException;
+import com.ssafy.backend.auth.model.entity.User;
+import com.ssafy.backend.auth.repository.UserRepository;
 import com.ssafy.backend.common.utils.parser.ExcelUtils;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationErrorCode;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationException;
@@ -43,8 +47,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDate;
-import java.time.Period;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.time.Year;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -69,6 +73,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     private final PersonalInfoRepository personalInfoRepository;
     private final SurveyAnswerRepository surveyAnswerRepository;
     private final SurveyVersionRepository surveyVersionRepository;
+    private final UserRepository userRepository;
     private final DataSource dataSource;
 
     @Value("${spring.cloud.aws.s3.bucket}")
@@ -221,7 +226,10 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     }
 
     @Override
-    public AddScheduleResponseDTO addSchedule(Long id, AddScheduleRequestDTO addScheduleRequestDTO) {
+    public AddScheduleResponseDTO addSchedule(String userId, Long id, AddScheduleRequestDTO addScheduleRequestDTO) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
+
         IsolatedYouth isolatedYouth = isolatedYouthRepository.findById(id)
                 .orElseThrow(() ->
                         new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_PERSON)
@@ -229,6 +237,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
 
         CounselingLog log = counselingLogRepository.save(
                 CounselingLog.builder()
+                        .user(user)
                         .consultationDate(addScheduleRequestDTO.getDate().atStartOfDay())
                         .isolatedYouth(isolatedYouth)
                         .counselingProcess(CounselingConstants.DEFAULT_STEP)
@@ -241,7 +250,11 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     }
 
     @Transactional
-    public SpeechResponseDTO getGeneralSummarize(SpeechRequestDTO requestDTO) {
+    @Override
+    public SpeechResponseDTO getGeneralSummarize(String loginUser, SpeechRequestDTO requestDTO) {
+        User user = userRepository.findByUserId(loginUser)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
+
         IsolatedYouth isolatedYouth = isolatedYouthRepository.findById(requestDTO.getIsolatedYouthId())
                 .orElseThrow(() -> new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_PERSON));
 
@@ -279,6 +292,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
 
         counselingLogRepository.save(
                 CounselingLog.builder()
+                        .user(user)
                         .fullScript(transcript)
                         .counselorKeyword(counselor)
                         .memoKeyword(notes)
@@ -555,6 +569,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         CounselingLog newLog = counselingLogRepository.save(
                 CounselingLog.builder()
                         .id(id)
+                        .user(counselingLog.getUser())
                         .consultationDate(counselingLog.getConsultationDate())
                         .isolatedYouth(counselingLog.getIsolatedYouth())
                         .fullScript(counselingLog.getFullScript())

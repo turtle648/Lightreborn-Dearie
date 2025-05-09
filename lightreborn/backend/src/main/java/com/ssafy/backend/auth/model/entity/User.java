@@ -2,15 +2,12 @@ package com.ssafy.backend.auth.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "users")
 @Getter
-@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -20,6 +17,8 @@ public class User {
 
     @Column(name = "login_id", nullable = false, length = 20, unique = true)
     private String userId;
+
+    private String name;
 
     @Column(name = "password", nullable = false)
     @JsonIgnore
