@@ -1,7 +1,7 @@
 package com.ssafy.backend.common.security;
 
-import com.ssafy.backend.auth.entity.User;
-import com.ssafy.backend.auth.repository.UserRepository;
+import com.ssafy.backend.user.entity.User;
+import com.ssafy.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
