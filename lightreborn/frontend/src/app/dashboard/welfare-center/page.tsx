@@ -175,7 +175,7 @@ export default function WelfareCenterPage() {
   // 선택된 동의 청년 1000명당 협력기관 비율
   const selectedDongRatio = isSelected
     ? centerRatioData.find(item => item.region === selectedDongName)?.ratio || 0
-    : null
+    : 0
     
   // 선택된 동의 협력기관 정보 가져오기
   const selectedDongInfo = isSelected

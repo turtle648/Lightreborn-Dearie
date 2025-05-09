@@ -121,8 +121,4 @@ export function getDongInfoByName(name: string | null): DongInfo | null {
   return dongNameMap[name] || null;
 }
 
-// 다른 형식의 코드나 이름으로 매핑하는 경우를 위한 준비
-export function initializeDongMap(geoJsonFeatures: any[]): void {
-  // GeoJSON 데이터로부터 dongCodeMap을 동적으로 만듭니다.
-  // 필요한 경우 추후 구현
-} 
+ 

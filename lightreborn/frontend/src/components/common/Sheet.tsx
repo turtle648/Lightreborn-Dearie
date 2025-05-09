@@ -8,16 +8,16 @@ import Image from 'next/image'
 import downloadIcon from '@/assets/download.svg'
 
 // 테이블 데이터 타입
-export interface TableColumn<T = any> {
+export interface TableColumn<T = unknown> {
   key: string
   title: string
-  render?: (value: any, record: T, index: number) => ReactNode
+  render?: (value: unknown, record: T, index: number) => ReactNode
   width?: string | number
 }
 
 export type SheetViewType = 'table' | 'chart' | 'custom'
 
-export interface SheetProps<T = any> {
+export interface SheetProps<T = unknown> {
   // 기본 속성
   title: string
   subTitle?: string
@@ -74,7 +74,7 @@ export interface SheetProps<T = any> {
  * Sheet 컴포넌트 - 테이블, 차트 또는 기타 콘텐츠를 담는 컨테이너
  * 데이터 관리 및 표시 기능을 포함합니다.
  */
-export default function Sheet<T extends Record<string, any>>({
+export default function Sheet<T extends Record<string, unknown>>({
   // 기본 속성
   title,
   subTitle,
