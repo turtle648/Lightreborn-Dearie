@@ -243,6 +243,7 @@ const CustomTooltip = ({
               name={valueName}
               // 막대 크기 동적 계산
               barSize={computedBarSize}
+              radius={[4, 4, 0, 0]}
             >
               {validData.map((entry, index) => (
                 <Cell
