@@ -1,6 +1,6 @@
 package com.ssafy.backend.common.security;
 
-import com.ssafy.backend.auth.entity.User;
+import com.ssafy.backend.user.entity.User;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,8 +21,8 @@ public class CustomUserDetails implements UserDetails {
 
     public CustomUserDetails(User user) {
         this.id = user.getId();
-        this.userId = user.getUserId();
-        this.nickname = user.getNickName();
+        this.userId = user.getLoginId();
+        this.nickname = user.getNickname();
         this.authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
     }
 

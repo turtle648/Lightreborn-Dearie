@@ -1,7 +1,7 @@
 package com.ssafy.backend.common.security;
 
-import com.ssafy.backend.auth.entity.User;
-import com.ssafy.backend.auth.repository.UserRepository;
+import com.ssafy.backend.user.entity.User;
+import com.ssafy.backend.user.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
@@ -77,7 +77,7 @@ public class JwtTokenProvider {
 
 
         // userId를 이용해 User 객체 조회
-        return userRepository.findByUserId(userId)
+        return userRepository.findByLoginId(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + userId));
     }
 
