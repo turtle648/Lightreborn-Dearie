@@ -309,11 +309,11 @@ pipeline {
                         docker tag dearie-frontend dearie-frontend:stable
                         docker tag lightreborn-frontend lightreborn-frontend:stable
 
-                        # push all
-                        docker push dearie-backend:stable
-                        docker push lightreborn-backend:stable
-                        docker push dearie-frontend:stable
-                        docker push lightreborn-frontend:stable
+                        # build all
+                        docker build -t dearie-backend:stable .
+                        docker build -t lightreborn-backend:stable .
+                        docker build -t dearie-frontend:stable .
+                        docker build -t lightreborn-frontend:stable .
                     '''
                 }
             }
@@ -334,12 +334,6 @@ pipeline {
                         docker rm lightreborn-backend || true
                         docker rm dearie-frontend || true
                         docker rm lightreborn-frontend || true
-
-                        # pull stable
-                        docker pull dearie-backend:stable
-                        docker pull lightreborn-backend:stable
-                        docker pull dearie-frontend:stable
-                        docker pull lightreborn-frontend:stable
 
                         # run rollback
                         docker run -d --name dearie-backend --network dearie-net -p 8082:8082 dearie-backend:stable
