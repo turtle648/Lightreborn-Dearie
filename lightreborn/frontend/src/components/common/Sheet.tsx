@@ -17,7 +17,7 @@ export interface TableColumn<T = unknown> {
 
 export type SheetViewType = 'table' | 'chart' | 'custom'
 
-export interface SheetProps<T = unknown> {
+export interface SheetProps {
   // 기본 속성
   title: string
   subTitle?: string
@@ -36,8 +36,8 @@ export interface SheetProps<T = unknown> {
   
   // 데이터 관련 속성
   viewType?: SheetViewType
-  data?: T[]
-  columns?: TableColumn<T>[]
+  data?: unknown[]    
+  columns?: TableColumn[]
   chartConfig?: {
     layout?: 'vertical' | 'horizontal'
     height?: number
@@ -64,17 +64,17 @@ export interface SheetProps<T = unknown> {
     totalItems?: number
     onChange?: (page: number) => void
   }
-  rowKey?: string | ((record: T) => string)
-  onRowClick?: (record: T, index: number) => void
+  rowKey?: string | ((record: unknown) => string)
+  onRowClick?: (record: unknown, index: number) => void
   // 데이터 필터링 및 가공 콜백
-  dataTransform?: (data: T[]) => T[]
+  dataTransform?: (data: unknown[]) => unknown[]
 }
 
 /**
  * Sheet 컴포넌트 - 테이블, 차트 또는 기타 콘텐츠를 담는 컨테이너
  * 데이터 관리 및 표시 기능을 포함합니다.
  */
-export default function Sheet<T extends Record<string, unknown>>({
+export default function Sheet({
   // 기본 속성
   title,
   subTitle,
@@ -100,9 +100,9 @@ export default function Sheet<T extends Record<string, unknown>>({
   rowKey = 'id',
   onRowClick,
   dataTransform,
-}: SheetProps<T>) {
+}: SheetProps) {
   // 데이터 변환 처리
-  const [processedData, setProcessedData] = useState<T[]>([])
+  const [processedData, setProcessedData] = useState<unknown[]>([])
   
   useEffect(() => {
     // 데이터 변환 함수가 있으면 적용
@@ -126,7 +126,7 @@ export default function Sheet<T extends Record<string, unknown>>({
   ) : null)
   
   // 행 키 생성 함수
-  const getRowKey = (record: T, index: number): string => {
+  const getRowKey = (record: unknown, index: number): string => {
     if (typeof rowKey === 'function') {
       return rowKey(record)
     }
@@ -161,8 +161,8 @@ export default function Sheet<T extends Record<string, unknown>>({
                 {columns.map((column, colIndex) => (
                   <td key={`${getRowKey(record, index)}-${column.key || colIndex}`} className="px-6 py-4 whitespace-nowrap">
                     {column.render 
-                      ? column.render(record[column.key], record, index)
-                      : record[column.key]
+                      ? column.render(record[column.key as string], record, index)
+                      : record[column.key as string]
                     }
                   </td>
                 ))}
@@ -207,11 +207,11 @@ export default function Sheet<T extends Record<string, unknown>>({
     
     // 데이터를 BarChart 컴포넌트에 맞게 변환
     const chartData: BarChartItem[] = processedData.map(item => ({
-      name: item[nameKey]?.toString() || '',
-      value: Number(item[valueKey]) || 0,
-      color: colorKey && item[colorKey] 
-        ? item[colorKey] 
-        : (highlightItem && item[nameKey] === highlightItem ? highlightColor : defaultColor)
+      name: item[nameKey as string]?.toString() || '',
+      value: Number(item[valueKey as string]) || 0,
+      color: colorKey && item[colorKey as string] 
+        ? item[colorKey as string] 
+        : (highlightItem && item[nameKey as string] === highlightItem ? highlightColor : defaultColor)
     }))
     
     return (
@@ -224,7 +224,7 @@ export default function Sheet<T extends Record<string, unknown>>({
         tooltipFormatter={tooltipFormatter}
         barSize={barSize}
         defaultColor={defaultColor}
-        highlightColor={highlightColor}
+        highlightedColor={highlightColor}
         highlightedItem={highlightItem}
       />
     )
