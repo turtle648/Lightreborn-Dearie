@@ -117,7 +117,38 @@ public class YouthConsultationController {
                 );
     }
 
-    @GetMapping("/export-excel")
+    @PatchMapping("/counseling/{counselingId}")
+    @Operation(
+            summary = "상담 일지 AI 코멘트 수정",
+            description = """
+                    📋 **특정 상담 일지의 AI 분석 결과(코멘트)를 수정합니다.**
+            
+                    🔹 **경로 변수**
+                    - `counselingId`: 수정할 상담 일지의 고유 ID
+            
+                    🔹 **요청 바디 (`UpdateCounselingLogRequestDTO`)**
+                    - `summary`: 상담 전체 요약
+                    - `client`: 내담자 키워드
+                    - `counselor`: 상담자 키워드
+                    - `memos`: 특이사항 또는 메모
+            
+                    🔸 **용도**
+                    - 녹음파일 AI 분석 완료 대시보드 
+                    등에서 상담일지 기록을 마친 후, 상담 관리자가 코멘트를 보완할 때 사용됩니다.
+                    """
+    )
+    public ResponseEntity<BaseResponse<SpeechResponseDTO>> updateCounselingLog(
+            @PathVariable Long counselingId,
+            @RequestBody UpdateCounselingLogRequestDTO request
+    ) {
+
+        SpeechResponseDTO response = youthConsultationService.updateCounselingLog(counselingId, request);
+
+        return ResponseEntity
+                .ok(BaseResponse.success("상담 일지 AI 코멘트를 수정 완료 하였습니다.", response));
+    }
+
+    @GetMapping("/counseling/export-excel")
     @Operation(
             summary = "전체 상담 일지 데이터 Excel 다운로드",
             description = """
@@ -300,7 +331,7 @@ public class YouthConsultationController {
         return ResponseEntity.ok(BaseResponse.success(200, "올해 월별 상담 정보를 얻었습니다.", response));
     }
 
-    @GetMapping(value = "/{personalInfoId}")
+    @GetMapping(value = "/{personalInfoId}/summary")
     @Operation(
             summary = "개인 상담 일지",
             description = """
@@ -318,6 +349,30 @@ public class YouthConsultationController {
         CounselingSummaryResponseDTO response = youthConsultationService.getPersonalCounselingLogSummary(personalInfoId);
 
         return ResponseEntity.ok(BaseResponse.success(200, "내담자의 상담 정보를 얻었습니다.", response));
+    }
+
+    @GetMapping(value = "/{personalInfoId}")
+    @Operation(
+            summary = "척도 설문 응답 내역",
+            description = """
+                    📋 **특정 내담자의 척도 설문 응답 내역을 얻습니다 **
+            
+                    🔹 **요청 경로**
+                    - `personalInfoId`: 상담 대상자의 고유 ID
+                    - `versionId`: 설문 고유 id
+                        
+                    🔸 **용도**
+                    - 4-1-2. 관리 청년 상세 정보 - 척도설문 자세히 보기
+                    등 에서 필요한 정보를 가져오기 위한 API 입니다.
+                    """
+    )
+    public ResponseEntity<BaseResponse<SurveyResponseSummaryDTO>> getSurveyResponseSummaryInfo (
+            @PathVariable("personalInfoId") Long personalInfoId,
+            @RequestParam(value = "survey-version") Long versionId
+    ) {
+        SurveyResponseSummaryDTO response = youthConsultationService.getSurveyResponseSummaryInfo(personalInfoId, versionId);
+
+        return ResponseEntity.ok(BaseResponse.success("내담자의 상담 정보를 얻었습니다.", response));
     }
 
 
@@ -350,37 +405,5 @@ public class YouthConsultationController {
         Page<PreSupportIsolatedYouthResponseDTO> response = youthConsultationService.getPresupportList(pageable);
 
         return ResponseEntity.ok(BaseResponse.success(200, "은둔 고립 청년 발굴 및 선정 절차 정보를 얻었습니다.", response));
-    }
-
-
-    @PatchMapping("/counseling/{counselingId}")
-    @Operation(
-            summary = "상담 일지 AI 코멘트 수정",
-            description = """
-                    📋 **특정 상담 일지의 AI 분석 결과(코멘트)를 수정합니다.**
-            
-                    🔹 **경로 변수**
-                    - `counselingId`: 수정할 상담 일지의 고유 ID
-            
-                    🔹 **요청 바디 (`UpdateCounselingLogRequestDTO`)**
-                    - `summary`: 상담 전체 요약
-                    - `client`: 내담자 키워드
-                    - `counselor`: 상담자 키워드
-                    - `memos`: 특이사항 또는 메모
-            
-                    🔸 **용도**
-                    - 녹음파일 AI 분석 완료 대시보드 
-                    등에서 상담일지 기록을 마친 후, 상담 관리자가 코멘트를 보완할 때 사용됩니다.
-                    """
-    )
-    public ResponseEntity<BaseResponse<SpeechResponseDTO>> updateCounselingLog(
-            @PathVariable Long counselingId,
-            @RequestBody UpdateCounselingLogRequestDTO request
-    ) {
-
-        SpeechResponseDTO response = youthConsultationService.updateCounselingLog(counselingId, request);
-
-        return ResponseEntity
-                .ok(BaseResponse.success("상담 일지 AI 코멘트를 수정 완료 하였습니다.", response));
     }
 }

@@ -493,6 +493,33 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                 .build();
     }
 
+    @Override
+    public SurveyResponseSummaryDTO getSurveyResponseSummaryInfo(Long personalInfoId, Long versionId) {
+        PersonalInfo personalInfo = personalInfoRepository.findById(personalInfoId)
+                .orElseThrow(() -> new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_PERSON));
+
+        SurveyVersion version = surveyVersionRepository.findById(versionId)
+                        .orElseThrow(() -> new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_SURVEY));
+
+        List<SurveyQuestion> questions = surveyQuestionRepository.findAll();
+        List<SurveyAnswer> answers = surveyAnswerRepository.findAllBySurveyVersion(version);
+
+        SurveyScaleResponseCollector surveyScaleResponseCollector = new SurveyScaleResponseCollector(
+                version
+        );
+
+        SurveyQuestionWithAnswerCollector surveyQuestionWithAnswerCollector = new SurveyQuestionWithAnswerCollector(
+                answers
+        );
+
+        return SurveyResponseSummaryDTO.builder()
+                .name(personalInfo.getName())
+                .age(personalInfo.getAge())
+                .surveyScale(surveyScaleResponseCollector.getSurveyScaleResponseDTO())
+                .answers(surveyQuestionWithAnswerCollector.getSurveyQuestionWithAnswerDTOS())
+                .build();
+    }
+
     private PreSupportIsolatedYouthResponseDTO toDto(IsolatedYouth iy)
     {
         PersonalInfo pi = iy.getPersonalInfo();
