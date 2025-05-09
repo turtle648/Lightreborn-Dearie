@@ -131,6 +131,7 @@ pipeline {
             steps {
                 script {
                     def frontendEnv = """
+                    NEXT_PUBLIC_BASE_PATH=/dearie
                     NEXT_PUBLIC_API_URL=/api/app/
                     """.stripIndent().trim()
 
