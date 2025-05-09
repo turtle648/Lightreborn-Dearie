@@ -275,7 +275,7 @@ export default function WelfareCenterPage() {
         onDownload={() => console.log('협력기관 현황 다운로드')}
         isLoading={isLoading}
         rowKey="id"
-        onRowClick={(record) => console.log('선택된 기관:', record.name)}
+        onRowClick={(record) => console.log('선택된 기관:', record)}
         emptyMessage={isSelected ? `${selectedDongName}에 등록된 협력기관이 없습니다.` : '협력기관 데이터가 없습니다.'}
       />
     </div>
