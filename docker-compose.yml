@@ -16,6 +16,18 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
 
+  frontend-dearie:
+    build:
+      context: ./dearie/frontend
+    image: dearie-frontend:latest
+    container_name: dearie-frontend
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend-dearie
+    networks:
+      - dearie-net
+
   redis-dearie:
     image: redis:latest
     container_name: redis-dearie
