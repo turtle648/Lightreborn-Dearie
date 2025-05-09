@@ -7,9 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ssafy.backend.common.utils.parser.ExcelUtils;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationErrorCode;
 import com.ssafy.backend.youth_consultation.exception.YouthConsultationException;
-import com.ssafy.backend.youth_consultation.model.collector.PeopleInfoCollector;
-import com.ssafy.backend.youth_consultation.model.collector.PersonalInfoCollector;
-import com.ssafy.backend.youth_consultation.model.collector.SurveyAnswerCollector;
+import com.ssafy.backend.youth_consultation.model.collector.*;
 import com.ssafy.backend.youth_consultation.model.context.SurveyContext;
 import com.ssafy.backend.youth_consultation.model.context.TranscriptionContext;
 import com.ssafy.backend.youth_consultation.model.dto.request.*;
@@ -463,7 +461,36 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
 
     @Override
     public CounselingSummaryResponseDTO getPersonalCounselingLogSummary(Long personalInfoId) {
-        return null;
+        IsolatedYouth isolatedYouth = isolatedYouthRepository.findByPersonalInfoId(personalInfoId)
+                .orElseThrow(() -> new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_PERSON));
+
+        PersonalInfo personalInfo = isolatedYouth.getPersonalInfo();
+
+        Pageable counselingPageable = PageRequest.of(0, 5, Sort.by("consultationDate").ascending());
+        Page<CounselingLog> counselingLogs = counselingLogRepository.findAllByIsolatedYouth(isolatedYouth, counselingPageable);
+
+        Optional<SurveyVersion> surveyVersion = surveyVersionRepository
+                .findTopByPersonalInfoOrderByVersionDesc(isolatedYouth.getPersonalInfo());
+
+        Pageable surveyPageable = PageRequest.of(0, 5, Sort.by("surveyDate").ascending());
+        Page<SurveyVersion> surveyVersions =
+                surveyVersionRepository.findAllByPersonalInfo(isolatedYouth.getPersonalInfo(), surveyPageable);
+
+        CounselingResponseCollector counselingCollector = new CounselingResponseCollector(counselingLogs);
+        SurveyScaleResponseCollector surveyScaleResponseCollector = new SurveyScaleResponseCollector(
+                surveyVersion.orElse(null),
+                surveyVersions.getContent()
+        );
+
+        return CounselingSummaryResponseDTO.builder()
+                .personalId(personalInfoId)
+                .name(personalInfo.getName())
+                .age(personalInfo.getAge())
+                .isolatedScore(isolatedYouth.getIsolatedScore())
+                .counselingList(counselingCollector.getCounselingResponseDTOS())
+                .currSurveyScale(surveyScaleResponseCollector.getSurveyScaleResponseDTO())
+                .surveyList(surveyScaleResponseCollector.getSurveyScaleResponseDTOS())
+                .build();
     }
 
     private PreSupportIsolatedYouthResponseDTO toDto(IsolatedYouth iy)

@@ -8,13 +8,11 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
 public interface IsolatedYouthRepository extends JpaRepository<IsolatedYouth, Long> {
 
     Optional<IsolatedYouth> findById(Long Id);
@@ -90,4 +88,6 @@ public interface IsolatedYouthRepository extends JpaRepository<IsolatedYouth, Lo
     @Override
     Page<IsolatedYouth> findAll(Pageable pageable);
 
+    @EntityGraph(attributePaths = "personalInfo")
+    Optional<IsolatedYouth> findByPersonalInfoId(Long personalInfoId);
 }
