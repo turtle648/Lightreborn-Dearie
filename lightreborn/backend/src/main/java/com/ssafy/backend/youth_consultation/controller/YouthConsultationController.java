@@ -51,6 +51,18 @@ public class YouthConsultationController {
                     🔸 **용도**: \s
                     - 상담일지 관리 대시보드에서 은둔고립청년 상담 기록을 조회하기 위한 API입니다.
                     """
+    )@Operation(
+            summary = "상담 일지 리스트 가져오기 (5개씩)",
+            description = """
+                    📋 **상담 일지 리스트를 페이지 단위로 조회합니다.**
+                    
+                    - 기본 페이지 크기: **5**
+                    - 페이지네이션을 위한 `page`, `size` 파라미터 사용 가능
+                    - 최신순 정렬로 반환됩니다.
+                    
+                    🔸 **용도**: \s
+                    - 상담일지 관리 대시보드에서 은둔고립청년 상담 기록을 조회하기 위한 API입니다.
+                    """
     )
     public ResponseEntity<BaseResponse<GetCounselingLogsResponseDTO>> searchIsolationYouthWithPagination(
             @RequestParam(value = "page", defaultValue = "0") int pageNum,

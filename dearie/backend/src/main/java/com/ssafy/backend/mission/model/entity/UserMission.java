@@ -9,7 +9,6 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "user_mission")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
