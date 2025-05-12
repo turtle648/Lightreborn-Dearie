@@ -9,7 +9,7 @@ export interface ComboChartItem {
 }
 
 interface ComboChartProps {
-  data: ComboChartItem[]
+  data?: ComboChartItem[]
   title?: string
   height?: number | string
   width?: number | string

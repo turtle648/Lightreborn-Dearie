@@ -264,7 +264,6 @@ export default function WelfareCenterPage() {
 
       <Sheet
         title={isSelected ? `${selectedDongName} 협력기관 현황` : "전체 협력기관 현황"}
-        viewType="table"
         data={filteredWelfareCenters}
         columns={[
           { key: 'type', title: '기관 분류' },

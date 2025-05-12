@@ -1,7 +1,7 @@
 "use client"
 
 import DoughnutChart from "@/components/common/rechart/DoughnutChart"
-import ComboChart from "@/components/common/rechart/ComboChart"
+import ComboChart, { ComboChartItem } from "@/components/common/rechart/ComboChart"
 import BarChart from "@/components/common/rechart/BarChart"
 import { Card } from "@/components/common/Card"
 import { colors } from "@/constants/colors"
@@ -9,10 +9,10 @@ import { colors } from "@/constants/colors"
 export default function Dashboard() {
   // 누적 상담 현황 데이터
   const consultationTypeData = [
-    { name: "비위험군", value: 79, color: "#DDDDDD" },
-    { name: "고민 위험군", value: 21, color: "#FFD465" },
-    { name: "고립 청년", value: 12, color: "#FF7A5A" },
-    { name: "은둔 청년", value: 8, color: "#B548C6" }
+    { name: "비위험군", value: 79, color: colors.chart.gray },
+    { name: "고립 위험군", value: 21, color: colors.chart.yellow },
+    { name: "고립 청년", value: 12, color: colors.chart.orange },
+    { name: "은둔 청년", value: 8, color: colors.chart.purple }
   ]
 
   // 월별 상담 데이터
@@ -24,17 +24,17 @@ export default function Dashboard() {
     { name: "5월", barValue: 55, lineValue: 40 },
     { name: "6월", barValue: 30, lineValue: 32 },
     { name: "7월", barValue: 25, lineValue: 38 },
-    { name: "8월", barValue: 20, lineValue: 30 },
-    { name: "9월", barValue: 30, lineValue: 25 },
-    { name: "10월", barValue: 35, lineValue: 20 },
-    { name: "11월", barValue: 40, lineValue: 15 },
-    { name: "12월", barValue: 45, lineValue: 22 }
+    { name: "8월", lineValue: 30 }, // 현재 7월인 경우
+    { name: "9월", lineValue: 25 },
+    { name: "10월",  lineValue: 20 },
+    { name: "11월",  lineValue: 15 },
+    { name: "12월",  lineValue: 22 }
   ]
 
   // 최근 3개월 등록 상담자 데이터
   const recentRiskGroupData = [
-    { name: "고립 위험군", value: 5, color: "#B548C6" },
-    { name: "비위험군", value: 7, color: "#DDDDDD" }
+    { name: "고립 위험군", value: 5, color: colors.chart.yellow },
+    { name: "비위험군", value: 7, color: colors.chart.gray }, 
   ]
 
   return (
@@ -77,7 +77,7 @@ export default function Dashboard() {
           <Card title="월별 상담 건수">
             <div className="h-64 w-full">
             <ComboChart
-              data={monthlyData}
+              data={monthlyData as ComboChartItem[]}
               barName="월별 건수"
               lineName="전년 동월 건수"
               barColor={colors.chart.blue}
@@ -108,9 +108,9 @@ export default function Dashboard() {
               
               <div className="flex h-64 w-full">
                 <BarChart
-                  data={[{name: "2월", value: 7}, {name: "3월", value: 10}, {name: "4월", value: 12}]}
+                  data={[{name: "2월", value: 7, color: colors.chart.gray}, {name: "3월", value: 10, color: colors.chart.gray}, {name: "4월", value: 12, color: colors.chart.blue}]}
                   height={250}
-                  width={250}
+                  width={300}
                   valueName="명"
                   tooltipFormatter={(value, name) => [`${value}명`, name]}
                   marginBottom={40}
@@ -124,9 +124,10 @@ export default function Dashboard() {
                   data={recentRiskGroupData}
                   titleText="고립 위험군"
                   valueText="5명"
-                  size={120}
-                  borderWidth={12}
+                  size={150}
+                  borderWidth={20}
                   centerText={true}
+                  showTooltip={false}
                 />
               </div>
               </div>
