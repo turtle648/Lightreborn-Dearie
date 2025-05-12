@@ -1,12 +1,10 @@
 package com.ssafy.backend.survey.entity;
 
-import com.ssafy.backend.user.entity.User;
+import com.ssafy.backend.auth.model.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "counseling_log")

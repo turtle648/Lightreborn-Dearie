@@ -1,6 +1,6 @@
 package com.ssafy.backend.mission.model.entity;
 
-import com.ssafy.backend.user.entity.User;
+import com.ssafy.backend.auth.model.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
