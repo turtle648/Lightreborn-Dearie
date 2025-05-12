@@ -1,98 +1,129 @@
 package com.ssafy.backend.common.security;
 
-import com.ssafy.backend.user.entity.User;
-import com.ssafy.backend.user.repository.UserRepository;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
 public class JwtTokenProvider {
+    @Value("${spring.profiles.active:local}")
+    private String activeProfile;
 
-    private static final String SECRET_KEY = "your-256-bit-secret-your-256-bit-secret"; // ✅ 256-bit 키 사용 필수
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // ✅ 24시간
+    public static final int EXPIRATION_TIME = 60 * 60 * 24;
 
     private final Key key;
-    private final UserRepository userRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
-    public JwtTokenProvider(UserRepository userRepository) {
-        this.key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
-        this.userRepository = userRepository;
+    public JwtTokenProvider(@Value("${jwt.secret-key}") String secretKey,
+                            RedisTemplate<String, Object> redisTemplate) {
+        this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
+        this.redisTemplate = redisTemplate;
     }
 
-    // ✅ JWT 토큰 생성
     public String generateToken(String userId) {
         return Jwts.builder()
-                .setSubject(String.valueOf(userId))
+                .setSubject(userId)
+                .claim("role", "user")
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME * 1000L))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // ✅ JWT 토큰 검증
+    public ResponseCookie generateTokenCookie(String jwtToken) {
+        boolean isDev = activeProfile.equals("local");
+
+        return ResponseCookie.from("access_token", jwtToken)
+                .httpOnly(true)
+                .secure(false)
+//                .secure(!isDev ? true : false)
+                .path("/")
+                .maxAge(EXPIRATION_TIME)
+                .sameSite("Lax")
+//                .sameSite(isDev ? "Lax" : "None")
+                .build();
+    }
+
+    public ResponseCookie expiredTokenCookie(String jwtToken) {
+        boolean isDev = activeProfile.equals("local");
+
+        long remainTime = getRemainingExpiration(jwtToken);
+        String blacklistKey = "blacklist:" + DigestUtils.sha256Hex(jwtToken);
+        redisTemplate.opsForValue().set(blacklistKey, "logout", remainTime, TimeUnit.MILLISECONDS);
+
+        return ResponseCookie.from("access_token", jwtToken)
+                .httpOnly(true)
+                .secure(!isDev)
+                .path("/")
+                .maxAge(0)
+                .sameSite(isDev ? "Lax" : "None")
+                .build();
+    }
+
+    public String extractTokenFromCookie(HttpServletRequest request) {
+        if(request.getCookies() == null) return null;
+
+        for(Cookie cookie: request.getCookies()) {
+            if("access_token".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
+    }
+
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            return true;
+
+            String blacklistKey = "blacklist:" + DigestUtils.sha256Hex(token);
+            Object status = redisTemplate.opsForValue().get(blacklistKey);
+
+            return !"logout".equals(status);
         } catch (JwtException e) {
             return false;
         }
     }
 
+    public long getRemainingExpiration(String token) {
+        Date expiration = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+
+        return expiration.getTime() - System.currentTimeMillis();
+    }
 
     public String getUserIdFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+        return getClaims(token).getSubject();
     }
 
-    // ✅ JWT에서 사용자 user 추출
-    public User getUserFromToken(String token){
-        // 접두어 Bearer 제거
-        if (token.startsWith("Bearer ")){
-            token = token.substring(7);
+    public Claims getClaims(String token) {
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (JwtException e) {
+            throw new IllegalArgumentException("유효하지 않은 JWT 토큰입니다", e);
         }
-
-        // JWT에서 userId 추출
-        String userId = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
-
-
-        // userId를 이용해 User 객체 조회
-        return userRepository.findByLoginId(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + userId));
     }
 
-    public User getUserFromRequest(HttpServletRequest request) {
-        String accessToken = request.getHeader("Authorization");
-
-        if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-            throw new UsernameNotFoundException("No valid Authorization token found");
-        }
-
-        return getUserFromToken(accessToken);
-    }
-
-    // ✅ JWT에서 인증 정보 가져오기
-    public Authentication getAuthentication(UserDetails userDetails) {
-        return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-    }
 }

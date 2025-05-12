@@ -1,5 +1,6 @@
-package com.ssafy.backend.common.exception;
+package com.ssafy.backend.common.dto;
 
+import com.ssafy.backend.common.exception.BaseErrorCode;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -16,6 +17,5 @@ public abstract class ErrorResponse {
         this.status = errorCode.getStatus().value();
         this.error = errorCode.getStatus().getReasonPhrase();
         this.message = errorCode.getMessage();
-
     }
 }

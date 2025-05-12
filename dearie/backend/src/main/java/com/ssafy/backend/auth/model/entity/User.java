@@ -1,7 +1,10 @@
-package com.ssafy.backend.user.entity;
+package com.ssafy.backend.auth.model.entity;
 
+import com.ssafy.backend.auth.model.state.Gender;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "users")
@@ -19,7 +22,7 @@ public class User {
     @Column(name = "login_id", nullable = false, unique = true, length = 20)
     private String loginId;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 60)
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -35,19 +38,15 @@ public class User {
     @Column(nullable = false)
     private Short age;
 
-    @Column(name = "phone_number", length = 20)
+    @Column(name = "phone_number", length = 20, nullable = false)
     private String phoneNumber;
 
-    @Column(name = "birth_date")
-    private java.time.LocalDate birthDate;
+    @Column(name = "birth_date", nullable = false)
+    private LocalDate birthDate;
 
-    @Column(length = 30)
+    @Column(length = 30, nullable = false)
     private String name;
 
     @Column(name = "emergency_contact", length = 20)
     private String emergencyContact;
-
-    public enum Gender {
-        MALE, FEMALE, OTHER
-    }
 }
