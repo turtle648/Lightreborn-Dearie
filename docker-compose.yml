@@ -15,6 +15,7 @@ services:
       - dearie-net
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - S3_BUCKET_DEARIE=${S3_BUCKET_DEARIE}
 
   frontend-dearie:
     build:
@@ -52,6 +53,7 @@ services:
       - lightreborn-net
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - S3_BUCKET_LIGHTREBORN=${S3_BUCKET_LIGHTREBORN}
 
   frontend-lightreborn:
     build:
