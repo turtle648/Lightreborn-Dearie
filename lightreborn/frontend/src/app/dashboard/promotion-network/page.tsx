@@ -291,7 +291,6 @@ export default function PromotionNetworkPage() {
           <Sheet
             title="홍보물 설치 현황" 
             subTitle="홍보물 설치 현황을 보여줍니다."
-            viewType="table"
             data={data?.promotionDetailByRegion?.promotionInstallations || []}
             columns={[
               { key: 'name', title: '장소명' },

@@ -69,7 +69,4 @@ tasks.named('test') {
 }
 
 processResources {
-    filesMatching("application.properties") {
-        expand(project.properties)
-    }
 }
