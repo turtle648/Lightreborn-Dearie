@@ -14,11 +14,11 @@ public interface CounselingLogRepository extends JpaRepository<CounselingLog, Lo
     @EntityGraph(attributePaths = {"isolatedYouth", "isolatedYouth.personalInfo", "user"})
     Optional<CounselingLog> findById(Long id);
 
-    @EntityGraph(attributePaths = {"isolatedYouth", "isolatedYouth.personalInfo"})
+    @EntityGraph(attributePaths = {"isolatedYouth", "isolatedYouth.personalInfo", "user"})
     Page<CounselingLog> findAll(Pageable pageable);
 
     Page<CounselingLog> findAllByIsolatedYouth(IsolatedYouth isolatedYouth, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"isolatedYouth", "isolatedYouth.personalInfo"})
+    @EntityGraph(attributePaths = {"isolatedYouth", "isolatedYouth.personalInfo", "user"})
     Page<CounselingLog> findAllByConsultationDateBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
 }
