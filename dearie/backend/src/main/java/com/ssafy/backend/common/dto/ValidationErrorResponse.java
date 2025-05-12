@@ -1,5 +1,6 @@
-package com.ssafy.backend.common.exception;
+package com.ssafy.backend.common.dto;
 
+import com.ssafy.backend.common.exception.ErrorCode;
 import lombok.Getter;
 
 import java.util.List;

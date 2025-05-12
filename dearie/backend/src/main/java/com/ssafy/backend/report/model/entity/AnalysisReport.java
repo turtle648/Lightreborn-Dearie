@@ -1,7 +1,7 @@
 package com.ssafy.backend.report.model.entity;
 
 import com.ssafy.backend.diary.model.entity.EmotionScore;
-import com.ssafy.backend.user.entity.User;
+import com.ssafy.backend.auth.model.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 

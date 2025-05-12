@@ -25,14 +25,13 @@ public class SwaggerConfig {
                         .description("디어리 프로젝트의 API 명세서")
                         .version("1.0.0")
                 )
-                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEMA_NAME)) // 보안 적용
+                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEMA_NAME))
                 .components(new io.swagger.v3.oas.models.Components()
                         .addSecuritySchemes(SECURITY_SCHEMA_NAME,
                                 new SecurityScheme()
-                                        .name(SECURITY_SCHEMA_NAME)
-                                        .type(SecurityScheme.Type.HTTP)
-                                        .scheme("bearer")
-                                        .bearerFormat("JWT")
+                                        .name("access_token")
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.COOKIE)
                         ));
     }
 
