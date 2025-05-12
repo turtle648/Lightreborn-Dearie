@@ -20,12 +20,12 @@ public class Diary {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Lob
+    @Column(columnDefinition = "text")
     private String content;
 
     private LocalDateTime createdAt;
 
-    @Lob
+    @Column(columnDefinition = "text")
     private String aiComment;
 
     @Enumerated(EnumType.STRING)

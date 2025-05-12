@@ -22,8 +22,7 @@ public class AnalysisReport {
     private LocalDateTime analysisWeekDate;
 
     // AI 코멘트(총평)
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "text")
     private String comment;
 
     // 일주일간 감정 점수 엔터티 (1:1)
