@@ -32,8 +32,9 @@ public class MissionController {
             @ModelAttribute @Validated MissionCompletionRequestDTO req
     ) {
         missionService.verifyMissionCompletion(req);
+        MissionCompletionResponseDTO resp = new MissionCompletionResponseDTO();
 
-        return ResponseEntity.ok().body(BaseResponse.success("상담 대상자를 성공적으로 검색하였습니다.", responseDTO));
+        return ResponseEntity.ok().body(BaseResponse.success("상담 대상자를 성공적으로 검색하였습니다.", resp));
     }
 
 
