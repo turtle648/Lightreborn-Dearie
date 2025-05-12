@@ -98,10 +98,10 @@ pipeline {
                     spring.kafka.topic.name=${envProps.KAFKA_TOPIC_NAME}
                     spring.kafka.consumer.group-id=${envProps.KAFKA_CONSUMER_GROUP_ID}
                     OPENAI_API_KEY=${envProps.OPENAI_API_KEY}
-                    spring.cloud.aws.credentials.access-key=${envProps.S3_ACCESS_KEY}
-                    spring.cloud.aws.credentials.secret-key=${envProps.S3_SECRET_KEY}
-                    spring.cloud.aws.s3.bucket=${envProps.S3_BUCKET}
-                    spring.cloud.aws.region.static=ap-northeast-2
+                    S3_ACCESS_KEY=${envProps.S3_ACCESS_KEY}
+                    S3_SECRET_KEY=${envProps.S3_SECRET_KEY}
+                    S3_BUCKET=${envProps.S3_BUCKET}
+                    spring.profiles.active=prod
                     NEXT_PUBLIC_NAVER_CLIENT_ID=${envProps.NEXT_PUBLIC_NAVER_CLIENT_ID}
                     """.stripIndent().trim()
                     
