@@ -18,11 +18,11 @@ public class RecommendAction {
     private String actionName;
 
     // 관련 주소 (예: 장소 위치 등)
-    @Column(length = 255)
+    @Column(length = 255, columnDefinition = "text")
     private String address;
 
     // 상세 설명
-    @Lob
+    @Column(length = 255, columnDefinition = "text")
     private String detail;
 
     // 어느 분석 보고서에 대한 추천인지 (N:1)
