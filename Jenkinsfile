@@ -87,40 +87,11 @@ pipeline {
                             error "❌ 필수 변수 ${var}가 envProps에 없습니다."
                         }
                     }
-<<<<<<< Updated upstream
 
                     def newEnvContent = generateEnvString(requiredVars) + '\nspring.profiles.active=prod'
 
                     writeFile file: "${env.WORKSPACE}/cicd/.env", text: newEnvContent.trim()
                     echo "✅ .env 재생성 완료"
-=======
-                    
-                    def newEnvContent = """
-                    DEARIE_DB_URL=${envProps.DEARIE_DB_URL}
-                    DEARIE_DB_USER=${envProps.DEARIE_DB_USER}
-                    DEARIE_DB_PASSWORD=${envProps.DEARIE_DB_PASSWORD}
-                    DEARIE_DB_NAME=${envProps.DEARIE_DB_NAME}
-                    DEARIE_JWT_SECRET=${envProps.DEARIE_JWT_SECRET}
-                    LIGHT_DB_URL=${envProps.LIGHT_DB_URL}
-                    LIGHT_DB_USER=${envProps.LIGHT_DB_USER}
-                    LIGHT_DB_PASSWORD=${envProps.LIGHT_DB_PASSWORD}
-                    LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}
-                    LIGHT_JWT_SECRET=${envProps.LIGHT_JWT_SECRET}
-                    spring.kafka.bootstrap-servers=${envProps.KAFKA_BOOTSTRAP_SERVERS}
-                    spring.kafka.topic.name=${envProps.KAFKA_TOPIC_NAME}
-                    spring.kafka.consumer.group-id=${envProps.KAFKA_CONSUMER_GROUP_ID}
-                    OPENAI_API_KEY=${envProps.OPENAI_API_KEY}
-                    S3_ACCESS_KEY=${envProps.S3_ACCESS_KEY}
-                    S3_SECRET_KEY=${envProps.S3_SECRET_KEY}
-                    S3_BUCKET_LIGHTREBORN=${envProps.S3_BUCKET_LIGHTREBORN}
-                    S3_BUCKET_DEARIE=${envProps.S3_BUCKET_DEARIE}
-                    spring.profiles.active=prod
-                    NEXT_PUBLIC_NAVER_CLIENT_ID=${envProps.NEXT_PUBLIC_NAVER_CLIENT_ID}
-                    """.stripIndent().trim()
-                    
-                    writeFile file: envFilePath, text: newEnvContent
-                    echo "✅ 실제 값으로 .env 재생성 완료"
->>>>>>> Stashed changes
                 }
             }
         }
@@ -178,45 +149,16 @@ pipeline {
                     def composePath = "${env.WORKSPACE}/docker-compose.yml"
                     def envPath = "${env.WORKSPACE}/cicd/.env"
 
-<<<<<<< Updated upstream
                     def runtimeEnvKeys = [
                         'DEARIE_DB_URL', 'DEARIE_DB_USER', 'DEARIE_DB_PASSWORD', 'DEARIE_DB_NAME', 'DEARIE_JWT_SECRET',
                         'LIGHT_DB_URL', 'LIGHT_DB_USER', 'LIGHT_DB_PASSWORD', 'LIGHT_DB_NAME', 'LIGHT_JWT_SECRET',
                         'KAFKA_BOOTSTRAP_SERVERS', 'KAFKA_TOPIC_NAME', 'KAFKA_CONSUMER_GROUP_ID',
                         'OPENAI_API_KEY',
-                        'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET',
+                        'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET_DEARIE','S3_BUCKET_LIGHTREBORN',
                         'NEXT_PUBLIC_NAVER_CLIENT_ID'
                     ]
 
                     withEnv(generateWithEnvList(runtimeEnvKeys)) {
-=======
-                    echo "🚀 docker-compose up"
-                    echo "⭐️ 전달할 env경로? : ${envPath}"
-                    
-                    // envProps에서 필요한 환경 변수를 설정
-                    withEnv([
-                        "DEARIE_DB_URL=${envProps.DEARIE_DB_URL}",
-                        "DEARIE_DB_USER=${envProps.DEARIE_DB_USER}",
-                        "DEARIE_DB_PASSWORD=${envProps.DEARIE_DB_PASSWORD}",
-                        "DEARIE_DB_NAME=${envProps.DEARIE_DB_NAME}",
-                        "DEARIE_JWT_SECRET=${envProps.DEARIE_JWT_SECRET}",
-                        "LIGHT_DB_URL=${envProps.LIGHT_DB_URL}",
-                        "LIGHT_DB_USER=${envProps.LIGHT_DB_USER}",
-                        "LIGHT_DB_PASSWORD=${envProps.LIGHT_DB_PASSWORD}",
-                        "LIGHT_DB_NAME=${envProps.LIGHT_DB_NAME}",
-                        "LIGHT_JWT_SECRET=${envProps.LIGHT_JWT_SECRET}",
-                        "KAFKA_BOOTSTRAP_SERVERS=${envProps.KAFKA_BOOTSTRAP_SERVERS}",
-                        "KAFKA_TOPIC_NAME=${envProps.KAFKA_TOPIC_NAME}",
-                        "KAFKA_CONSUMER_GROUP_ID=${envProps.KAFKA_CONSUMER_GROUP_ID}",
-                        "OPENAI_API_KEY=${envProps.OPENAI_API_KEY}",
-                        "spring.cloud.aws.credentials.access-key=${envProps.S3_ACCESS_KEY}",
-                        "spring.cloud.aws.credentials.secret-key=${envProps.S3_SECRET_KEY}",
-                        "S3_BUCKET_LIGHTREBORN=${envProps.S3_BUCKET_LIGHTREBORN}",
-                        "S3_BUCKET_DEARIE=${envProps.S3_BUCKET_DEARIE}",
-                        "spring.cloud.aws.region.static=ap-northeast-2",
-                        "NEXT_PUBLIC_NAVER_CLIENT_ID=${envProps.NEXT_PUBLIC_NAVER_CLIENT_ID}"
-                    ]) {
->>>>>>> Stashed changes
                         sh """
                             docker-compose --env-file ${envPath} -f ${composePath} up -d --build
                         """
