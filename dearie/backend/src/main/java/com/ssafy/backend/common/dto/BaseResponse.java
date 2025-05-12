@@ -48,4 +48,5 @@ public class BaseResponse<T> {
     public static <T> BaseResponse<T> fail(int code, String message) {
         return new BaseResponse<>(code, message, null);
     }
+
 }

@@ -15,4 +15,5 @@ import java.util.List;
 public class CreateDiaryRequestDTO {
     private String content;
     private EmotionTag emotionTag;
+    private List<String> images;
 }

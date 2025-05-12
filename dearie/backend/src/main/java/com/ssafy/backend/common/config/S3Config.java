@@ -1,4 +1,4 @@
-package com.ssafy.backend.common.S3;
+package com.ssafy.backend.common.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
