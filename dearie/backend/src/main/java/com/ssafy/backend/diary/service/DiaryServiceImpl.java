@@ -1,15 +1,17 @@
 package com.ssafy.backend.diary.service;
 
 
+import com.ssafy.backend.auth.model.entity.User;
+import com.ssafy.backend.auth.repository.UserRepository;
 import com.ssafy.backend.diary.model.entity.Diary;
 import com.ssafy.backend.diary.model.entity.DiaryImage;
 import com.ssafy.backend.diary.model.request.CreateDiaryRequestDTO;
+import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
 import com.ssafy.backend.diary.repository.DiaryRepository;
-import com.ssafy.backend.user.entity.User;
-import com.ssafy.backend.user.repository.UserRepository;
+
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -38,21 +40,42 @@ public class DiaryServiceImpl implements DiaryService {
                 .user(user)
                 .build();
 
-        // 이미지 저장
-        if (images != null) {
-            List<DiaryImage> imageEntities = images.stream()
-                    .map(file -> {
-                        String s3Url = s3Service.upload(file); // 실제 S3 업로드 수행
-                        return DiaryImage.builder()
-                                .imageUrl(s3Url)
-                                .diary(diary)
-                                .build();
-                    }).toList();
-
-            diary.getImages().addAll(imageEntities);
-        }
+//        // 이미지 저장
+//        if (images != null) {
+//            List<DiaryImage> imageEntities = images.stream()
+//                    .map(file -> {
+//                        String s3Url = s3Service.upload(file); // 실제 S3 업로드 수행
+//                        return DiaryImage.builder()
+//                                .imageUrl(s3Url)
+//                                .diary(diary)
+//                                .build();
+//                    }).toList();
+//
+//            diary.getImages().addAll(imageEntities);
+//        }
 
         diaryRepository.save(diary);
         return diary.getId();
+    }
+
+    @Override
+    public GetDiaryDetailDto getDiary(Long diaryId, String userLoginId) {
+        Diary diary = diaryRepository.findByIdAndUser_LoginId(diaryId, userLoginId)
+                .orElseThrow(() -> new AccessDeniedException("자신의 일기만 조회할 수 없습니다."));
+
+        List<String> images = diary.getImages().stream()
+                .map(DiaryImage::getImageUrl)
+                .toList();
+
+        GetDiaryDetailDto result = new GetDiaryDetailDto();
+        result.setContent(diary.getContent());
+        result.setAiComment(diary.getAiComment());
+        result.setImages(images);
+        result.setEmotionTag(
+                diary.getEmotionTag() != null ? diary.getEmotionTag().toString() : "UNKNOWN"
+        );
+        result.setCreateTime(diary.getCreatedAt().toString());
+
+        return result;
     }
 }

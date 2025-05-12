@@ -29,7 +29,7 @@ public class Diary {
     private String aiComment;
 
     @Enumerated(EnumType.STRING)
-    private EmotionTag mainEmotion;
+    private EmotionTag EmotionTag;
 
     // 연관 관계
     @ManyToOne(fetch = FetchType.LAZY)
