@@ -14,6 +14,5 @@ import java.util.List;
 @AllArgsConstructor
 public class CreateDiaryRequestDTO {
     private String content;
-    private String emotionTag;
-    private Long userId;
+    private EmotionTag emotionTag;
 }

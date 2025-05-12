@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface DiaryService {
-    Long createDiary(CreateDiaryRequestDTO requestDTO, List<MultipartFile> images);
+    Long createDiary(CreateDiaryRequestDTO requestDTO, List<MultipartFile> images, String userId);
 
     GetDiaryDetailDto getDiary(Long DiaryId, String userId);
 
