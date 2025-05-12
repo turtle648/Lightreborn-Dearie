@@ -4,16 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 // 설문 문항 데이터
@@ -81,78 +75,6 @@ const surveyQuestions = [
       { value: "5", label: "매우 해당된다" },
     ],
   },
-  {
-    id: 6,
-    question: "누군가와 함께 하는 것을 불편하게 느낀다.",
-    type: "likert",
-    options: [
-      { value: "1", label: "해당되지 않는다" },
-      { value: "2", label: "별로 해당되지 않는다" },
-      { value: "3", label: "어느 정도 아니다" },
-      { value: "4", label: "조금 해당된다" },
-      { value: "5", label: "매우 해당된다" },
-    ],
-  },
-  {
-    id: 7,
-    question: "사람이 귀찮다.",
-    type: "likert",
-    options: [
-      { value: "1", label: "해당되지 않는다" },
-      { value: "2", label: "별로 해당되지 않는다" },
-      { value: "3", label: "어느 정도 아니다" },
-      { value: "4", label: "조금 해당된다" },
-      { value: "5", label: "매우 해당된다" },
-    ],
-  },
-  {
-    id: 8,
-    question: "하루종일 혼자서 지낸다.",
-    type: "likert",
-    options: [
-      { value: "1", label: "해당되지 않는다" },
-      { value: "2", label: "별로 해당되지 않는다" },
-      { value: "3", label: "어느 정도 아니다" },
-      { value: "4", label: "조금 해당된다" },
-      { value: "5", label: "매우 해당된다" },
-    ],
-  },
-  {
-    id: 9,
-    question: "사람들에게 보여지는 것이 싫다.",
-    type: "likert",
-    options: [
-      { value: "1", label: "해당되지 않는다" },
-      { value: "2", label: "별로 해당되지 않는다" },
-      { value: "3", label: "어느 정도 아니다" },
-      { value: "4", label: "조금 해당된다" },
-      { value: "5", label: "매우 해당된다" },
-    ],
-  },
-  {
-    id: 10,
-    question: "집안에 들어가는 것이 서투르다.",
-    type: "likert",
-    options: [
-      { value: "1", label: "해당되지 않는다" },
-      { value: "2", label: "별로 해당되지 않는다" },
-      { value: "3", label: "어느 정도 아니다" },
-      { value: "4", label: "조금 해당된다" },
-      { value: "5", label: "매우 해당된다" },
-    ],
-  },
-  {
-    id: 11,
-    question: "사람들과 교류하는 일이 거의 없다.",
-    type: "likert",
-    options: [
-      { value: "1", label: "해당되지 않는다" },
-      { value: "2", label: "별로 해당되지 않는다" },
-      { value: "3", label: "어느 정도 아니다" },
-      { value: "4", label: "조금 해당된다" },
-      { value: "5", label: "매우 해당된다" },
-    ],
-  },
 ];
 
 export default function SurveyPage() {
@@ -160,7 +82,6 @@ export default function SurveyPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
 
   const currentQuestion = surveyQuestions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / surveyQuestions.length) * 100;
@@ -181,7 +102,7 @@ export default function SurveyPage() {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     } else {
-      router.push("/mypage");
+      router.push("/monthly-report");
     }
   };
 
@@ -191,48 +112,14 @@ export default function SurveyPage() {
     try {
       // 여기서 실제로는 API 호출을 통해 설문 결과를 제출합니다
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      setIsCompleted(true);
+
+      // 로딩 페이지가 아닌 결과 페이지로 직접 리다이렉트
+      router.push("/survey/results");
     } catch (error) {
       console.error("설문 제출 중 오류 발생:", error);
-    } finally {
       setIsSubmitting(false);
     }
   };
-
-  const handleFinish = () => {
-    router.push("/mypage");
-  };
-
-  if (isCompleted) {
-    return (
-      <div className="container mx-auto py-12 px-4 max-w-md flex items-center justify-center min-h-screen">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="w-full"
-        >
-          <Card className="w-full">
-            <CardHeader className="text-center">
-              <CheckCircle2 className="w-16 h-16 mx-auto text-green-500 mb-4" />
-              <CardTitle className="text-2xl">설문이 완료되었습니다</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center text-muted-foreground">
-                소중한 의견을 제공해 주셔서 감사합니다. 다음 달 리포트에
-                반영하겠습니다.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleFinish} className="w-full">
-                월간 리포트로 돌아가기
-              </Button>
-            </CardFooter>
-          </Card>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-md">
