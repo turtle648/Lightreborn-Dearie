@@ -16,7 +16,7 @@ export default function SignupForm() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
@@ -46,7 +46,7 @@ export default function SignupForm() {
     return true
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
     // 폼 유효성 검증
