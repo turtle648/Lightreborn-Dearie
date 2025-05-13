@@ -12,7 +12,7 @@ export function SurveySelection() {
     {
       id: "monthly",
       name: "월간 설문조사",
-      path: "/survey",
+      path: "/survey/intro",
       icon: BarChart2,
       color: "bg-gradient-to-br from-primary/10 to-primary/30",
       iconColor: "text-primary",
