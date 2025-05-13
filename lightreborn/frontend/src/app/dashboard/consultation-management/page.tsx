@@ -11,7 +11,7 @@ import Sheet from '@/components/common/Sheet'
 
 export default function ConsultationManagementPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [consultations, setConsultations] = useState<Consultation[]>([
+  const consultations : Consultation[] = [
     {
       id: '1',
       clientId: '1',
@@ -90,7 +90,7 @@ export default function ConsultationManagementPage() {
       status: '진행전',
       notes: '취업 준비'
     }
-  ])
+  ]
 
   // 선택된 날짜의 일정
   const [selectedDateConsultations, setSelectedDateConsultations] = useState<Consultation[]>([])
@@ -129,20 +129,6 @@ export default function ConsultationManagementPage() {
         return "bg-red-500"
       default:
         return "bg-gray-500"
-    }
-  }
-
-  // 상태에 따른 배경색 가져오기
-  const getStatusBgColor = (status: string) => {
-    switch (status) {
-      case "진행전":
-        return "bg-green-50"
-      case "완료":
-        return "bg-blue-50"
-      case "미작성":
-        return "bg-red-50"
-      default:
-        return "bg-gray-50"
     }
   }
 
