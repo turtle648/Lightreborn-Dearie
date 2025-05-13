@@ -4,9 +4,19 @@ import logo from "@/assets/user.svg";
 interface UserInfoProps {
   id: string;
   name: string;
-  gender: string;
+  gender?: string;
   age: number;
   profileImage?: StaticImageData;
+}
+
+const genderColors = (gender: string) => {
+  if (gender === "상담가") {
+    return "bg-purple-400";
+  } else if (gender === "남") {
+    return "bg-blue-400";
+  } else if (gender === "여") {
+    return "bg-pink-400";
+  }
 }
 
 export const UserInfo = ({gender, name, id, age, profileImage}: UserInfoProps) => {
@@ -19,9 +29,9 @@ export const UserInfo = ({gender, name, id, age, profileImage}: UserInfoProps) =
       </div>
       <div className="space-y-1">
         <div className="flex items-center">
-          <span className="bg-blue-400 text-white px-3 py-1 rounded-md mr-2">{gender}</span>
+          <span className={`${genderColors(gender || '')} text-white px-3 py-1 rounded-md mr-2`}>{gender}</span>
           <span className="text-xl font-bold">{name}</span>
-          <span className="text-gray-500 ml-2">{id}</span>
+          <span className="text-gray-500 ml-2">#{id}</span>
         </div>
         <div className="text-lg">만 {age}세</div>
       </div>
