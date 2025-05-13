@@ -24,7 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("diary")
+@RequestMapping("diaries")
 @Tag(name="Diary", description = "일기관련 API ")
 public class DiaryController {
 
@@ -59,6 +59,18 @@ public class DiaryController {
             return ResponseEntity.status(500)
                     .body(BaseResponse.fail(500, "일기 작성 실패: " + e.getMessage()));
         }
+    }
+
+    @Operation(summary = "일기에 대한 AI의 코멘트", description = "AI를 이용하여 일기 내용에 대한 코멘트를 받을 수 있다.")
+    @GetMapping("/{diaryId}/ai-comments")
+    public ResponseEntity<BaseResponse<String>> createAiComment(
+            @AuthenticationPrincipal String userId,
+            @PathVariable Long diaryId
+    ) {
+
+        String result = diaryService.createAiComment(diaryId, userId);
+
+        return ResponseEntity.ok(BaseResponse.success(200, "AI 코멘트 생성 성공", result));
     }
 
 }

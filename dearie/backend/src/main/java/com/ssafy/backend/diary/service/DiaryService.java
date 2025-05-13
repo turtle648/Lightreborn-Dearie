@@ -13,5 +13,6 @@ public interface DiaryService {
 
     Long createDiaryWithImages(String content, Diary.EmotionTag emotionTag, List<MultipartFile> images, String userId);
 
+    String createAiComment(Long DiaryId, String userId);
 
 }

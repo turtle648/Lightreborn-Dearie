@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface DiaryRepository extends JpaRepository<Diary, Long> {
 
-    Diary getDiaryById(Long id);
+//    Diary getDiaryById(Long id);
 
     Optional<Diary> findByIdAndUser_LoginId(Long id, String loginId);
 
