@@ -1,374 +1,329 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from 'react'
 import { Card } from "@/components/common/Card"
 import Button from "@/components/common/Button"
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react"  
+import { Plus, FileText, Edit, Clock, Calendar as CalendarIcon } from "lucide-react"
 import { colors } from "@/constants/colors"
-
-interface Consultation {
-  id: string
-  type: string
-  counselor: string
-  client: string
-  date: string
-  status: "진행전" | "완료" | "미적성"
-  notes: string
-}
-
-interface ScheduledClient {
-  id: string
-  name: string
-  date: string
-  time: string
-  profileImage?: string
-}
+import { UserInfo } from "@/components/common/UserInfo"
+import ConsultationCalendar, { Consultation, formatDate, formatTime } from "@/components/common/Calendar"
+import Sheet from '@/components/common/Sheet'
 
 export default function ConsultationManagementPage() {
-  const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [selectedDate, setSelectedDate] = useState<number | null>(null)
-  const [consultations, setConsultations] = useState<Consultation[]>([])
-  const [scheduledClients, setScheduledClients] = useState<ScheduledClient[]>([])
-
-  // 현재 월의 날짜 생성
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear()
-    const month = date.getMonth()
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
-    const firstDayOfMonth = new Date(year, month, 1).getDay()
-
-    const days = []
-    // 이전 달의 날짜로 채우기
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(null)
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [consultations, setConsultations] = useState<Consultation[]>([
+    {
+      id: '1',
+      clientId: '1',
+      clientName: '이OO',
+      clientAge: 20,
+      clientGender: '남',
+      title: '심리상담',
+      type: '심리상담',
+      date: new Date(2025, 5, 10, 10, 0), // 2025년 6월 10일 10시
+      time: '10:00',
+      status: '진행전',
+      notes: '초기 상담'
+    },
+    {
+      id: '2',
+      clientId: '2',
+      clientName: '김OO',
+      clientAge: 22,
+      clientGender: '여',
+      title: '직업상담',
+      type: '직업상담',
+      date: new Date(2025, 5, 13, 14, 0), // 2025년 6월 13일 14시
+      time: '14:00',
+      status: '완료',
+      notes: '취업 상담'
+    },
+    {
+      id: '3',
+      clientId: '3',
+      clientName: '박OO',
+      clientAge: 19,
+      clientGender: '남',
+      title: '생활상담',
+      type: '생활상담',
+      date: new Date(2025, 5, 13, 16, 0), // 2025년 6월 13일 16시 (같은 날 추가)
+      time: '16:00',
+      status: '진행전',
+      notes: '생활 지원 상담'
+    },
+    {
+      id: '4',
+      clientId: '4',
+      clientName: '최OO',
+      clientAge: 21,
+      clientGender: '여',
+      title: '심리상담',
+      type: '심리상담',
+      date: new Date(2025, 5, 26, 13, 0), // 2025년 6월 26일 13시
+      time: '13:00',
+      status: '진행전',
+      notes: '정기 상담'
+    },
+    {
+      id: '5',
+      clientId: '5',
+      clientName: '정OO',
+      clientAge: 18,
+      clientGender: '여',
+      title: '진로상담',
+      type: '진로상담',
+      date: new Date(2025, 5, 26, 15, 0), // 2025년 6월 26일 15시 (같은 날 추가)
+      time: '15:00',
+      status: '미작성',
+      notes: '진로 탐색'
+    },
+    {
+      id: '6',
+      clientId: '6',
+      clientName: '강OO',
+      clientAge: 23,
+      clientGender: '남',
+      title: '취업상담',
+      type: '취업상담',
+      date: new Date(2025, 5, 26, 17, 0), // 2025년 6월 26일 17시 (같은 날 추가)
+      time: '17:00',
+      status: '진행전',
+      notes: '취업 준비'
     }
+  ])
 
-    // 현재 달의 날짜 채우기
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i)
-    }
+  // 선택된 날짜의 일정
+  const [selectedDateConsultations, setSelectedDateConsultations] = useState<Consultation[]>([])
 
-    return days
+  // 선택된 일정
+  const [selectedConsultation, setSelectedConsultation] = useState<Consultation | null>(null)
+
+  // 날짜 선택 핸들러
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date)
+    
+    // 선택된 날짜의 일정 필터링
+    const filteredConsultations = consultations.filter(consultation => 
+      consultation.date.getFullYear() === date.getFullYear() &&
+      consultation.date.getMonth() === date.getMonth() &&
+      consultation.date.getDate() === date.getDate()
+    ).sort((a, b) => a.date.getTime() - b.date.getTime()) // 시간순 정렬
+    
+    setSelectedDateConsultations(filteredConsultations)
+    setSelectedConsultation(null) // 일정 선택 초기화
   }
 
-  const prevMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
+  // 일정 선택 핸들러
+  const handleConsultationSelect = (consultation: Consultation) => {
+    setSelectedConsultation(consultation)
   }
 
-  const nextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
-  }
-
-  const isHighlighted = (day: number) => {
-    return [10, 11, 13, 26].includes(day)
-  }
-
-  const isSelected = (day: number) => {
-    return selectedDate === day
-  }
-
+  // 상태에 따른 색상 가져오기
   const getStatusColor = (status: string) => {
     switch (status) {
       case "진행전":
         return "bg-green-500"
       case "완료":
         return "bg-blue-500"
-      case "미적성":
+      case "미작성":
         return "bg-red-500"
       default:
         return "bg-gray-500"
     }
   }
 
+  // 상태에 따른 배경색 가져오기
+  const getStatusBgColor = (status: string) => {
+    switch (status) {
+      case "진행전":
+        return "bg-green-50"
+      case "완료":
+        return "bg-blue-50"
+      case "미작성":
+        return "bg-red-50"
+      default:
+        return "bg-gray-50"
+    }
+  }
+
+  // 초기 로드 시 오늘 날짜의 일정 불러오기
   useEffect(() => {
-    // 실제 구현에서는 API 호출을 통해 데이터를 가져와야 합니다.
-    // 임시 데이터
-    const mockConsultations: Consultation[] = [
-      {
-        id: "1",
-        type: "정기상담",
-        counselor: "김OO",
-        client: "이OO",
-        date: "2025.06.17",
-        status: "진행전",
-        notes: "온든/고민지표 개선",
-      },
-      {
-        id: "2",
-        type: "초기상담",
-        counselor: "김OO",
-        client: "이OO",
-        date: "2025.06.17",
-        status: "완료",
-        notes: "온든/고민 척도 설문",
-      },
-      {
-        id: "3",
-        type: "정기상담",
-        counselor: "김OO",
-        client: "이OO",
-        date: "2025.06.17",
-        status: "미적성",
-        notes: "온든/고민지표 개선",
-      },
-      {
-        id: "4",
-        type: "정기상담",
-        counselor: "김OO",
-        client: "이OO",
-        date: "2025.06.17",
-        status: "완료",
-        notes: "온든/고민지표 개선",
-      },
-      {
-        id: "5",
-        type: "정기상담",
-        counselor: "김OO",
-        client: "이OO",
-        date: "2025.06.17",
-        status: "완료",
-        notes: "온든/고민지표 개선",
-      },
-      {
-        id: "6",
-        type: "정기상담",
-        counselor: "김OO",
-        client: "이OO",
-        date: "2025.06.17",
-        status: "완료",
-        notes: "온든/고민지표 개선",
-      },
-    ]
-
-    const mockScheduledClients: ScheduledClient[] = [
-      {
-        id: "1",
-        name: "이OO",
-        date: "2025. 06. 26.",
-        time: "오후 3시",
-        profileImage: "/abstract-profile.png",
-      },
-      {
-        id: "2",
-        name: "이OO",
-        date: "2025. 04. 28.",
-        time: "오전 10시",
-        profileImage: "/abstract-profile.png",
-      },
-      {
-        id: "3",
-        name: "이OO",
-        date: "2025. 04. 28.",
-        time: "오후 1시",
-        profileImage: "/abstract-profile.png",
-      },
-    ]
-
-    setConsultations(mockConsultations)
-    setScheduledClients(mockScheduledClients)
-    setSelectedDate(26) // 기본적으로 26일 선택
+    handleDateChange(new Date())
   }, [])
 
   return (
     <div className="space-y-6 p-6">
       <h1 className="text-2xl font-bold" style={{ color: colors.text.primary }}>
-        상담 일정 관리
+        웅상종합사회복지관
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 왼쪽 섹션: 상담사 정보 및 일정 */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center">
-                <div className="w-16 h-16 rounded-full overflow-hidden mr-4">
-                  <img src="/placeholder.svg?key=ob5c7" alt="상담사 프로필" className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <div className="flex items-center mb-1">
-                    <span className="bg-purple-500 text-white text-xs px-2 py-1 rounded mr-2">복지사</span>
-                    <span className="font-medium text-lg">이OO</span>
-                  </div>
-                  <p className="text-gray-600">일정 확인</p>
-                </div>
-              </div>
-            </div>
+        {/* 왼쪽: 달력 */}
+        
+        <Card title='상담 일정 관리' subTitle='날짜를 선택하면 해당 날짜의 상담정보를 확인할 수 있습니다.'>
+          <div className='flex flex-col gap-4'>
 
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-medium text-lg">June 2024</h3>
-                <div className="flex items-center space-x-2">
-                  <button onClick={prevMonth} className="p-1 rounded-full hover:bg-gray-100" aria-label="이전 달">
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button onClick={nextMonth} className="p-1 rounded-full hover:bg-gray-100" aria-label="다음 달">
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
+            <ConsultationCalendar 
+              consultations={consultations}
+              selectedDate={selectedDate}
+              onDateChange={handleDateChange}
+            />
 
-              <div className="grid grid-cols-7 gap-1 mb-2">
-                <div className="text-center text-sm text-gray-500 font-medium">SUN</div>
-                <div className="text-center text-sm text-gray-500 font-medium">MON</div>
-                <div className="text-center text-sm text-gray-500 font-medium">TUE</div>
-                <div className="text-center text-sm text-gray-500 font-medium">WED</div>
-                <div className="text-center text-sm text-gray-500 font-medium">THU</div>
-                <div className="text-center text-sm text-gray-500 font-medium">FRI</div>
-                <div className="text-center text-sm text-gray-500 font-medium">SAT</div>
-              </div>
+            <Button variant="outline" className="w-full flex flex-row items-center justify-center">
+              <Plus className="w-4 h-4 mr-1" /> 
+              <span>상담 일정 추가</span>
+            </Button>
+          </div>
+        </Card>
 
-              <div className="grid grid-cols-7 gap-1">
-                {getDaysInMonth(currentMonth).map((day, index) => {
-                  if (day === null) {
-                    return <div key={`empty-${index}`} className="h-10"></div>
-                  }
-
-                  return (
-                    <button
-                      key={`day-${day}`}
-                      className={`h-10 rounded-md flex items-center justify-center text-sm
-                        ${isSelected(day) ? "bg-blue-500 text-white" : ""}
-                        ${isHighlighted(day) && !isSelected(day) ? (day === 11 ? "text-red-500" : day === 13 ? "text-blue-500" : "text-blue-500") : ""}
-                        ${!isSelected(day) && !isHighlighted(day) ? "hover:bg-gray-100" : ""}
-                      `}
-                      onClick={() => setSelectedDate(day)}
-                    >
-                      {day}
-                    </button>
-                  )
-                })}
-              </div>
-
-              <div className="mt-6">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full flex items-center justify-center text-blue-500 border-blue-500"
+        <div className="lg:col-span-2">
+          <Card title='상담예정자 관리' subTitle='상담예정자를 선택하면 상세 상담정보를 확인할 수 있습니다.'>
+            <div className="flex flex-col gap-4">
+              <div className='scrollable-container'>
+              {selectedDateConsultations.length > 0 ? (
+                <div 
+                  className="flex flex-row gap-4 overflow-x-auto"
+                  style={{ 
+                    scrollBehavior: 'smooth',
+                    WebkitOverflowScrolling: 'touch',  // 터치 디바이스에서 관성 스크롤 활성화
+                    paddingBottom: '10px'  // 스크롤바 공간 확보
+                  }}
                 >
-                  <span>상담 일정 추가하기</span>
-                </Button>
-              </div>
-            </div>
-          </Card>
+                  {selectedDateConsultations.map((consultation) => (
+                    <div 
+                    key={consultation.id} 
+                    className={`p-4 rounded-lg border ${
+                      consultation.status === '진행전' ? 'border-green-200 bg-green-50' : 
+                      consultation.status === '완료' ? 'border-blue-200 bg-blue-50' : 
+                      'border-red-200 bg-red-50'
+                    } cursor-pointer transition hover:shadow-md`}
+                    onClick={() => handleConsultationSelect(consultation)}
+                    >
+                      {/* <div className="mb-3 flex justify-between items-center">
+                        <div className={`px-2 py-1 rounded-full text-white text-xs ${getStatusColor(consultation.status)}`}>
+                          {consultation.status}
+                        </div>
+                        <div className="flex items-center text-gray-500 text-sm">
+                          <Clock className="w-4 h-4 mr-1" />
+                          <span>{consultation.time}</span>
+                        </div>
+                      </div> */}
+                      <div className="mb-3 flex justify-between">
+                        <div className="text-sm text-gray-600">
+                          {consultation.type}
+                        </div>
+                        <div className="flex space-x-2 gap-2">
+                          <div className="flex items-center text-gray-500 text-sm">
+                            <Clock className="w-4 h-4 mr-1" />
+                            <span>{consultation.time}</span>
+                          </div>
+                          <button 
+                            className="p-1 rounded-full hover:bg-gray-200 text-gray-500"
+                            title="상담일지 작성"
+                            >
+                            <FileText className="w-4 h-4" />
+                          </button>
+                          <button 
+                            className="p-1 rounded-full hover:bg-gray-200 text-gray-500"
+                            title="일정 수정"
+                            >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className='w-80'>
+                        <UserInfo 
+                          id={consultation.clientId}
+                          name={consultation.clientName}
+                          age={consultation.clientAge || 0}
+                          gender={consultation.clientGender || '남'}
+                        />  
+                      </div>
 
-          <Card>
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="font-medium text-lg">대상자별 상세 정보 검색</h3>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <input
-                    type="text"
-                    placeholder="이름"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <input
-                    type="text"
-                    placeholder="코드"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                  <div className="mb-3">
+                    <CalendarIcon className="w-12 h-12 text-gray-400" />
+                  </div>
+                  <p>선택한 날짜에 예정된 상담이 없습니다.</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex flex-row items-center justify-center mt-4 text-blue-500 border-blue-500"
+                    >
+                    <Plus className="w-4 h-4 mr-1" />
+                    <span>일정 추가하기</span>
+                  </Button>
                 </div>
-              </div>
-              <Button className="bg-blue-400 hover:bg-blue-500 text-white">검색하기</Button>
+              )}
             </div>
-          </Card>
-        </div>
-
-        {/* 오른쪽 섹션: 상담 예정 청년 목록 */}
-        <div>
-          <Card className="h-full">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="font-medium text-lg">상담예정청년</h3>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                {scheduledClients.map((client) => (
-                  <div key={client.id} className="bg-gray-50 rounded-md p-4 flex items-center">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden mr-3">
-                      {client.profileImage ? (
-                        <img
-                          src={client.profileImage || "/placeholder.svg"}
-                          alt={client.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-300"></div>
-                      )}
+            {selectedConsultation && (
+              <Card>
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">상담 대상자</p>
+                      <p className="font-medium">{selectedConsultation.clientName}</p>
                     </div>
                     <div>
-                      <p className="font-medium">{client.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {client.date} {client.time}
+                      <p className="text-sm text-gray-500 mb-1">상담 일시</p>
+                      <p className="font-medium">
+                        {formatDate(selectedConsultation.date)} {formatTime(selectedConsultation.date)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">상담 유형</p>
+                      <p className="font-medium">{selectedConsultation.type}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">상태</p>
+                      <div className={`inline-block px-2 py-0.5 rounded-full text-white text-xs ${getStatusColor(selectedConsultation.status)}`}>
+                        {selectedConsultation.status}
+                      </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-gray-500 mb-1">특이사항</p>
+                      <p className="p-3 bg-blue-50 rounded-md">
+                        {selectedConsultation.notes || '특이사항 없음'}
                       </p>
                     </div>
                   </div>
-                ))}
-                <Button variant="outline" className="w-full flex items-center justify-center text-gray-600">
-                  <Plus className="w-4 h-4 mr-1" />
-                  <span>상담청년 리스트 추가하기</span>
-                </Button>
-              </div>
-            </div>
+                  <div className="mt-6 flex space-x-3">
+                    <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+                      상담일지 작성
+                    </Button>
+                    <Button variant="outline">
+                      일정 수정
+                    </Button>
+                    <Button variant="outline" className="text-red-500 border-red-500">
+                      일정 취소
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )}
+            </div> 
           </Card>
         </div>
       </div>
-
-      {/* 온든고립청년 상담일지 테이블 */}
-      <Card>
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h3 className="font-medium text-lg">온든고립청년 상담일지</h3>
-          <div className="flex space-x-2">
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white">상담일지 작성</Button>
-            <Button variant="outline">다운로드</Button>
-          </div>
+        <div className='grid grid-cols-1'>
+          <Sheet 
+            title='은둔고립청년 상담일지'
+            downloadDisabled={false}
+            columns={[
+              {key: 'id', title: '번호'},
+              {key: 'clientName', title: '상담 대상자'},
+              {key: 'consultantName', title: '상담자'},
+              {key: 'status', title: '진행여부'},
+              {key: 'date', title: '상담 일시'},
+              {key: 'notes', title: '특이사항'},
+            ]}
+            data={consultations}
+          />
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상담유형
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  담당자
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  진행여부
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상담일시
-                  <span className="ml-2 inline-flex">
-                    <ChevronLeft className="w-4 h-4" />
-                    <ChevronRight className="w-4 h-4" />
-                  </span>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  특이사항
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {consultations.map((consultation) => (
-                <tr key={consultation.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">{consultation.type}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{consultation.counselor}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 rounded-full ${getStatusColor(consultation.status)} mr-2`}></div>
-                      <span>{consultation.status}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{consultation.date}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{consultation.notes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
     </div>
   )
 }

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { colors } from "@/constants/colors"
-import Button from "./Button"
+import Button from "../common/Button"
 import Image from "next/image"
 import useAuthStore, { useHydration } from "@/stores/useAuthStore"
 import { useRouter } from "next/navigation"

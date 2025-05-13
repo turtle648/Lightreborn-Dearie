@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import TopBar from '@/components/common/TopBar';
-import SideBar from '@/components/common/SideBar';
+import TopBar from '@/components/ui/TopBar';
+import SideBar from '@/components/ui/SideBar';
 import useAuthStore from '@/stores/useAuthStore';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
