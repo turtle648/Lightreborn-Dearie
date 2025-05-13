@@ -249,7 +249,11 @@ export default function ConsultationCalendar({
       `}</style>
       
       <Calendar 
-        onChange={onDateChange}
+        onChange={(value) => {
+          if (value instanceof Date) {
+            onDateChange(value)
+          }
+        }}
         value={selectedDate}
         locale="ko-KR"
         tileClassName={tileClassName}
