@@ -9,7 +9,7 @@ export default function ConsultationCompletePage() {
   const router = useRouter();
 
   const handleComplete = () => {
-    router.push("/home");
+    router.push("/mypage");
   };
 
   return (
