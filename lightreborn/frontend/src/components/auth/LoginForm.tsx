@@ -4,7 +4,6 @@ import type React from "react"
 import Button from "@/components/common/Button"
 import { useState } from "react";
 import useAuthStore from "@/stores/useAuthStore";
-import { signup } from "@/apis/users";
 import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
