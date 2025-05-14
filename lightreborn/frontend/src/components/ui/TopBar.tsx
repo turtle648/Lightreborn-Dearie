@@ -109,7 +109,7 @@ export default function TopBar({ onMenuClick, isMenuOpen }: TopBarProps) {
             <Image src={userimage} alt="profile image" width={32} height={32} className="rounded-full" />
           </div>
           <span className="text-sm" style={{ color: colors.text.primary }}>
-            {isLoading ? '로딩 중...' : (user?.id || '로그인 필요')}
+            {isLoading ? '로딩 중...' : (user?.name || '로그인 필요')}
           </span>
         </div>
         <Button variant="outline" size="sm" onClick={handleLogout}>
