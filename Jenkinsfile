@@ -138,8 +138,10 @@ pipeline {
                     def envPath = "${env.WORKSPACE}/cicd/.env"
 
                     sh """
-                        echo "🧹 docker-compose down"
-                        docker-compose --env-file ${envPath} -f ${composePath} down || true
+                        echo \"🧹 docker-compose down (remove orphans)\"
+                        docker-compose --env-file ${envPath} \
+                                    -f ${composePath} \
+                                    down --remove-orphans || true
                     """
                 }
             }
