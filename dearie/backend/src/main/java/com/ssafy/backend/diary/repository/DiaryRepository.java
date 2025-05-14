@@ -2,7 +2,10 @@ package com.ssafy.backend.diary.repository;
 
 import com.ssafy.backend.diary.model.entity.Diary;
 import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
+import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 
@@ -16,5 +19,8 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
 
     Optional<Diary> findByIdAndUser_LoginId(Long id, String loginId);
 
+    @Modifying
+    @Query("DELETE FROM Diary d WHERE d.id = :id AND d.user.loginId = :loginId")
+    int deleteByIdAndUser_LoginId(@Param("id") Long id, @Param("loginId") String loginId);
 
 }

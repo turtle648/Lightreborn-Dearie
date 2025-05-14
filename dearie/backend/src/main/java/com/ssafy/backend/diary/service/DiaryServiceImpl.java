@@ -137,6 +137,12 @@ public class DiaryServiceImpl implements DiaryService {
         return aiComment;
     }
 
+    @Transactional
+    @Override
+    public Integer deleteDiary(Long diaryId, String userId) {
+        return diaryRepository.deleteByIdAndUser_LoginId(diaryId, userId);
+    }
+
     public String generateComment(String diaryContent) {
         List<OpenAiMessage> messages = List.of(
                 new OpenAiMessage("system", "너는 공감을 바탕으로 일기를 바탕으로 따뜻한" +

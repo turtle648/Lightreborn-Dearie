@@ -15,4 +15,5 @@ public interface DiaryService {
 
     String createAiComment(Long DiaryId, String userId);
 
+    Integer deleteDiary(Long DiaryId, String userId);
 }

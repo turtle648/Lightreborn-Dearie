@@ -73,4 +73,15 @@ public class DiaryController {
         return ResponseEntity.ok(BaseResponse.success(200, "AI 코멘트 생성 성공", result));
     }
 
+    @Operation(summary = "일기 삭제", description = "작성한 일기를 삭제합니다.")
+    @DeleteMapping("/{diaryId}")
+    public ResponseEntity<BaseResponse<Integer>> deleteDiary(
+            @AuthenticationPrincipal String userId,
+            @PathVariable Long diaryId
+    ) {
+        int result = diaryService.deleteDiary(diaryId, userId);
+
+        String message = (result == 1) ? "일기 삭제 성공" : "삭제할 일기가 없습니다.";
+        return ResponseEntity.ok(BaseResponse.success(200, message, result));
+    }
 }
