@@ -249,6 +249,7 @@ export default function ConsultationCalendar({
       `}</style>
       
       <Calendar 
+        calendarType="gregory"
         onChange={(value) => {
           if (value instanceof Date) {
             onDateChange(value)
