@@ -9,5 +9,5 @@ import java.util.List;
 @Builder
 public class YouthSurveyQuestionDTO {
     private List<QuestionDTO> questions;
-    private List<AggreementDTO> aggreements;
+    private List<AgreementDTO> agreements;
 }

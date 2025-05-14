@@ -1,19 +1,15 @@
-package com.ssafy.backend.survey.entity;
+package com.ssafy.backend.survey.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
-@Table(name = "surveys")
+@Table(name = "survey_templates")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Survey {
+public class SurveyTemplate {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

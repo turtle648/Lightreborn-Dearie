@@ -1,4 +1,4 @@
-package com.ssafy.backend.survey.entity;
+package com.ssafy.backend.survey.model.entity;
 
 import com.ssafy.backend.auth.model.entity.User;
 import jakarta.persistence.*;
@@ -7,13 +7,12 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "counseling_log")
+@Table(name = "survey")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CounselingLog {
+public class Survey {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,11 +23,14 @@ public class CounselingLog {
     @Column(name = "survey_result")
     private String surveyResult;
 
+    @Column(name = "is_send")
+    private Boolean isSend;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "survey_id")
-    private Survey survey;
+    @JoinColumn(name = "survey_template_id")
+    private SurveyTemplate surveyTemplate;
 }

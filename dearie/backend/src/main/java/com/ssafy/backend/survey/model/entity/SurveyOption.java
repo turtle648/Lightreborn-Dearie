@@ -14,6 +14,7 @@ public class SurveyOption {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Lob
     @Column(name = "option_text", nullable = false)
     private String optionText;
 

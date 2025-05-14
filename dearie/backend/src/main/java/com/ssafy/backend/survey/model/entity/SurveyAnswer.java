@@ -1,4 +1,4 @@
-package com.ssafy.backend.survey.entity;
+package com.ssafy.backend.survey.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -6,7 +6,6 @@ import lombok.*;
 @Entity
 @Table(name = "survey_answers")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -15,17 +14,19 @@ public class SurveyAnswer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "answer_test", length = 50)
-    private String answerTest;
+    @Lob
+    @Column(name = "answer_text")
+    private String answerText;
 
-    @Column(name = "answer_choice")
-    private Integer answerChoice;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "answer_choice")
+    private SurveyAnswer answerChoice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "survey_questions_id")
     private SurveyQuestion surveyQuestion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "counseling_id")
-    private CounselingLog counselingLog;
+    @JoinColumn(name = "survey_id")
+    private Survey survey;
 }
