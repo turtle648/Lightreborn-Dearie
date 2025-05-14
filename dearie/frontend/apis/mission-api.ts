@@ -1,7 +1,7 @@
 /**
  * 미션 관련 API 호출 함수
  */
-
+import axios from "axios"
 import type { Mission, MissionCategory } from "@/types/mission"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api"
@@ -94,6 +94,7 @@ function getMockMissions(): Mission[] {
       category: "mindfulness",
       icon: "Sparkles",
       color: "text-primary",
+      route: "/mission/mindfulness",
     },
     {
       id: 2,
@@ -103,6 +104,7 @@ function getMockMissions(): Mission[] {
       category: "emotion",
       icon: "Award",
       color: "text-amber-500",
+      route: "/mission/emotion",
     },
     {
       id: 3,
@@ -112,6 +114,7 @@ function getMockMissions(): Mission[] {
       category: "mindfulness",
       icon: "Clock",
       color: "text-blue-500",
+      route: "/mission/meditation",
     },
     {
       id: 4,
@@ -121,6 +124,7 @@ function getMockMissions(): Mission[] {
       category: "emotion",
       icon: "Sparkles",
       color: "text-green-500",
+      route: "/mission/gratitude",
     },
     {
       id: 5,
@@ -130,6 +134,47 @@ function getMockMissions(): Mission[] {
       category: "activity",
       icon: "Award",
       color: "text-violet-500",
+      route: "/mission/walking",
     },
   ]
+}
+
+export interface WalkRecordResponse {
+  id: number;
+  userMissionId: number;
+  startTime: string;
+  endTime?: string;
+  pathJson: string;
+  snapshotUrl: string;
+}
+
+/**
+ * 산책 기록 종료
+ * POST {API_BASE_URL}/walk-records/{userMissionId}/end
+ */
+export async function endWalk(
+  userMissionId: number,
+  path: { lat: number; lng: number }[],
+  snapshot: Blob,
+  endTime?: Date
+): Promise<WalkRecordResponse> {
+  const form = new FormData();
+  form.append("pathData", JSON.stringify(path));
+  form.append("snapshot", snapshot, "snapshot.png");
+
+  const params = endTime
+    ? { endTime: endTime.toISOString() }
+    : undefined;
+
+  const { data } = await axios.post<{ data: WalkRecordResponse }>(
+    `${API_BASE_URL}/walk-records/${userMissionId}/end`,
+    form,
+    {
+      params,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+  return data.data;
 }

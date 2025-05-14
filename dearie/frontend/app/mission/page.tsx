@@ -1,10 +1,28 @@
-import { AppLayout } from "@/components/app-layout"
-import { MissionList } from "@/components/mission-list"
+"use client"
+
+import { AppLayout } from "@/components/layout/app-layout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Filter } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { getMissions } from "@/apis/mission-api"
+import type { Mission, MissionCategory } from "@/types/mission"
+import { MissionItem } from "@/components/feature/mission/mission-item"
 
 export default function MissionPage() {
+  const router = useRouter()
+  const [missions, setMissions] = useState<Mission[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<MissionCategory | undefined>(undefined)
+
+  useEffect(() => {
+    const fetchMissions = async () => {
+      const allMissions = await getMissions(selectedCategory)
+      setMissions(allMissions)
+    }
+    fetchMissions()
+  }, [selectedCategory])
+
   return (
     <AppLayout>
       <div className="p-6">
@@ -16,7 +34,7 @@ export default function MissionPage() {
           </Button>
         </div>
 
-        <Tabs defaultValue="all" className="w-full">
+        <Tabs defaultValue="all" className="w-full" onValueChange={(value) => setSelectedCategory(value === "all" ? undefined : value as MissionCategory)}>
           <TabsList className="grid grid-cols-4 mb-6 bg-gray-100/80 p-1 rounded-full">
             <TabsTrigger value="all" className="rounded-full">
               전체
@@ -31,18 +49,11 @@ export default function MissionPage() {
               활동
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="all">
-            <MissionList />
-          </TabsContent>
-          <TabsContent value="mindfulness">
-            <MissionList category="mindfulness" />
-          </TabsContent>
-          <TabsContent value="emotion">
-            <MissionList category="emotion" />
-          </TabsContent>
-          <TabsContent value="activity">
-            <MissionList category="activity" />
-          </TabsContent>
+          <div className="space-y-3">
+            {missions.map((mission) => (
+              <MissionItem key={mission.id} mission={mission} />
+            ))}
+          </div>
         </Tabs>
       </div>
     </AppLayout>

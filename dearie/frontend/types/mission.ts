@@ -13,4 +13,5 @@ export interface Mission {
   category: MissionCategory
   icon: string
   color: string
+  route?: string
 }

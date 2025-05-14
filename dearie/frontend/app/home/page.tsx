@@ -10,6 +10,11 @@ import { Bell } from "@/components/ui/bell"
 import Link from "next/link"
 import Image from "next/image"
 import { ROUTES } from "@/constants/routes"
+import { getDailyMissions } from "@/apis/mission-api"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import type { Mission } from "@/types/mission"
+import { MissionItem } from "@/components/feature/mission/mission-item"
 
 // 동적 임포트로 코드 스플리팅 적용
 const DailyMission = dynamic(() => import("@/components/feature/mission/daily-mission"), {
@@ -23,25 +28,9 @@ const DiaryCard = dynamic(() => import("@/components/feature/diary/diary-card"),
 })
 
 export default function HomePage() {
-  // 샘플 데이터
-  const missions = [
-    {
-      id: 1,
-      title: "오늘의 추천 미션",
-      description: "창문 밖 풍경을 5분간 바라보며 깊게 호흡하기",
-      difficulty: "쉬움",
-      category: "마음챙김",
-    },
-    {
-      id: 2,
-      title: "감정 표현하기",
-      description: "오늘 느낀 감정을 3가지 단어로 표현해보기",
-      difficulty: "보통",
-      category: "감정인식",
-    },
-  ]
-
-  const diaries = [
+  const router = useRouter()
+  const [missions, setMissions] = useState<Mission[]>([])
+  const [diaries] = useState([
     {
       id: 1,
       date: "04.25",
@@ -60,7 +49,21 @@ export default function HomePage() {
       likes: 12,
       comments: 4,
     },
-  ]
+  ])
+
+  useEffect(() => {
+    const fetchMissions = async () => {
+      const dailyMissions = await getDailyMissions(2)
+      setMissions(dailyMissions)
+    }
+    fetchMissions()
+  }, [])
+
+  const handleMissionClick = (mission: Mission) => {
+    if (mission.route) {
+      router.push(mission.route)
+    }
+  }
 
   return (
     <AppLayout hideHeader>
@@ -121,7 +124,7 @@ export default function HomePage() {
           <div className="space-y-3">
             <Suspense fallback={<LoadingSpinner />}>
               {missions.map((mission) => (
-                <DailyMission key={mission.id} mission={mission} />
+                <MissionItem key={mission.id} mission={mission} />
               ))}
             </Suspense>
           </div>
