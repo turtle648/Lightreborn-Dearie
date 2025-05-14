@@ -3,12 +3,14 @@ package com.ssafy.backend.diary.service;
 import com.ssafy.backend.auth.model.entity.User;
 import com.ssafy.backend.auth.repository.UserRepository;
 import com.ssafy.backend.common.config.S3Uploader;
+import com.ssafy.backend.diary.model.entity.Bookmark;
 import com.ssafy.backend.diary.model.entity.Diary;
 import com.ssafy.backend.diary.model.entity.DiaryImage;
 import com.ssafy.backend.diary.model.request.OpenAiMessage;
 import com.ssafy.backend.diary.model.request.OpenAiRequest;
 import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
 import com.ssafy.backend.diary.model.response.OpenAiResponse;
+import com.ssafy.backend.diary.repository.BookmarkRepository;
 import com.ssafy.backend.diary.repository.DiaryImageRepository;
 import com.ssafy.backend.diary.repository.DiaryRepository;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,7 +22,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -32,17 +33,19 @@ public class DiaryServiceImpl implements DiaryService {
     private final S3Uploader s3Uploader;
     private final DiaryImageRepository diaryImageRepository;
     private final WebClient openAiWebClient;
+    private final BookmarkRepository bookmarkRepository;
 
     public DiaryServiceImpl(DiaryRepository diaryRepository,
                             UserRepository userRepository,
                             S3Uploader s3Uploader,
                             DiaryImageRepository diaryImageRepository,
-                            WebClient openAiWebClient) {
+                            WebClient openAiWebClient, BookmarkRepository bookmarkRepository) {
         this.diaryRepository = diaryRepository;
         this.userRepository = userRepository;
         this.s3Uploader = s3Uploader;
         this.diaryImageRepository = diaryImageRepository;
         this.openAiWebClient = openAiWebClient;
+        this.bookmarkRepository = bookmarkRepository;
     }
 
     @Override
@@ -141,6 +144,32 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     public Integer deleteDiary(Long diaryId, String userId) {
         return diaryRepository.deleteByIdAndUser_LoginId(diaryId, userId);
+    }
+
+    @Transactional
+    public Boolean addBookmark(String loginId, Long diaryId) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        Diary diary = diaryRepository.findById(diaryId)
+                .orElseThrow(() -> new IllegalArgumentException("일기를 찾을 수 없습니다."));
+
+        if (!diary.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("본인의 일기만 북마크할 수 있습니다.");
+        }
+
+        if (bookmarkRepository.existsByUserAndDiary(user, diary)) {
+            return false;
+        }
+
+        Bookmark bookmark = Bookmark.builder()
+                .user(user)
+                .diary(diary)
+                .bookmarkedAt(LocalDateTime.now())
+                .build();
+
+        bookmarkRepository.save(bookmark);
+        return true;
     }
 
     public String generateComment(String diaryContent) {

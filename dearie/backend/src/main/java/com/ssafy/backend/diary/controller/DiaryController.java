@@ -1,15 +1,10 @@
 package com.ssafy.backend.diary.controller;
 
-import com.ssafy.backend.common.config.S3Uploader;
 import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.diary.model.entity.Diary;
-import com.ssafy.backend.diary.model.request.CreateDiaryRequestDTO;
 import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
 import com.ssafy.backend.diary.service.DiaryService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -18,9 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -83,5 +76,17 @@ public class DiaryController {
 
         String message = (result == 1) ? "일기 삭제 성공" : "삭제할 일기가 없습니다.";
         return ResponseEntity.ok(BaseResponse.success(200, message, result));
+    }
+
+    @Operation(summary = "북마크 추가", description = "작성한 일기에 대해서 북마크를 추가합니다.")
+    @PostMapping("{diaryId}/bookmark")
+    public ResponseEntity<BaseResponse<Integer>> addBookmark(
+            @AuthenticationPrincipal String userId,
+            @PathVariable Long diaryId
+    ) {
+        boolean result = diaryService.addBookmark(userId, diaryId);
+
+        String message = result ? "북마크 추가 성공" : "이미 북마크된 일기입니다.";
+        return ResponseEntity.ok(BaseResponse.success(200, message, result ? 1 : 0));
     }
 }
