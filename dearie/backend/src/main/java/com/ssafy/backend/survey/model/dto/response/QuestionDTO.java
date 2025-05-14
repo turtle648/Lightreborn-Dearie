@@ -14,19 +14,21 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ToString
 public class QuestionDTO {
+    private Long questionId;
     private String code;
     private String description;
-    private List<String> option;
+    private List<OptionDTO> options;
 
     public static QuestionDTO from(SurveyQuestion question, List<SurveyOption> options) {
-        List<String> optionLabels = options.stream()
-                .map(SurveyOption::getOptionText)
+        List<OptionDTO> optionLabels = options.stream()
+                .map(OptionDTO::from)
                 .toList();
 
         return QuestionDTO.builder()
+                .questionId(question.getId())
                 .code(question.getQuestionCode())
                 .description(question.getContent())
-                .option(optionLabels)
+                .options(optionLabels)
                 .build();
     }
 }

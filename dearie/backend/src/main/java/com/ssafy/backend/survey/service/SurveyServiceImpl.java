@@ -1,33 +1,45 @@
 package com.ssafy.backend.survey.service;
 
 
+import com.ssafy.backend.auth.exception.AuthErrorCode;
+import com.ssafy.backend.auth.exception.AuthException;
+import com.ssafy.backend.auth.model.entity.User;
+import com.ssafy.backend.auth.repository.UserRepository;
+import com.ssafy.backend.survey.exception.SurveyErrorCode;
+import com.ssafy.backend.survey.exception.SurveyException;
 import com.ssafy.backend.survey.model.collector.AgreementCollector;
 import com.ssafy.backend.survey.model.collector.QuestionCollector;
 import com.ssafy.backend.survey.model.constant.SurveyConstant;
+import com.ssafy.backend.survey.model.dto.request.PostSurveyRequestDTO;
+import com.ssafy.backend.survey.model.dto.request.SurveyAnswerDTO;
 import com.ssafy.backend.survey.model.dto.response.AgreementDTO;
 import com.ssafy.backend.survey.model.dto.response.QuestionDTO;
 import com.ssafy.backend.survey.model.dto.response.YouthSurveyQuestionDTO;
-import com.ssafy.backend.survey.model.entity.SurveyConsent;
-import com.ssafy.backend.survey.model.entity.SurveyOption;
-import com.ssafy.backend.survey.model.entity.SurveyQuestion;
-import com.ssafy.backend.survey.repository.SurveyConsentRepository;
-import com.ssafy.backend.survey.repository.SurveyOptionRepository;
-import com.ssafy.backend.survey.repository.SurveyQuestionRepository;
-import com.ssafy.backend.survey.repository.SurveyRepository;
+import com.ssafy.backend.survey.model.entity.*;
+import com.ssafy.backend.survey.model.vo.SurveyAnswerVO;
+import com.ssafy.backend.survey.model.vo.SurveyVO;
+import com.ssafy.backend.survey.repository.*;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SurveyServiceImpl implements SurveyService {
+    private final UserRepository userRepository;
     private final SurveyRepository surveyRepository;
     private final SurveyQuestionRepository surveyQuestionRepository;
     private final SurveyOptionRepository surveyOptionRepository;
     private final SurveyConsentRepository surveyConsentRepository;
+    private final SurveyTemplateRepository surveyTemplateRepository;
+    private final SurveyAnswerRepository surveyAnswerRepository;
 
     @Override
     public YouthSurveyQuestionDTO getIsolatedYouthSurveyQuestions() {
@@ -52,5 +64,73 @@ public class SurveyServiceImpl implements SurveyService {
         log.info("[SurveyServiceImpl] 개인정보 동의 항목들 가져오기 완료: {}", agreementCollector.getAgreementDTOS());
 
         return YouthSurveyQuestionDTO.from(questionCollector.getQuestionDTOS(), agreementCollector.getAgreementDTOS());
+    }
+
+    @Override
+    @Transactional
+    public void postIsolatedYouthSurvey(String userId, PostSurveyRequestDTO requestDTO) {
+        User user = userRepository.findByLoginId(userId)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
+
+        SurveyTemplate surveyTemplate = surveyTemplateRepository.findById(SurveyConstant.DEFAULT_TEMPLATE)
+                .orElseThrow(() -> new SurveyException(SurveyErrorCode.SURVEY_REQUIRED));
+
+        List<SurveyAnswerDTO> answers = requestDTO.getAnswers();
+
+        // 설문 질문들 가져오기
+        List<Long> questionIds = answers.stream()
+                .map(SurveyAnswerDTO::getQuestionId)
+                .toList();
+        List<SurveyQuestion> questions = surveyQuestionRepository.findAllById(questionIds);
+
+        // 보기 문항들 가져오기
+        List<Long> optionIds = answers.stream()
+                .map(SurveyAnswerDTO::getOptionId)
+                .toList();
+        List<SurveyOption> options = surveyOptionRepository.findAllById(optionIds);
+
+        // 질문/보기 pk-객체 묶어 놓기 (검색 효율을 위함)
+        Map<Long, SurveyQuestion> questionMap = questions.stream()
+                .collect(Collectors.toMap(SurveyQuestion::getId, Function.identity()));
+        Map<Long, SurveyOption> answerMap = options.stream()
+                .collect(Collectors.toMap(SurveyOption::getId, Function.identity()));
+
+        // survey 부터 저장해서 pk 만들고
+        Survey survey = saveSurvey(user, surveyTemplate, answers, options);
+
+        // 이 pk로 answer 저장하기
+        List<SurveyAnswerVO> answerVOs = answers.stream()
+                .map(answer -> {
+                    SurveyQuestion question = questionMap.get(answer.getQuestionId());
+                    if (question == null) throw new SurveyException(SurveyErrorCode.QUESTION_NOT_FOUND);
+
+                    SurveyOption answerChoice = answer.getOptionId() == null ? null : answerMap.get(answer.getOptionId());
+                    if (answer.getOptionId() != null && answerChoice == null) throw new SurveyException(SurveyErrorCode.OPTION_NOT_FOUND);
+
+                    return SurveyAnswerVO.of(answer.getAnswerText(), answerChoice, question, survey);
+                })
+                .toList();
+
+        surveyAnswerRepository.saveAll(answerVOs.stream()
+                .map(SurveyAnswerVO::toEntity)
+                .toList());
+    }
+
+    private Survey saveSurvey (User user, SurveyTemplate surveyTemplate, List<SurveyAnswerDTO> answers,
+                               List<SurveyOption> options) {
+        int result = calculateScore(answers, options);
+
+        SurveyVO surveyVO = SurveyVO.of(Integer.toString(result), user, surveyTemplate);
+
+        return surveyRepository.save(SurveyVO.toEntity(surveyVO));
+    }
+
+    private int calculateScore(List<SurveyAnswerDTO> answers, List<SurveyOption> options) {
+        List<Integer> scores = options.stream()
+                .map(SurveyOption::getScore)
+                .toList();
+
+        int totalScore = scores.stream().mapToInt(Integer::intValue).sum();
+        return Math.round(totalScore * 10.0f / scores.size()) / 10;
     }
 }

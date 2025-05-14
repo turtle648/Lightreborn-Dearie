@@ -1,12 +1,14 @@
 package com.ssafy.backend.survey.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
+import com.ssafy.backend.survey.model.dto.request.PostSurveyRequestDTO;
 import com.ssafy.backend.survey.model.dto.response.YouthSurveyQuestionDTO;
 import com.ssafy.backend.survey.service.SurveyService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -24,5 +26,14 @@ public class SurveyController {
         log.info("[/isolated-youth/questions] 응답 생성 완료: {}", response);
 
         return ResponseEntity.ok(BaseResponse.success("청년 온라인 자가점검 설문지를 불러왔습니다.", response));
+    }
+
+    @PostMapping("/isolated-youth")
+    public ResponseEntity<BaseResponse<String>> postIsolatedYouthSurvey(
+            @AuthenticationPrincipal String userId,
+            @RequestBody PostSurveyRequestDTO requestDTO
+    ) {
+        surveyService.postIsolatedYouthSurvey(userId, requestDTO);
+        return ResponseEntity.ok(BaseResponse.success("청년 온라인 자가점검 설문 응답을 완료하였습니다."));
     }
 }
