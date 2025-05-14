@@ -66,6 +66,12 @@ dependencies {
 	implementation 'software.amazon.awssdk:auth:2.20.0'
 	implementation 'software.amazon.awssdk:regions:2.20.0'
 	implementation 'software.amazon.awssdk:apache-client:2.20.0'
+
+	//deep java library
+	implementation 'ai.djl:api:0.25.0'
+	implementation 'ai.djl.onnxruntime:onnxruntime-engine:0.25.0'
+	implementation 'ai.djl.tensorflow:tensorflow-engine:0.25.0'
+
 }
 
 tasks.named('test') {

@@ -11,7 +11,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # env 파일 복사 - dearie의 env 어떻게 할지
-COPY .env.dearie.production .env.dearie.production
+COPY .env.dearie.production .env.production
 
 # 전체 프로젝트 복사
 COPY . .

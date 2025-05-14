@@ -4,6 +4,7 @@ import { login, signup, getUserInfo, logout } from "@/apis/users";
 
 interface User {
   id: string;
+  name: string;
   role: string;
 }
 
@@ -85,7 +86,8 @@ const useAuthStore = create<AuthStore>()(
             // 사용자 데이터 구조에 따라 적절히 설정
             const userInfo = {
               id: userData.id || userData.userId,
-              role: userData.role || userData.userRole || 'user'
+              role: userData.role || userData.userRole || 'user',
+              name: userData.name || userData.userName || 'user'
             };
             
             set({ 

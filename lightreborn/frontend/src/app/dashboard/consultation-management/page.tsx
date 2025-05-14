@@ -8,6 +8,7 @@ import { colors } from "@/constants/colors"
 import { UserInfo } from "@/components/common/UserInfo"
 import ConsultationCalendar, { Consultation, formatDate, formatTime } from "@/components/common/Calendar"
 import Sheet from '@/components/common/Sheet'
+import { useRouter } from 'next/navigation'
 
 export default function ConsultationManagementPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -137,6 +138,11 @@ export default function ConsultationManagementPage() {
     handleDateChange(new Date())
   }, [])
 
+  const router = useRouter()
+  const handleMakeNewConsultation = () => {
+    router.push('/dashboard/consultation-management/makenew')
+  }
+
   return (
     <div className="space-y-6 p-6">
       <h1 className="text-2xl font-bold" style={{ color: colors.text.primary }}>
@@ -149,16 +155,20 @@ export default function ConsultationManagementPage() {
         <Card title='상담 일정 관리' subTitle='날짜를 선택하면 해당 날짜의 상담정보를 확인할 수 있습니다.'>
           <div className='flex flex-col gap-4'>
 
+            <Button 
+              variant="primary" 
+              className="w-full h-20 flex flex-row items-center justify-center"
+              onClick={handleMakeNewConsultation}
+            >
+              <Plus className="w-4 h-4 mr-1" /> 
+              <span>상담 일정 추가</span>
+            </Button>
+
             <ConsultationCalendar 
               consultations={consultations}
               selectedDate={selectedDate}
               onDateChange={handleDateChange}
             />
-
-            <Button variant="outline" className="w-full flex flex-row items-center justify-center">
-              <Plus className="w-4 h-4 mr-1" /> 
-              <span>상담 일정 추가</span>
-            </Button>
           </div>
         </Card>
 
@@ -239,6 +249,7 @@ export default function ConsultationManagementPage() {
                     variant="outline" 
                     size="sm" 
                     className="flex flex-row items-center justify-center mt-4 text-blue-500 border-blue-500"
+                    onClick={handleMakeNewConsultation}
                     >
                     <Plus className="w-4 h-4 mr-1" />
                     <span>일정 추가하기</span>

@@ -7,6 +7,8 @@ import { useState } from "react"
 import { cn } from "@/utils/cn"
 import { Badge } from "@/components/ui/badge"
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
+import { updateMissionStatus } from "@/apis/mission-api"
 
 interface MissionProps {
   id: number
@@ -14,6 +16,7 @@ interface MissionProps {
   description: string
   difficulty: string
   category: string
+  route?: string
 }
 
 interface DailyMissionProps {
@@ -21,10 +24,49 @@ interface DailyMissionProps {
 }
 
 export default function DailyMission({ mission }: DailyMissionProps) {
+  const router = useRouter()
   const [completed, setCompleted] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
 
-  const handleComplete = () => {
-    setCompleted(!completed)
+  const handleMissionAction = async () => {
+    if (isUpdating) return
+
+    console.log("미션 정보:", mission); // 미션 객체 확인
+    console.log("제목:", mission.title);
+
+    if (completed) {
+      setIsUpdating(true)
+      try {
+        await updateMissionStatus(mission.id, false)
+        setCompleted(false)
+      } catch (error) {
+        console.error("미션 상태 업데이트 중 오류 발생:", error)
+      } finally {
+        setIsUpdating(false)
+      }
+    } else {
+      // 산책하기 미션인 경우 산책 페이지로 이동
+      if (mission.title === "산책하기") {
+        console.log("산책하기 미션 감지, 이동 시도");
+        router.push("/mission/walking")
+        return;
+      } else if (mission.route) {
+        console.log("경로로 이동 시도:", mission.route); // 로그 추가
+        router.push(mission.route);
+        return; // 여기서 함수 종료
+      } else {
+        // 라우트가 없는 경우 기본 동작 (완료 처리)
+        setIsUpdating(true)
+        try {
+          await updateMissionStatus(mission.id, true)
+          setCompleted(true)
+        } catch (error) {
+          console.error("미션 상태 업데이트 중 오류 발생:", error)
+        } finally {
+          setIsUpdating(false)
+        }
+      }
+    }
   }
 
   return (
@@ -65,11 +107,14 @@ export default function DailyMission({ mission }: DailyMissionProps) {
                     ? "border-primary text-primary bg-white hover:bg-primary/5"
                     : "bg-gradient-soft hover:opacity-90",
                 )}
-                onClick={handleComplete}
+                onClick={handleMissionAction}
+                disabled={isUpdating}
                 aria-pressed={completed}
                 aria-label={completed ? "미션 완료 취소하기" : "미션 시작하기"}
               >
-                {completed ? (
+                {isUpdating ? (
+                  "처리 중..."
+                ) : completed ? (
                   <>
                     <CheckCircle className="h-4 w-4 mr-1" aria-hidden="true" />
                     완료

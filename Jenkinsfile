@@ -78,7 +78,7 @@ pipeline {
                         'DEARIE_DB_URL', 'DEARIE_DB_USER', 'DEARIE_DB_PASSWORD', 'DEARIE_DB_NAME', 'DEARIE_JWT_SECRET',
                         'LIGHT_DB_URL', 'LIGHT_DB_USER', 'LIGHT_DB_PASSWORD', 'LIGHT_DB_NAME', 'LIGHT_JWT_SECRET',
                         'KAFKA_BOOTSTRAP_SERVERS', 'KAFKA_TOPIC_NAME', 'KAFKA_CONSUMER_GROUP_ID',
-                        'OPENAI_API_KEY', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET',
+                        'OPENAI_API_KEY', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET_DEARIE', 'S3_BUCKET_LIGHTREBORN',
                         'NEXT_PUBLIC_NAVER_CLIENT_ID'
                     ]
 
@@ -118,6 +118,9 @@ pipeline {
                     def frontendEnv = """
                     NEXT_PUBLIC_BASE_PATH=/dearie
                     NEXT_PUBLIC_API_URL=/api/app/
+                    NEXT_PUBLIC_MAPBOX_TOKEN=${envProps.NEXT_PUBLIC_MAPBOX_TOKEN}
+                    NEXT_PUBLIC_MAPTILER_KEY=${envProps.NEXT_PUBLIC_MAPTILER_KEY}
+                    NEXT_PUBLIC_NAVER_CLIENT_ID=${envProps.NEXT_PUBLIC_NAVER_CLIENT_ID}
                     """.stripIndent().trim()
 
                     writeFile file: "${env.WORKSPACE}/dearie/frontend/.env.dearie.production", text: frontendEnv
@@ -135,8 +138,10 @@ pipeline {
                     def envPath = "${env.WORKSPACE}/cicd/.env"
 
                     sh """
-                        echo "🧹 docker-compose down"
-                        docker-compose --env-file ${envPath} -f ${composePath} down || true
+                        echo \"🧹 docker-compose down (remove orphans)\"
+                        docker-compose --env-file ${envPath} -f ${composePath} down --remove-orphans || true
+                      
+                        docker rm -f dearie-backend lightreborn-backend dearie-frontend lightreborn-frontend || true
                     """
                 }
             }
@@ -155,7 +160,8 @@ pipeline {
                         'KAFKA_BOOTSTRAP_SERVERS', 'KAFKA_TOPIC_NAME', 'KAFKA_CONSUMER_GROUP_ID',
                         'OPENAI_API_KEY',
                         'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET_DEARIE','S3_BUCKET_LIGHTREBORN',
-                        'NEXT_PUBLIC_NAVER_CLIENT_ID'
+                        'NEXT_PUBLIC_NAVER_CLIENT_ID',
+                        'NEXT_PUBLIC_MAPTILER_KEY', 'NEXT_PUBLIC_MAPBOX_TOKEN'
                     ]
 
                     withEnv(generateWithEnvList(runtimeEnvKeys)) {

@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "mission")
+@Table(name = "missions")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,4 +21,7 @@ public class Mission {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mission_type_id")
     private MissionType missionType;
+
+    @Column(length = 100)
+    private String requiredObjectLabel;
 }

@@ -1,3 +1,5 @@
+"use client"
+
 import type React from "react"
 import type { ButtonHTMLAttributes } from "react"
 import { colors } from "@/constants/colors"
@@ -36,7 +38,7 @@ export default function Button({
 
   return (
     <button
-      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${widthStyle} ${className}`}
+      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${widthStyle} ${className} cursor-pointer`}
       {...props}
     >
       {children}
