@@ -1,10 +1,11 @@
 package com.ssafy.backend.mission.model.entity;
 
+import com.ssafy.backend.mission.model.enums.MissionTypeMapping;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "mission_type")
+@Table(name = "mission_types")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,9 +18,5 @@ public class MissionType {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, unique = true)
-    private Type type;
-
-    public enum Type {
-        ACTIVE, STATIC
-    }
+    private MissionTypeMapping type;
 }

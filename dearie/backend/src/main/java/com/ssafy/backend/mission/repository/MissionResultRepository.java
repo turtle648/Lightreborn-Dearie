@@ -1,6 +1,7 @@
 package com.ssafy.backend.mission.repository;
 
 import com.ssafy.backend.mission.model.entity.MissionResult;
+import com.ssafy.backend.mission.model.enums.MissionResultType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,6 +14,6 @@ public interface MissionResultRepository extends JpaRepository<MissionResult, Lo
      */
     Optional<MissionResult> findTopByUserMissionIdAndResultType(
             Long userMissionId,
-            MissionResult.ResultType resultType
+            MissionResultType resultType
     );
 }

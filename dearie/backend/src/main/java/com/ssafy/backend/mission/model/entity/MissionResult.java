@@ -1,5 +1,6 @@
 package com.ssafy.backend.mission.model.entity;
 
+import com.ssafy.backend.mission.model.enums.MissionResultType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,7 +20,7 @@ public class MissionResult {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "result_type", nullable = false)
-    private ResultType resultType;  // WALK, IMAGE, TEXT, MUSIC 등
+    private MissionResultType resultType;  // WALK, IMAGE, TEXT, MUSIC 등
 
     @Column(name = "value", nullable = false, length = 100)
     private String value;           // 결과 값 (예: gpx key나 텍스트)
@@ -39,14 +40,10 @@ public class MissionResult {
         optional = true)
     private WalkRecord walkRecord;
 
-    public enum ResultType {
-        WALK, IMAGE, TEXT, MUSIC
-    }
-
     /**
      * 새 MissionResult 생성 시에는 verified=false 고정
      */
-    public static MissionResult of(UserMission um, ResultType type, String value) {
+    public static MissionResult of(UserMission um, MissionResultType type, String value) {
         return MissionResult.builder()
                 .userMission(um)
                 .resultType(type)
