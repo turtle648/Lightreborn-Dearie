@@ -3,16 +3,27 @@ package com.ssafy.backend.diary.service;
 import com.ssafy.backend.auth.model.entity.User;
 import com.ssafy.backend.auth.repository.UserRepository;
 import com.ssafy.backend.common.config.S3Uploader;
+import com.ssafy.backend.common.exception.CustomException;
+import com.ssafy.backend.common.exception.ErrorCode;
 import com.ssafy.backend.diary.model.entity.Bookmark;
 import com.ssafy.backend.diary.model.entity.Diary;
 import com.ssafy.backend.diary.model.entity.DiaryImage;
+import com.ssafy.backend.diary.model.request.DiarySearchRequest;
 import com.ssafy.backend.diary.model.request.OpenAiMessage;
 import com.ssafy.backend.diary.model.request.OpenAiRequest;
+import com.ssafy.backend.diary.model.response.DiaryListItemDto;
+import com.ssafy.backend.diary.model.response.DiaryListResponse;
 import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
 import com.ssafy.backend.diary.model.response.OpenAiResponse;
 import com.ssafy.backend.diary.repository.BookmarkRepository;
 import com.ssafy.backend.diary.repository.DiaryImageRepository;
 import com.ssafy.backend.diary.repository.DiaryRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,11 +31,10 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class DiaryServiceImpl implements DiaryService {
 
@@ -48,10 +58,95 @@ public class DiaryServiceImpl implements DiaryService {
         this.bookmarkRepository = bookmarkRepository;
     }
 
+    private Pair<User, Diary> validateAndGetOwnDiaryWithUser(String loginId, Long diaryId) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        Diary diary = diaryRepository.findById(diaryId)
+                .orElseThrow(() -> new CustomException(ErrorCode.DIARY_NOT_FOUND));
+
+        if (!diary.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("본인의 일기에만 접근할 수 있습니다.");
+        }
+
+        return Pair.of(user, diary);
+    }
+
+    @Transactional(readOnly = true)
+    public DiaryListResponse getMyDiaries(String loginId, DiarySearchRequest request) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        // 디버깅
+        log.info("사용자 ID: {}", user.getId());
+        log.info("북마크 필터: {}", request.getBookmark());
+        log.info("키워드 필터: {}", request.getKeyword());
+
+        // 페이징 및 정렬 설정
+        Pageable pageable = PageRequest.of(
+                request.getPage(),
+                request.getSize(),
+                "oldest".equals(request.getSort()) ? Sort.by("createdAt").ascending() : Sort.by("createdAt").descending()
+        );
+
+        // 키워드가 null이거나 빈 문자열이면 null로 설정 (검색 조건에서 제외)
+        String keyword = (request.getKeyword() == null || request.getKeyword().trim().isEmpty())
+                ? null
+                : request.getKeyword();
+
+        // 일기 조회 (날짜 검색 제외)
+        Page<Diary> diaryPage = diaryRepository.findFilteredDiaries(
+                user,
+                request.getBookmark(),
+                keyword,  // null 또는 실제 검색어
+                pageable
+        );
+
+        // 디버깅
+        log.info("조회된 일기 수: {}", diaryPage.getTotalElements());
+
+        // 조회된 일기의 ID 목록 추출
+        List<Long> diaryIds = diaryPage.getContent().stream()
+                .map(Diary::getId)
+                .toList();
+
+        // 일기 ID 목록으로 이미지 조회
+        List<DiaryImage> allImages = diaryIds.isEmpty()
+                ? Collections.emptyList()
+                : diaryImageRepository.findByDiaryIdIn(diaryIds);
+
+        log.info("조회된 이미지 수: {}", allImages.size());
+
+        // 이미지를 일기 ID별로 그룹화
+        Map<Long, List<String>> diaryImageMap = allImages.stream()
+                .collect(Collectors.groupingBy(
+                        image -> image.getDiary().getId(),
+                        Collectors.mapping(DiaryImage::getImageUrl, Collectors.toList())
+                ));
+
+        // 응답 변환
+        List<DiaryListItemDto> result = diaryPage.getContent().stream()
+                .map(diary -> {
+                    List<String> imageUrls = diaryImageMap.getOrDefault(diary.getId(), Collections.emptyList());
+                    log.info("일기 ID: {}, 이미지 URL 수: {}", diary.getId(), imageUrls.size());
+
+                    return new DiaryListItemDto(
+                            diary.getId(),
+                            diary.getContent(),
+                            diary.getCreatedAt().toLocalDate().toString(),
+                            imageUrls
+                    );
+                })
+                .toList();
+
+        return new DiaryListResponse(result, diaryPage);
+    }
+
+
     @Override
-    public GetDiaryDetailDto getDiary(Long diaryId, String userLoginId) {
-        Diary diary = diaryRepository.findByIdAndUser_LoginId(diaryId, userLoginId)
-                .orElseThrow(() -> new AccessDeniedException("자신의 일기만 조회할 수 없습니다."));
+    public GetDiaryDetailDto getDiary(Long diaryId, String userId) {
+        Pair<User, Diary> pair = validateAndGetOwnDiaryWithUser(userId, diaryId);
+        Diary diary = pair.getRight();
 
         List<String> images = diary.getImages().stream()
                 .map(DiaryImage::getImageUrl)
@@ -72,7 +167,7 @@ public class DiaryServiceImpl implements DiaryService {
     public Long createDiaryWithImages(String content, Diary.EmotionTag emotionTag, List<MultipartFile> images, String userId) {
         // 1. 사용자 조회
         User user = userRepository.findByLoginId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 사용자 ID"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         // 2. 일기 엔티티 생성
         Diary diary = Diary.builder()
@@ -129,9 +224,9 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Transactional
-    public String createAiComment(Long diaryId, String userLoginId) {
-        Diary diary = diaryRepository.findByIdAndUser_LoginId(diaryId, userLoginId)
-                .orElseThrow(() -> new IllegalArgumentException("일기를 찾을 수 없습니다."));
+    public String createAiComment(Long diaryId, String userId) {
+        Pair<User, Diary> pair = validateAndGetOwnDiaryWithUser(userId, diaryId);
+        Diary diary = pair.getRight();
 
         String aiComment = generateComment(diary.getContent());
 
@@ -147,16 +242,10 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Transactional
-    public Boolean addBookmark(String loginId, Long diaryId) {
-        User user = userRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        Diary diary = diaryRepository.findById(diaryId)
-                .orElseThrow(() -> new IllegalArgumentException("일기를 찾을 수 없습니다."));
-
-        if (!diary.getUser().getId().equals(user.getId())) {
-            throw new AccessDeniedException("본인의 일기만 북마크할 수 있습니다.");
-        }
+    public Boolean addBookmark(String userId, Long diaryId) {
+        Pair<User, Diary> pair = validateAndGetOwnDiaryWithUser(userId, diaryId);
+        Diary diary = pair.getRight();
+        User user = pair.getLeft();
 
         if (bookmarkRepository.existsByUserAndDiary(user, diary)) {
             return false;
@@ -171,6 +260,21 @@ public class DiaryServiceImpl implements DiaryService {
         bookmarkRepository.save(bookmark);
         return true;
     }
+
+    @Override
+    public Boolean deleteBookmark(String userId, Long diaryId) {
+        Pair<User, Diary> pair = validateAndGetOwnDiaryWithUser(userId, diaryId);
+        Diary diary = pair.getRight();
+        User user = pair.getLeft();
+
+        Bookmark bookmark = bookmarkRepository.findByUserAndDiary(user, diary)
+                .orElseThrow(() -> new CustomException(ErrorCode.BOOKMARK_NOT_FOUND));
+
+        bookmarkRepository.delete(bookmark);
+
+        return true;
+    }
+
 
     public String generateComment(String diaryContent) {
         List<OpenAiMessage> messages = List.of(
@@ -192,7 +296,7 @@ public class DiaryServiceImpl implements DiaryService {
                 .bodyToMono(OpenAiResponse.class)
                 .block();
 
-        return response.getChoices().get(0).getMessage().getContent();
+        return Objects.requireNonNull(response).getChoices().getFirst().getMessage().getContent();
     }
 
 }

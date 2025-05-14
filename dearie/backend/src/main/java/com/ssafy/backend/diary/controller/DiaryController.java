@@ -2,6 +2,8 @@ package com.ssafy.backend.diary.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.diary.model.entity.Diary;
+import com.ssafy.backend.diary.model.request.DiarySearchRequest;
+import com.ssafy.backend.diary.model.response.DiaryListResponse;
 import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
 import com.ssafy.backend.diary.service.DiaryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,6 +25,16 @@ public class DiaryController {
 
     private final DiaryService diaryService;
 
+    @Operation(summary = "내가 작성한 일기 조회", description = "사용자는 작성한 일기 목록을 검색, 정렬하여 조회할 수 있다.")
+    @GetMapping
+    public ResponseEntity<BaseResponse<DiaryListResponse>> getMyDiaries(
+            @AuthenticationPrincipal String loginId,
+            @ModelAttribute DiarySearchRequest request
+    ) {
+        DiaryListResponse result = diaryService.getMyDiaries(loginId, request);
+        return ResponseEntity.ok(BaseResponse.success(200, "일기 전체 조회를 성공했습니다.", result));
+    }
+
     @Operation(summary = "일기 상세 보기", description = "사용자는 일기의 상세 내용을 조회할 수 있다.")
     @GetMapping("/{diaryId}")
     public ResponseEntity<BaseResponse<GetDiaryDetailDto>> getDiaryDetail(
@@ -38,7 +50,7 @@ public class DiaryController {
     @PostMapping(consumes = {
             MediaType.MULTIPART_FORM_DATA_VALUE,
             MediaType.APPLICATION_FORM_URLENCODED_VALUE + ";charset=UTF-8"
-    })    @Operation(summary = "이미지와 함께 일기 작성", description = "이미지를 S3에 업로드하고 일기를 함께 저장합니다")
+    })    @Operation(summary = "이미지와 함께 일기 작성", description = "이미지를 S3에 업로드하고 일기를 함께 저장합니다.")
     public ResponseEntity<BaseResponse<Long>> createDiary(
             @RequestParam("content") String content,
             @RequestParam("emotionTag") Diary.EmotionTag emotionTag,
@@ -87,6 +99,18 @@ public class DiaryController {
         boolean result = diaryService.addBookmark(userId, diaryId);
 
         String message = result ? "북마크 추가 성공" : "이미 북마크된 일기입니다.";
+        return ResponseEntity.ok(BaseResponse.success(200, message, result ? 1 : 0));
+    }
+
+    @Operation(summary = "북마크 삭제", description = "작성한 일기에 대한 북마크를 삭제합니다.")
+    @DeleteMapping("{diaryId}/bookmark")
+    public ResponseEntity<BaseResponse<Integer>> deleteBookmark(
+            @AuthenticationPrincipal String userId,
+            @PathVariable Long diaryId
+    ) {
+        boolean result = diaryService.deleteBookmark(userId, diaryId);
+
+        String message = result ? "북마크 삭제 성공" : "해당 일기에 대한 북마크가 없습니다.";
         return ResponseEntity.ok(BaseResponse.success(200, message, result ? 1 : 0));
     }
 }
