@@ -118,6 +118,9 @@ pipeline {
                     def frontendEnv = """
                     NEXT_PUBLIC_BASE_PATH=/dearie
                     NEXT_PUBLIC_API_URL=/api/app/
+                    NEXT_PUBLIC_MAPBOX_TOKEN=${envProps.NEXT_PUBLIC_MAPBOX_TOKEN}
+                    NEXT_PUBLIC_MAPTILER_KEY=${envProps.NEXT_PUBLIC_MAPTILER_KEY}
+                    NEXT_PUBLIC_NAVER_CLIENT_ID=${envProps.NEXT_PUBLIC_NAVER_CLIENT_ID}
                     """.stripIndent().trim()
 
                     writeFile file: "${env.WORKSPACE}/dearie/frontend/.env.dearie.production", text: frontendEnv
@@ -155,7 +158,8 @@ pipeline {
                         'KAFKA_BOOTSTRAP_SERVERS', 'KAFKA_TOPIC_NAME', 'KAFKA_CONSUMER_GROUP_ID',
                         'OPENAI_API_KEY',
                         'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET_DEARIE','S3_BUCKET_LIGHTREBORN',
-                        'NEXT_PUBLIC_NAVER_CLIENT_ID'
+                        'NEXT_PUBLIC_NAVER_CLIENT_ID',
+                        'NEXT_PUBLIC_MAPTILER_KEY', 'NEXT_PUBLIC_MAPBOX_TOKEN'
                     ]
 
                     withEnv(generateWithEnvList(runtimeEnvKeys)) {
