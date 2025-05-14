@@ -1,4 +1,4 @@
-package com.ssafy.backend.survey.model.dto.state;
+package com.ssafy.backend.survey.model.state;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

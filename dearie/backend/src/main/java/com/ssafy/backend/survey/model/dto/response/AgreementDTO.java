@@ -7,6 +7,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class AgreementDTO {
+    private Long agreementId;
     private String title;
     private String purpose;
     private String items;
@@ -15,6 +16,7 @@ public class AgreementDTO {
 
     public static AgreementDTO from(SurveyConsent consent) {
         return AgreementDTO.builder()
+                .agreementId(consent.getId())
                 .title(consent.getTitle())
                 .purpose(consent.getPurpose())
                 .items(consent.getItems())
