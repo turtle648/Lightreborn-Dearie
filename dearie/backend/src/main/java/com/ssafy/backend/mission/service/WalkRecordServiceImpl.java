@@ -7,6 +7,7 @@ import com.ssafy.backend.mission.model.dto.response.WalkRecordResponse;
 import com.ssafy.backend.mission.model.entity.MissionResult;
 import com.ssafy.backend.mission.model.entity.UserMission;
 import com.ssafy.backend.mission.model.entity.WalkRecord;
+import com.ssafy.backend.mission.model.enums.MissionResultType;
 import com.ssafy.backend.mission.repository.MissionResultRepository;
 import com.ssafy.backend.mission.repository.WalkRecordRepository;
 import com.ssafy.backend.mission.repository.UserMissionRepository;
@@ -41,7 +42,7 @@ public class WalkRecordServiceImpl implements WalkRecordService {
         // 2) MissionResult 신규 생성 (WALK 타입, 아직 value/verify는 빈값 또는 false)
         MissionResult mr = MissionResult.builder()
                 .userMission(um)
-                .resultType(MissionResult.ResultType.WALK)
+                .resultType(MissionResultType.WALK)
                 .value("")
                 .verified(false)
                 .build();
@@ -81,7 +82,7 @@ public class WalkRecordServiceImpl implements WalkRecordService {
         String imgKey = String.format("walk/%d/snapshot-%d.png", missionResultId, System.currentTimeMillis());
         String snapshotUrl = s3Uploader.upload(imgKey, snapshotFile);
 
-        // 4) 엔티티 업데이트 & 저장
+        // 4) 엔티티 업데이트 & 저장W
         WalkRecord updated = wr.toBuilder()
                 .endTime(endTime)
                 .duration(Duration.between(wr.getStartTime(), endTime))

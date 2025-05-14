@@ -1,6 +1,6 @@
 package com.ssafy.backend.common.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -9,12 +9,21 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class WebClientConfig {
 
 //    @Value("${yolo.server.base-url}")
-    private String BASE_URL;
+    private String YOLO_BASE_URL;
 
     @Bean
-    public WebClient webClient(WebClient.Builder webClientBuilder) {
+    @Qualifier("yoloWebClient")
+    public WebClient yoloWebClient(WebClient.Builder webClientBuilder) {
         return webClientBuilder
-                .baseUrl(BASE_URL)
+                .baseUrl("")
+                .build();
+    }
+
+    @Bean
+    @Qualifier("itunesWebClient")
+    public WebClient itunesWebClient(WebClient.Builder webClientBuilder) {
+        return webClientBuilder
+                .baseUrl("https://itunes.apple.com")
                 .build();
     }
 }
