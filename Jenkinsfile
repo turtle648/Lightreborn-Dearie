@@ -139,9 +139,9 @@ pipeline {
 
                     sh """
                         echo \"🧹 docker-compose down (remove orphans)\"
-                        docker-compose --env-file ${envPath} \
-                                    -f ${composePath} \
-                                    down --remove-orphans || true
+                        docker-compose --env-file ${envPath} -f ${composePath} down --remove-orphans || true
+                      
+                        docker rm -f dearie-backend lightreborn-backend dearie-frontend lightreborn-frontend || true
                     """
                 }
             }
