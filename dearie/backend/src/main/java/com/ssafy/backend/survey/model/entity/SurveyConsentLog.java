@@ -1,32 +1,30 @@
-package com.ssafy.backend.survey.entity;
+package com.ssafy.backend.survey.model.entity;
 
-import com.ssafy.backend.auth.model.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "counseling_log")
+@Table(name = "survey_consent_logs")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CounselingLog {
+@ToString
+public class SurveyConsentLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Boolean isAgreed;
 
-    @Column(name = "survey_result")
-    private String surveyResult;
+    @Column(nullable = false)
+    private LocalDateTime agreedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "survey_consent_id")
+    private SurveyConsent surveyConsent;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "survey_id")
