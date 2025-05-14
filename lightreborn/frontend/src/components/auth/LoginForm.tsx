@@ -4,7 +4,6 @@ import type React from "react"
 import Button from "@/components/common/Button"
 import { useState } from "react";
 import useAuthStore from "@/stores/useAuthStore";
-import { signup } from "@/apis/users";
 import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
@@ -32,20 +31,8 @@ export default function LoginForm() {
     setIsLoading(false)
   }
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
-    
-    try {
-      await signup({ id, password, role: 1 })
-      // 회원가입 성공 시 로그인 페이지로 이동
-      router.push("/login")
-    } catch (error) {
-      console.error("회원가입 실패:", error)
-      setError("회원가입에 실패했습니다. 다시 시도해 주세요.")
-    } 
-    setIsLoading(false)
+  const handleSignup = () => {
+    router.push("/signup")
   }
 
   return (
@@ -83,7 +70,7 @@ export default function LoginForm() {
         )}
 
         <Button 
-          variant="outline" 
+          variant="primary" 
           fullWidth={true} 
           size="lg" 
           onClick={handleSubmit}
@@ -99,6 +86,7 @@ export default function LoginForm() {
         size="lg" 
         onClick={handleSignup}
         disabled={isLoading}
+        className="border-none"
       >
         {isLoading ? "처리 중..." : "회원가입"}
       </Button>

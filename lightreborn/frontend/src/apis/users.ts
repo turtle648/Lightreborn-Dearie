@@ -22,7 +22,7 @@ export const logout = async () => {
 };
 
 // 회원가입 
-export const signup = async (data : {id : string, password : string, role: number}) => {
+export const signup = async (data : {id : string, password : string, role: number, name: string}) => {
   const response = await publicApi.post("/auth/signup", data);
   return response.data;
 };

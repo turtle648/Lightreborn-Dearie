@@ -15,7 +15,7 @@ interface AuthStore {
   setHydrated: (state: boolean) => void;
   login: (data: { id: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
-  signup: (data: { id: string; password: string; role: number }) => Promise<void>;
+  signup: (data: { id: string; password: string; role: number; name: string }) => Promise<void>;
   getUserInfo: () => Promise<User | void>;
 }
 
