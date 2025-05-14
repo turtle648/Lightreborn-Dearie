@@ -9,18 +9,20 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class SurveyOption {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Lob
-    @Column(name = "option_text", nullable = false)
+    @Column(name = "option_text", columnDefinition = "TEXT", nullable = false)
     private String optionText;
 
+    @Column(name = "score", nullable = false)
     private int score;
 
-    private int order;
+    @Column(name = "option_num", nullable = false)
+    private int optionNum;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="survey_questions_id", nullable = false)

@@ -9,6 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class SurveyTemplate {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

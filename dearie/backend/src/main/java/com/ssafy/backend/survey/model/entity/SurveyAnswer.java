@@ -9,13 +9,13 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class SurveyAnswer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Lob
-    @Column(name = "answer_text")
+    @Column(name = "answer_text", columnDefinition = "TEXT")
     private String answerText;
 
     @ManyToOne(fetch = FetchType.LAZY)

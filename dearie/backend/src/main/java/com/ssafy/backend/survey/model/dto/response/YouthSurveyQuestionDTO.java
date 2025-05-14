@@ -10,4 +10,11 @@ import java.util.List;
 public class YouthSurveyQuestionDTO {
     private List<QuestionDTO> questions;
     private List<AgreementDTO> agreements;
+
+    public static YouthSurveyQuestionDTO from(List<QuestionDTO> questions, List<AgreementDTO> agreements) {
+        return YouthSurveyQuestionDTO.builder()
+                .questions(questions)
+                .agreements(agreements)
+                .build();
+    }
 }
