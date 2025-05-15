@@ -10,10 +10,12 @@ import com.ssafy.backend.survey.exception.SurveyException;
 import com.ssafy.backend.survey.model.collector.AgreementCollector;
 import com.ssafy.backend.survey.model.collector.QuestionCollector;
 import com.ssafy.backend.survey.model.constant.SurveyConstant;
+import com.ssafy.backend.survey.model.dto.request.PostSurveyAgreementRequestDTO;
 import com.ssafy.backend.survey.model.dto.request.PostSurveyRequestDTO;
-import com.ssafy.backend.survey.model.dto.request.SurveyAnswerDTO;
+import com.ssafy.backend.survey.model.dto.request.SurveyAnswerRequestDTO;
 import com.ssafy.backend.survey.model.dto.response.AgreementDTO;
 import com.ssafy.backend.survey.model.dto.response.QuestionDTO;
+import com.ssafy.backend.survey.model.dto.response.SurveyResponseDTO;
 import com.ssafy.backend.survey.model.dto.response.YouthSurveyQuestionDTO;
 import com.ssafy.backend.survey.model.entity.*;
 import com.ssafy.backend.survey.model.vo.SurveyAnswerVO;
@@ -68,24 +70,24 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional
-    public void postIsolatedYouthSurvey(String userId, PostSurveyRequestDTO requestDTO) {
+    public SurveyResponseDTO postIsolatedYouthSurvey(String userId, PostSurveyRequestDTO requestDTO) {
         User user = userRepository.findByLoginId(userId)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
 
         SurveyTemplate surveyTemplate = surveyTemplateRepository.findById(SurveyConstant.DEFAULT_TEMPLATE)
                 .orElseThrow(() -> new SurveyException(SurveyErrorCode.SURVEY_REQUIRED));
 
-        List<SurveyAnswerDTO> answers = requestDTO.getAnswers();
+        List<SurveyAnswerRequestDTO> answers = requestDTO.getAnswers();
 
         // 설문 질문들 가져오기
         List<Long> questionIds = answers.stream()
-                .map(SurveyAnswerDTO::getQuestionId)
+                .map(SurveyAnswerRequestDTO::getQuestionId)
                 .toList();
         List<SurveyQuestion> questions = surveyQuestionRepository.findAllById(questionIds);
 
         // 보기 문항들 가져오기
         List<Long> optionIds = answers.stream()
-                .map(SurveyAnswerDTO::getOptionId)
+                .map(SurveyAnswerRequestDTO::getOptionId)
                 .toList();
         List<SurveyOption> options = surveyOptionRepository.findAllById(optionIds);
 
@@ -97,6 +99,9 @@ public class SurveyServiceImpl implements SurveyService {
 
         // survey 부터 저장해서 pk 만들고
         Survey survey = saveSurvey(user, surveyTemplate, answers, options);
+
+        // total score 계산하기
+        Integer totalScore = calculateTotalScore(questions);
 
         // 이 pk로 answer 저장하기
         List<SurveyAnswerVO> answerVOs = answers.stream()
@@ -114,9 +119,23 @@ public class SurveyServiceImpl implements SurveyService {
         surveyAnswerRepository.saveAll(answerVOs.stream()
                 .map(SurveyAnswerVO::toEntity)
                 .toList());
+
+        return SurveyResponseDTO.from(survey, totalScore);
     }
 
-    private Survey saveSurvey (User user, SurveyTemplate surveyTemplate, List<SurveyAnswerDTO> answers,
+    @Override
+    public void postIsolatedYouthSurveyAgreement(String userId, PostSurveyAgreementRequestDTO requestDTO) {
+
+    }
+
+    private Integer calculateTotalScore (List<SurveyQuestion> questions) {
+        return surveyOptionRepository.findTopOptionsBySurveyQuestions(questions)
+                .stream()
+                .mapToInt(SurveyOption::getScore)
+                .sum();
+    }
+
+    private Survey saveSurvey (User user, SurveyTemplate surveyTemplate, List<SurveyAnswerRequestDTO> answers,
                                List<SurveyOption> options) {
         int result = calculateScore(answers, options);
 
@@ -125,12 +144,11 @@ public class SurveyServiceImpl implements SurveyService {
         return surveyRepository.save(SurveyVO.toEntity(surveyVO));
     }
 
-    private int calculateScore(List<SurveyAnswerDTO> answers, List<SurveyOption> options) {
+    private int calculateScore(List<SurveyAnswerRequestDTO> answers, List<SurveyOption> options) {
         List<Integer> scores = options.stream()
                 .map(SurveyOption::getScore)
                 .toList();
 
-        int totalScore = scores.stream().mapToInt(Integer::intValue).sum();
-        return Math.round(totalScore * 10.0f / scores.size()) / 10;
+        return scores.stream().mapToInt(Integer::intValue).sum();
     }
 }
