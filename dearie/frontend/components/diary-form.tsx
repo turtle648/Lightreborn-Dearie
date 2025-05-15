@@ -1,37 +1,100 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent } from "@/components/ui/card"
-import { Camera, ImageIcon, Smile, Send } from "lucide-react"
-import { EmotionSelector } from "./emotion-selector"
-import { motion } from "framer-motion"
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Camera, ImageIcon, Smile, Send } from "lucide-react";
+import { EmotionSelector } from "./emotion-selector";
+import { motion } from "framer-motion";
+
+// export const emotionOptions = [
+//   { label: "😊 기쁨", value: "JOY" },
+//   { label: "😢 슬픔", value: "SADNESS" },
+//   { label: "😠 화남", value: "ANGER" },
+//   { label: "😰 불안", value: "ANXIETY" },
+//   { label: "😌 평온", value: "NEUTRAL" },
+//   { label: "😑 지루함", value: "BOREDOM" },
+//   { label: "😍 설렘", value: "EXCITEMENT" },
+//   { label: "🙏 감사", value: "GRATITUDE" },
+//   { label: "😲 놀람", value: "SURPRISE" },
+//   { label: "😵 혼란", value: "CONFUSION" },
+//   { label: "🌈 희망", value: "HOPE" },
+//   { label: "😴 피곤", value: "FATIGUE" },
+// ];
 
 export function DiaryForm() {
-  const router = useRouter()
-  const [content, setContent] = useState("")
-  const [showEmotionSelector, setShowEmotionSelector] = useState(false)
-  const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter();
+  const [content, setContent] = useState("");
+  const [showEmotionSelector, setShowEmotionSelector] = useState(false);
+  const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      setImages(Array.from(files));
+    }
+  };
 
   const handleSubmit = async () => {
-    if (!content.trim()) return
+    if (!content.trim() || !selectedEmotion) {
+      alert("내용과 감정을 입력해주세요.");
+      return;
+    }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
-    // 실제 구현에서는 API 호출
-    setTimeout(() => {
-      setIsSubmitting(false)
-      router.push("/diary")
-    }, 1000)
-  }
+    const formData = new FormData();
+    const diaryData = {
+      content,
+      emotionTag: selectedEmotion,
+    };
+
+    formData.append(
+      "diary",
+      new Blob([JSON.stringify(diaryData)], { type: "application/json" })
+    );
+
+    images.forEach((file) => {
+      formData.append("images", file);
+    });
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/diaries`,
+        {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "일기 작성 실패");
+      }
+
+      router.push("/diary");
+    } catch (err: any) {
+      alert("에러 발생: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleEmotionSelect = (emotion: string) => {
-    setSelectedEmotion(emotion)
-    setShowEmotionSelector(false)
-  }
+    setSelectedEmotion(emotion);
+    setShowEmotionSelector(false);
+  };
 
   return (
     <div className="p-6 h-full flex flex-col">
@@ -77,6 +140,19 @@ export function DiaryForm() {
           value={content}
           onChange={(e) => setContent(e.target.value)}
         />
+
+        {images.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {images.map((img, i) => (
+              <img
+                key={i}
+                src={URL.createObjectURL(img)}
+                alt={`image-${i}`}
+                className="w-20 h-20 object-cover rounded-lg border"
+              />
+            ))}
+          </div>
+        )}
       </motion.div>
 
       <motion.div
@@ -87,13 +163,23 @@ export function DiaryForm() {
       >
         <div className="flex justify-between items-center">
           <div className="flex gap-2">
-            <Button variant="outline" size="icon" className="rounded-full">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full"
+              onClick={handleImageClick}
+            >
               <Camera className="h-5 w-5" />
             </Button>
             <Button variant="outline" size="icon" className="rounded-full">
               <ImageIcon className="h-5 w-5" />
             </Button>
-            <Button variant="outline" size="icon" onClick={() => setShowEmotionSelector(true)} className="rounded-full">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowEmotionSelector(true)}
+              className="rounded-full"
+            >
               <Smile className="h-5 w-5" />
             </Button>
           </div>
@@ -108,6 +194,16 @@ export function DiaryForm() {
         </div>
       </motion.div>
 
+      {/* 이미지 업로드용 숨겨진 input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImageChange}
+        accept="image/*"
+        multiple
+        hidden
+      />
+
       {showEmotionSelector && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-4">
           <motion.div
@@ -118,12 +214,15 @@ export function DiaryForm() {
           >
             <Card className="border-none shadow-xl">
               <CardContent className="p-5">
-                <EmotionSelector onSelect={handleEmotionSelect} onClose={() => setShowEmotionSelector(false)} />
+                <EmotionSelector
+                  onSelect={handleEmotionSelect}
+                  onClose={() => setShowEmotionSelector(false)}
+                />
               </CardContent>
             </Card>
           </motion.div>
         </div>
       )}
     </div>
-  )
+  );
 }
