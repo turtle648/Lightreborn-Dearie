@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum SurveyErrorCode implements BaseErrorCode {
+    AGREEMENT_REQUIRED(HttpStatus.BAD_REQUEST, "개인정보 수집 및 활용 동의 여부는 필수입니다."),
+    SURVEY_CONSENT_REQUIRED(HttpStatus.BAD_REQUEST, "설문 동의 항목이 누락되었습니다."),
     OPTION_NOT_FOUND(HttpStatus.BAD_REQUEST, "잘못된 보기입니다."),
     QUESTION_NOT_FOUND(HttpStatus.BAD_REQUEST, "질문을 찾을 수 없습니다."),
     ANSWER_TEXT_REQUIRED(HttpStatus.BAD_REQUEST, "답변 텍스트는 필수입니다."),

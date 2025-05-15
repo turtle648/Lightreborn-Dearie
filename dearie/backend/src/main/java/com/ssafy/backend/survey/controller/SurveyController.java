@@ -3,6 +3,7 @@ package com.ssafy.backend.survey.controller;
 import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.survey.model.dto.request.PostSurveyAgreementRequestDTO;
 import com.ssafy.backend.survey.model.dto.request.PostSurveyRequestDTO;
+import com.ssafy.backend.survey.model.dto.response.SurveyConsentLogResponseDTO;
 import com.ssafy.backend.survey.model.dto.response.SurveyResponseDTO;
 import com.ssafy.backend.survey.model.dto.response.YouthSurveyQuestionDTO;
 import com.ssafy.backend.survey.service.SurveyService;
@@ -40,11 +41,11 @@ public class SurveyController {
     }
 
     @PostMapping("/isolated-youth/agreement")
-    public ResponseEntity<BaseResponse<String>> postIsolatedYouthSurveyAgreement(
+    public ResponseEntity<BaseResponse<SurveyConsentLogResponseDTO>> postIsolatedYouthSurveyAgreement(
             @AuthenticationPrincipal String userId,
             @RequestBody PostSurveyAgreementRequestDTO requestDTO
     ) {
-        surveyService.postIsolatedYouthSurveyAgreement(userId, requestDTO);
-        return ResponseEntity.ok(BaseResponse.success(201, "청년 온라인 자가점검 설문 개인정보 수집 동의를 완료하였습니다."));
+        SurveyConsentLogResponseDTO response = surveyService.postIsolatedYouthSurveyAgreement(userId, requestDTO);
+        return ResponseEntity.ok(BaseResponse.success(201, "청년 온라인 자가점검 설문 개인정보 수집 동의를 완료하였습니다.", response));
     }
 }

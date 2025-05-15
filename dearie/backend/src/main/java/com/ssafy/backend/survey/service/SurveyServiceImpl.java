@@ -10,15 +10,14 @@ import com.ssafy.backend.survey.exception.SurveyException;
 import com.ssafy.backend.survey.model.collector.AgreementCollector;
 import com.ssafy.backend.survey.model.collector.QuestionCollector;
 import com.ssafy.backend.survey.model.constant.SurveyConstant;
+import com.ssafy.backend.survey.model.dto.request.AgreementRequestDTO;
 import com.ssafy.backend.survey.model.dto.request.PostSurveyAgreementRequestDTO;
 import com.ssafy.backend.survey.model.dto.request.PostSurveyRequestDTO;
 import com.ssafy.backend.survey.model.dto.request.SurveyAnswerRequestDTO;
-import com.ssafy.backend.survey.model.dto.response.AgreementDTO;
-import com.ssafy.backend.survey.model.dto.response.QuestionDTO;
-import com.ssafy.backend.survey.model.dto.response.SurveyResponseDTO;
-import com.ssafy.backend.survey.model.dto.response.YouthSurveyQuestionDTO;
+import com.ssafy.backend.survey.model.dto.response.*;
 import com.ssafy.backend.survey.model.entity.*;
 import com.ssafy.backend.survey.model.vo.SurveyAnswerVO;
+import com.ssafy.backend.survey.model.vo.SurveyConsentLogVO;
 import com.ssafy.backend.survey.model.vo.SurveyVO;
 import com.ssafy.backend.survey.repository.*;
 import jakarta.transaction.Transactional;
@@ -42,6 +41,7 @@ public class SurveyServiceImpl implements SurveyService {
     private final SurveyConsentRepository surveyConsentRepository;
     private final SurveyTemplateRepository surveyTemplateRepository;
     private final SurveyAnswerRepository surveyAnswerRepository;
+    private final SurveyConsentLogRepository surveyConsentLogRepository;
 
     @Override
     public YouthSurveyQuestionDTO getIsolatedYouthSurveyQuestions() {
@@ -124,8 +124,40 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     @Override
-    public void postIsolatedYouthSurveyAgreement(String userId, PostSurveyAgreementRequestDTO requestDTO) {
+    public SurveyConsentLogResponseDTO postIsolatedYouthSurveyAgreement(String userId, PostSurveyAgreementRequestDTO requestDTO) {
+        List<Long> consentIds = requestDTO.getAgreements()
+                .stream()
+                .map(AgreementRequestDTO::getAgreementId)
+                .toList();
+        List<SurveyConsent> consents = surveyConsentRepository.findAllById(consentIds);
 
+        Map<Long, SurveyConsent> consentMap = consents.stream()
+                .collect(Collectors.toMap(SurveyConsent::getId, Function.identity()));
+
+        Survey survey = surveyRepository.findById(requestDTO.getSurveyId())
+                .orElseThrow(() -> new SurveyException(SurveyErrorCode.SURVEY_REQUIRED));
+
+        List<SurveyConsentLogVO> surveyConsentLogVOS = requestDTO.getAgreements().stream().map(agreement -> {
+            SurveyConsent consent = consentMap.get(agreement.getAgreementId());
+
+            if(consent == null) {
+                throw new SurveyException(SurveyErrorCode.SURVEY_CONSENT_REQUIRED);
+            }
+
+            return SurveyConsentLogVO.of(agreement.getIsAgreed(), consentMap.get(agreement.getAgreementId()), survey);
+        }).toList();
+
+        List<SurveyConsentLog> surveyConsentLogs = surveyConsentLogRepository.saveAll(
+                surveyConsentLogVOS.stream()
+                        .map(SurveyConsentLogVO::toEntity)
+                        .toList()
+        );
+
+        List<SurveyConsentLogDTO> surveyConsentLogDTOS = surveyConsentLogs.stream()
+                .map(SurveyConsentLogDTO::from)
+                .toList();
+
+        return SurveyConsentLogResponseDTO.from(survey.getId(), surveyConsentLogDTOS);
     }
 
     private Integer calculateTotalScore (List<SurveyQuestion> questions) {
