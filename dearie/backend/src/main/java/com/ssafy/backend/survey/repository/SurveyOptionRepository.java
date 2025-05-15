@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface SurveyOptionRepository extends JpaRepository<SurveyOption, Long> {
     List<SurveyOption> findAllBySurveyQuestionOrderByOptionNumAsc(SurveyQuestion surveyQuestion);
+    List<SurveyOption> findAllBySurveyQuestionInOrderBySurveyQuestionIdAscOptionNumAsc(List<SurveyQuestion> surveyQuestions);
 
     @Query("""
         SELECT o

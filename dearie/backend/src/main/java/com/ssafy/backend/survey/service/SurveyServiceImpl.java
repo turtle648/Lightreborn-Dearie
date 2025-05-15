@@ -53,10 +53,16 @@ public class SurveyServiceImpl implements SurveyService {
         log.info("[SurveyServiceImpl] 설문 리스트 가져오기: {}", questions);
 
         // 질문에 대한 옵션들을 가져온다
+        List<SurveyOption> allOptions = surveyOptionRepository.findAllBySurveyQuestionInOrderBySurveyQuestionIdAscOptionNumAsc(questions);
+
+        Map<Long, List<SurveyOption>> optionMap = allOptions.stream()
+                .collect(Collectors.groupingBy(option -> option.getSurveyQuestion().getId()));
+
         questions.forEach(question -> {
-            List<SurveyOption> surveyOptions = surveyOptionRepository.findAllBySurveyQuestionOrderByOptionNumAsc(question);
-            questionCollector.add(QuestionDTO.from(question, surveyOptions));
+            List<SurveyOption> options = optionMap.getOrDefault(question.getId(), List.of());
+            questionCollector.add(QuestionDTO.from(question, options));
         });
+
         log.info("[SurveyServiceImpl] 질문과 보기 매핑 완료: {}", questionCollector.getQuestionDTOS());
 
         // 개인정보 동의 항목들을 가져온다
