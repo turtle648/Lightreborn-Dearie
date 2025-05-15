@@ -36,12 +36,12 @@ public class YoloInferenceService {
                         new float[]{0f,0f,0f}, new float[]{255f,255f,255f}))
                 .build();
 
-        // 2) Model 로드
-        Model model = Model.newInstance("yolo-custom");
-        model.load(Paths.get("src/main/resources/models"), "best.onnx");
-
-        // 3) Predictor 생성
-        predictor = model.newPredictor(translator);
+//        // 2) Model 로드
+//        Model model = Model.newInstance("yolo-custom");
+//        model.load(Paths.get("src/main/resources/models"), "best.onnx");
+//
+//        // 3) Predictor 생성
+//        predictor = model.newPredictor(translator);
     }
 
     /**

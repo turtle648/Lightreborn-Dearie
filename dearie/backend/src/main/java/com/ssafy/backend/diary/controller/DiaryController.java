@@ -2,11 +2,13 @@ package com.ssafy.backend.diary.controller;
 
 import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.diary.model.entity.Diary;
+import com.ssafy.backend.diary.model.request.CreateDiaryRequestDTO;
 import com.ssafy.backend.diary.model.request.DiarySearchRequest;
 import com.ssafy.backend.diary.model.response.DiaryListResponse;
 import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
 import com.ssafy.backend.diary.service.DiaryService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -47,18 +49,15 @@ public class DiaryController {
         return ResponseEntity.ok(BaseResponse.success(200, "일기 상세 정보 조회 성공", result));
     }
 
-    @PostMapping(consumes = {
-            MediaType.MULTIPART_FORM_DATA_VALUE,
-            MediaType.APPLICATION_FORM_URLENCODED_VALUE + ";charset=UTF-8"
-    })    @Operation(summary = "이미지와 함께 일기 작성", description = "이미지를 S3에 업로드하고 일기를 함께 저장합니다.")
-    public ResponseEntity<BaseResponse<Long>> createDiary(
-            @RequestParam("content") String content,
-            @RequestParam("emotionTag") Diary.EmotionTag emotionTag,
-            @RequestParam(value = "images", required = false) List<MultipartFile> images,
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "일기 작성", description = "이미지와 JSON을 함께 업로드")
+    public ResponseEntity<?> createDiary(
+            @RequestPart("diary") @Parameter(description = "일기 본문 및 감정") CreateDiaryRequestDTO request,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @AuthenticationPrincipal String userId
     ) {
         try {
-            Long diaryId = diaryService.createDiaryWithImages(content, emotionTag, images, userId);
+            Long diaryId = diaryService.createDiaryWithImages(request.getContent(), request.getEmotionTag(), images, userId);
             return ResponseEntity.ok(BaseResponse.success(201, "일기 작성 및 이미지 업로드 성공", diaryId));
         } catch (Exception e) {
             return ResponseEntity.status(500)

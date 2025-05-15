@@ -174,7 +174,7 @@ public class DiaryServiceImpl implements DiaryService {
                 .content(content)
                 .createdAt(LocalDateTime.now())
                 .user(user)
-                .EmotionTag(emotionTag)
+                .emotionTag(emotionTag)
                 .build();
 
         // 3. 일기 저장 (ID 생성)

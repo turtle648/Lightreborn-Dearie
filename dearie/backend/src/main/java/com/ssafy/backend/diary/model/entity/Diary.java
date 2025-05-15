@@ -29,7 +29,7 @@ public class Diary {
     private String aiComment;
 
     @Enumerated(EnumType.STRING)
-    private EmotionTag EmotionTag;
+    private EmotionTag emotionTag;
 
     // 연관 관계
     @ManyToOne(fetch = FetchType.LAZY)
@@ -47,7 +47,18 @@ public class Diary {
     private EmotionScore emotionScore;
 
     public enum EmotionTag {
-        JOY, SADNESS, ANGER, ANXIETY, DISGUST, NEUTRAL
+        JOY,        // 😊 기쁨
+        SADNESS,    // 😢 슬픔
+        ANGER,      // 😠 화남
+        ANXIETY,    // 😰 불안
+        NEUTRAL,    // 😌 평온
+        BOREDOM,    // 😑 지루함
+        EXCITEMENT, // 😍 설렘
+        GRATITUDE,  // 🙏 감사
+        SURPRISE,   // 😲 놀람
+        CONFUSION,  // 😵 혼란
+        HOPE,       // 🌈 희망
+        FATIGUE     // 😴 피곤
     }
 }
 
