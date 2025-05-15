@@ -7,11 +7,16 @@ import { colors } from "@/constants/colors"
 import Image from "next/image"
 import addfile from "@/assets/addfile.svg"
 import Sheet from "@/components/common/Sheet"
+import { useRouter } from "next/navigation"
+// import { useYouthConsultationStore } from "@/stores/useYouthConsultaionStore"
 
 // 진행 상태 유형 정의
 type ProgressStatus = "온라인 자가척도 작성" | "상담 진행" | "내부 회의 진행";
 
 export default function YouthManagement() {
+
+  const router = useRouter();
+
   // 파일 드래그 드롭 상태
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -22,7 +27,15 @@ export default function YouthManagement() {
   // 상태 필터링을 위한 선택된 진행 상태
   const [selectedStatus, setSelectedStatus] = useState<ProgressStatus | null>(null);
   
-  // 신규 설문 등록 청년 데이터
+  // // 신규 설문 등록 청년 데이터
+  // const { preSupportYouthConsultation, getPreSupportYouthConsultation } = useYouthConsultationStore();
+
+  // useEffect(() => {
+  //   getPreSupportYouthConsultation();
+  //   console.log("preSupportYouthConsultation : ", preSupportYouthConsultation);
+  // }, []);
+
+
   const newSurveyData = [
     {name: "이OO", age: 27, progress: "온라인 자가척도 작성"},
     {name: "김OO", age: 25, progress: "상담 진행"},
@@ -33,11 +46,11 @@ export default function YouthManagement() {
   
   // 은둔고립청년 데이터
   const youthData = [
-    {name: "이OO", age: 27, status: "고립 위험군", recentDate: "2025.06.17", specialNote: "고립위험군 변경"},
-    {name: "김OO", age: 25, status: "고립 청년", recentDate: "2025.06.15", specialNote: "상담 예약 필요"},
-    {name: "박OO", age: 22, status: "비위험군", recentDate: "2025.06.10", specialNote: "온든/고립지표 개선"},
-    {name: "최OO", age: 29, status: "고립 위험군", recentDate: "2025.05.22", specialNote: "가족 상담 필요"},
-    {name: "정OO", age: 26, status: "은둔 청년", recentDate: "2025.05.15", specialNote: "전화 상담 진행"},
+    {id: 1, name: "이OO", age: 27, status: "고립 위험군", recentDate: "2025.06.17", specialNote: "고립위험군 변경"},
+    {id: 2, name: "김OO", age: 25, status: "고립 청년", recentDate: "2025.06.15", specialNote: "상담 예약 필요"},
+    {id: 3, name: "박OO", age: 22, status: "비위험군", recentDate: "2025.06.10", specialNote: "온든/고립지표 개선"},
+    {id: 4, name: "최OO", age: 29, status: "고립 위험군", recentDate: "2025.05.22", specialNote: "가족 상담 필요"},
+    {id: 5, name: "정OO", age: 26, status: "은둔 청년", recentDate: "2025.05.15", specialNote: "전화 상담 진행"},
   ];
 
   // 드래그 이벤트 핸들러
@@ -295,6 +308,11 @@ export default function YouthManagement() {
             {key: "specialNote", title: "특이사항"},
           ]}
           data={youthData}
+          onRowClick={(record) => {
+            router.push(`/dashboard/youth-management/${(record as { id: number }).id}`);
+            console.log("행 클릭:", record);
+            // 여기에 행 클릭 시 처리 로직 추가
+          }}
         />
       </div>
     </div>

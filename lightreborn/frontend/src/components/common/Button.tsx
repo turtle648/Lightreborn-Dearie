@@ -2,7 +2,7 @@
 
 import type React from "react"
 import type { ButtonHTMLAttributes } from "react"
-import { colors } from "@/constants/colors"
+// import { colors } from "@/constants/colors"
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "outline" | "text"
@@ -22,11 +22,12 @@ export default function Button({
   const baseStyles = "rounded-md font-medium transition-colors focus:outline-none"
 
   const variantStyles = {
-    primary: `bg-[${colors.primary.main}] text-white hover:bg-[${colors.primary.dark}]`,
-    secondary: `bg-[${colors.secondary.main}] text-[${colors.secondary.contrastText}] hover:bg-[${colors.secondary.dark}]`,
-    outline: `border border-[${colors.primary.main}] text-[${colors.primary.main}] hover:bg-[${colors.primary.light}]`,
-    text: `text-[${colors.primary.main}] hover:bg-[${colors.primary.light}]`,
-  }
+  primary: "bg-[#6B9AFF] text-white hover:bg-[#4B7BFF]",
+  secondary: "bg-[#FFD166] text-[#333333] hover:bg-[#FFBA33]",
+  outline: "border border-[#6B9AFF] text-[#6B9AFF] hover:bg-[#E8F1FF]",
+  text: "text-[#6B9AFF] hover:bg-[#E8F1FF]",
+}
+
 
   const sizeStyles = {
     sm: "px-3 py-1 text-sm",
@@ -38,7 +39,7 @@ export default function Button({
 
   return (
     <button
-      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${widthStyle} ${className} cursor-pointer`}
+      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${widthStyle} ${className}`}
       {...props}
     >
       {children}

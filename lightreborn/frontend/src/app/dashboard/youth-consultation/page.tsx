@@ -7,6 +7,8 @@ import { Card } from "@/components/common/Card"
 import { colors } from "@/constants/colors"
 
 export default function Dashboard() {
+
+
   // 누적 상담 현황 데이터
   const consultationTypeData = [
     { name: "비위험군", value: 79, color: colors.chart.gray },

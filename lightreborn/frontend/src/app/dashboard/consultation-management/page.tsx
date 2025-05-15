@@ -21,9 +21,9 @@ export default function ConsultationManagementPage() {
       clientGender: '남',
       title: '심리상담',
       type: '심리상담',
-      date: new Date(2025, 5, 10, 10, 0), // 2025년 6월 10일 10시
+      date: new Date(2025, 4, 10, 10, 0), // 2025년 5월 10일 10시
       time: '10:00',
-      status: '진행전',
+      status: '완료',
       notes: '초기 상담'
     },
     {
@@ -34,9 +34,9 @@ export default function ConsultationManagementPage() {
       clientGender: '여',
       title: '직업상담',
       type: '직업상담',
-      date: new Date(2025, 5, 13, 14, 0), // 2025년 6월 13일 14시
+      date: new Date(2025, 4, 13, 14, 0), // 2025년 5월 13일 14시
       time: '14:00',
-      status: '완료',
+      status: '미작성',
       notes: '취업 상담'
     },
     {
@@ -47,9 +47,9 @@ export default function ConsultationManagementPage() {
       clientGender: '남',
       title: '생활상담',
       type: '생활상담',
-      date: new Date(2025, 5, 13, 16, 0), // 2025년 6월 13일 16시 (같은 날 추가)
+      date: new Date(2025, 4, 13, 16, 0), // 2025년 5월 13일 16시 (같은 날 추가)
       time: '16:00',
-      status: '진행전',
+      status: '완료',
       notes: '생활 지원 상담'
     },
     {
@@ -60,7 +60,7 @@ export default function ConsultationManagementPage() {
       clientGender: '여',
       title: '심리상담',
       type: '심리상담',
-      date: new Date(2025, 5, 26, 13, 0), // 2025년 6월 26일 13시
+      date: new Date(2025, 4, 26, 13, 0), // 2025년 5월 26일 13시
       time: '13:00',
       status: '진행전',
       notes: '정기 상담'
@@ -73,9 +73,9 @@ export default function ConsultationManagementPage() {
       clientGender: '여',
       title: '진로상담',
       type: '진로상담',
-      date: new Date(2025, 5, 26, 15, 0), // 2025년 6월 26일 15시 (같은 날 추가)
+      date: new Date(2025, 4, 26, 15, 0), // 2025년 5월 26일 15시 (같은 날 추가)
       time: '15:00',
-      status: '미작성',
+      status: '진행전',
       notes: '진로 탐색'
     },
     {
@@ -86,7 +86,7 @@ export default function ConsultationManagementPage() {
       clientGender: '남',
       title: '취업상담',
       type: '취업상담',
-      date: new Date(2025, 5, 26, 17, 0), // 2025년 6월 26일 17시 (같은 날 추가)
+      date: new Date(2025, 4, 26, 17, 0), // 2025년 5월 26일 17시 (같은 날 추가)
       time: '17:00',
       status: '진행전',
       notes: '취업 준비'
@@ -289,13 +289,13 @@ export default function ConsultationManagementPage() {
                     </div>
                   </div>
                   <div className="mt-6 flex space-x-3">
-                    <Button className="bg-blue-500 hover:bg-blue-600 text-white">
-                      상담일지 작성
+                    <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={()=>router.push(`/dashboard/consultation-management/${selectedConsultation.id}`)}>
+                      상담일지 확인
                     </Button>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={()=>alert("일정 수정")}>
                       일정 수정
                     </Button>
-                    <Button variant="outline" className="text-red-500 border-red-500">
+                    <Button variant="outline" className="text-red-500 border-red-500" onClick={()=>alert("일정 취소")}>
                       일정 취소
                     </Button>
                   </div>
