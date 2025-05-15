@@ -9,5 +9,5 @@ import java.util.List;
 @Schema(description = "설문 응답 제출 요청 DTO")
 public class PostSurveyRequestDTO {
     @Schema(description = "질문에 대한 응답 리스트")
-    private List<SurveyAnswerDTO> answers;
+    private List<SurveyAnswerRequestDTO> answers;
 }
