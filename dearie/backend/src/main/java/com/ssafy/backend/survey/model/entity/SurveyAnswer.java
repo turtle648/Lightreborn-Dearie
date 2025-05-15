@@ -20,7 +20,7 @@ public class SurveyAnswer {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "answer_choice")
-    private SurveyAnswer answerChoice;
+    private SurveyOption answerChoice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "survey_questions_id")

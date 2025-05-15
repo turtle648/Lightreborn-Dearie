@@ -1,9 +1,8 @@
 package com.ssafy.backend.survey.model.entity;
 
-import com.ssafy.backend.survey.model.dto.state.SurveyType;
+import com.ssafy.backend.survey.model.state.SurveyType;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.extern.slf4j.Slf4j;
 
 @Entity
 @Table(name = "survey_questions")
