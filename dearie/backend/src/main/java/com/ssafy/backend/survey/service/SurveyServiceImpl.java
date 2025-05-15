@@ -10,10 +10,7 @@ import com.ssafy.backend.survey.exception.SurveyException;
 import com.ssafy.backend.survey.model.collector.AgreementCollector;
 import com.ssafy.backend.survey.model.collector.QuestionCollector;
 import com.ssafy.backend.survey.model.constant.SurveyConstant;
-import com.ssafy.backend.survey.model.dto.request.AgreementRequestDTO;
-import com.ssafy.backend.survey.model.dto.request.PostSurveyAgreementRequestDTO;
-import com.ssafy.backend.survey.model.dto.request.PostSurveyRequestDTO;
-import com.ssafy.backend.survey.model.dto.request.SurveyAnswerRequestDTO;
+import com.ssafy.backend.survey.model.dto.request.*;
 import com.ssafy.backend.survey.model.dto.response.*;
 import com.ssafy.backend.survey.model.entity.*;
 import com.ssafy.backend.survey.model.vo.SurveyAnswerVO;
@@ -23,6 +20,8 @@ import com.ssafy.backend.survey.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,6 +33,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SurveyServiceImpl implements SurveyService {
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
     private final UserRepository userRepository;
     private final SurveyRepository surveyRepository;
     private final SurveyQuestionRepository surveyQuestionRepository;
@@ -42,6 +43,10 @@ public class SurveyServiceImpl implements SurveyService {
     private final SurveyTemplateRepository surveyTemplateRepository;
     private final SurveyAnswerRepository surveyAnswerRepository;
     private final SurveyConsentLogRepository surveyConsentLogRepository;
+
+    @Value("${spring.kafka.topic.name}")
+    private String topicName;
+
 
     @Override
     public YouthSurveyQuestionDTO getIsolatedYouthSurveyQuestions() {
@@ -130,7 +135,7 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     @Override
-    public SurveyConsentLogResponseDTO postIsolatedYouthSurveyAgreement(String userId, PostSurveyAgreementRequestDTO requestDTO) {
+    public SurveyConsentLogResponseDTO postIsolatedYouthSurveyAgreement(PostSurveyAgreementRequestDTO requestDTO) {
         List<Long> consentIds = requestDTO.getAgreements()
                 .stream()
                 .map(AgreementRequestDTO::getAgreementId)
@@ -164,6 +169,46 @@ public class SurveyServiceImpl implements SurveyService {
                 .toList();
 
         return SurveyConsentLogResponseDTO.from(survey.getId(), surveyConsentLogDTOS);
+    }
+
+    @Override
+    @Transactional
+    public void sendDataToDashBoard(String userId, Long surveyId) {
+        User user = userRepository.findByLoginId(userId)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
+
+        if(!isValidToSendResult(surveyId)) {
+            throw new SurveyException(SurveyErrorCode.AGREEMENT_REQUIRED);
+        }
+
+        Survey survey = surveyRepository.findById(surveyId)
+                .orElseThrow(() -> new SurveyException(SurveyErrorCode.SURVEY_REQUIRED));
+
+        List<SurveyAnswer> answers = surveyAnswerRepository.findAllBySurveyId(surveyId);
+
+        log.info("[sendDataToDashBoard] : {}", answers);
+
+        UserInfoDTO userInfoDTO = UserInfoDTO.from(user);
+        List<SurveyAnswerDTO> answerDTOS = answers.stream().map(SurveyAnswerDTO::from).toList();
+
+        SurveySendRequestDTO surveySendRequestDTO = SurveySendRequestDTO.from(survey, userInfoDTO, answerDTOS);
+
+        kafkaTemplate.send(topicName, surveySendRequestDTO);
+
+        surveyRepository.save(
+                SurveyVO.toEntity(
+                        SurveyVO.of(survey.getId(), survey.getSurveyResult(), user,
+                                survey.getCreatedAt(), true, survey.getSurveyTemplate()
+                        )
+                )
+        );
+    }
+
+    private boolean isValidToSendResult (Long surveyId) {
+        int totalSize = surveyConsentRepository.countBySurveyTemplateId(SurveyConstant.DEFAULT_TEMPLATE);
+        int isAgreedSize = surveyConsentLogRepository.countBySurveyIdAndIsAgreedTrue(surveyId);
+
+        return totalSize == isAgreedSize;
     }
 
     private Integer calculateTotalScore (List<SurveyQuestion> questions) {

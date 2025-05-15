@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface SurveyConsentRepository extends JpaRepository<SurveyConsent, Long> {
     List<SurveyConsent> findAllBySurveyTemplateId(Long surveyTemplateId);
+    int countBySurveyTemplateId(Long surveyTemplateId);
 }

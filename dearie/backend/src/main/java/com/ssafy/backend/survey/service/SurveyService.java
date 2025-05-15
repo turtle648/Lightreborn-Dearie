@@ -11,7 +11,7 @@ public interface SurveyService {
 
     SurveyResponseDTO postIsolatedYouthSurvey(String userId, PostSurveyRequestDTO requestDTO);
 
-    SurveyConsentLogResponseDTO postIsolatedYouthSurveyAgreement(String userId, PostSurveyAgreementRequestDTO requestDTO);
+    SurveyConsentLogResponseDTO postIsolatedYouthSurveyAgreement(PostSurveyAgreementRequestDTO requestDTO);
 
-
+    void sendDataToDashBoard(String userId, Long surveyId);
 }

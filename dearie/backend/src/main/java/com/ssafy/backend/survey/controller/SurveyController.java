@@ -45,7 +45,16 @@ public class SurveyController {
             @AuthenticationPrincipal String userId,
             @RequestBody PostSurveyAgreementRequestDTO requestDTO
     ) {
-        SurveyConsentLogResponseDTO response = surveyService.postIsolatedYouthSurveyAgreement(userId, requestDTO);
+        SurveyConsentLogResponseDTO response = surveyService.postIsolatedYouthSurveyAgreement(requestDTO);
         return ResponseEntity.ok(BaseResponse.success(201, "청년 온라인 자가점검 설문 개인정보 수집 동의를 완료하였습니다.", response));
+    }
+
+    @PostMapping("/isolated-youth/{surveyId}/send")
+    public ResponseEntity<BaseResponse<String>> postIsolatedYouthSurveyToDashboard (
+            @AuthenticationPrincipal String userId,
+            @PathVariable("surveyId") Long surveyId
+    ) {
+        surveyService.sendDataToDashBoard(userId, surveyId);
+        return ResponseEntity.ok(BaseResponse.success(201, "청년 온라인 자가점검 설문 개인정보 수집 동의를 완료하였습니다."));
     }
 }
