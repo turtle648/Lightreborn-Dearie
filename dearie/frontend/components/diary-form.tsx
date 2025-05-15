@@ -1,49 +1,109 @@
 "use client";
 
-import { useState, useRef } from "react";
+import type React from "react";
+
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, ImageIcon, Smile, Send } from "lucide-react";
+import { Camera, ImageIcon, Smile, Send, X } from "lucide-react";
 import { EmotionSelector } from "./emotion-selector";
 import { motion } from "framer-motion";
-
-// export const emotionOptions = [
-//   { label: "😊 기쁨", value: "JOY" },
-//   { label: "😢 슬픔", value: "SADNESS" },
-//   { label: "😠 화남", value: "ANGER" },
-//   { label: "😰 불안", value: "ANXIETY" },
-//   { label: "😌 평온", value: "NEUTRAL" },
-//   { label: "😑 지루함", value: "BOREDOM" },
-//   { label: "😍 설렘", value: "EXCITEMENT" },
-//   { label: "🙏 감사", value: "GRATITUDE" },
-//   { label: "😲 놀람", value: "SURPRISE" },
-//   { label: "😵 혼란", value: "CONFUSION" },
-//   { label: "🌈 희망", value: "HOPE" },
-//   { label: "😴 피곤", value: "FATIGUE" },
-// ];
+import Image from "next/image";
 
 export function DiaryForm() {
   const router = useRouter();
   const [content, setContent] = useState("");
   const [showEmotionSelector, setShowEmotionSelector] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
-  const [images, setImages] = useState<File[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [images, setImages] = useState<
+    Array<{ id: string; file: File; url: string }>
+  >([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      setImages(Array.from(files));
+  // 갤러리에서 이미지 선택 함수 수정
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const newImages = Array.from(event.target.files).map((file) => ({
+        id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        file,
+        url: URL.createObjectURL(file),
+      }));
+      setImages((prevImages) => [...prevImages, ...newImages]);
     }
   };
 
+  // 카메라로 사진 촬영 함수
+  const handleCameraCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const newImages = Array.from(event.target.files).map((file) => ({
+        id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        file,
+        url: URL.createObjectURL(file),
+      }));
+      setImages((prevImages) => [...prevImages, ...newImages]);
+    }
+  };
+
+  // 갤러리 열기 함수
+  const openGallery = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // 카메라 열기 함수
+  const openCamera = () => {
+    if (cameraInputRef.current) {
+      cameraInputRef.current.click();
+    }
+  };
+
+  // 이미지 제거 함수
+  const handleRemoveImage = (id: string) => {
+    // 삭제할 이미지 찾기
+    const imageToRemove = images.find((img) => img.id === id);
+
+    // URL 해제
+    if (imageToRemove && imageToRemove.url.startsWith("blob:")) {
+      URL.revokeObjectURL(imageToRemove.url);
+    }
+
+    // 이미지 배열에서 제거
+    setImages(images.filter((img) => img.id !== id));
+  };
+
+  // 컴포넌트 언마운트 시 URL.createObjectURL로 생성된 객체 URL 해제
+  useEffect(() => {
+    return () => {
+      images.forEach((image) => {
+        if (image.url.startsWith("blob:")) {
+          URL.revokeObjectURL(image.url);
+        }
+      });
+    };
+  }, [images]);
+
+  // 감정태그 매핑
+  const emotionDisplayMap: Record<string, { label: string; emoji: string }> = {
+    JOY: { label: "기쁨", emoji: "😊" },
+    SADNESS: { label: "슬픔", emoji: "😢" },
+    ANGER: { label: "화남", emoji: "😠" },
+    ANXIETY: { label: "불안", emoji: "😰" },
+    NEUTRAL: { label: "평온", emoji: "😌" },
+    BOREDOM: { label: "지루함", emoji: "😑" },
+    EXCITEMENT: { label: "설렘", emoji: "😍" },
+    GRATITUDE: { label: "감사", emoji: "🙏" },
+    SURPRISE: { label: "놀람", emoji: "😲" },
+    CONFUSION: { label: "혼란", emoji: "😵" },
+    HOPE: { label: "희망", emoji: "🌈" },
+    FATIGUE: { label: "피곤", emoji: "😴" },
+  };
+
+  // 제출하기
   const handleSubmit = async () => {
     if (!content.trim() || !selectedEmotion) {
       alert("내용과 감정을 입력해주세요.");
@@ -63,8 +123,8 @@ export function DiaryForm() {
       new Blob([JSON.stringify(diaryData)], { type: "application/json" })
     );
 
-    images.forEach((file) => {
-      formData.append("images", file);
+    images.forEach((img) => {
+      formData.append("images", img.file);
     });
 
     try {
@@ -97,7 +157,7 @@ export function DiaryForm() {
   };
 
   return (
-    <div className="p-6 h-full flex flex-col">
+    <div className="pt-6 px-6 pb-1 h-full flex flex-col">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -122,7 +182,7 @@ export function DiaryForm() {
               onClick={() => setShowEmotionSelector(true)}
             >
               <Smile className="h-4 w-4 mr-1" />
-              {selectedEmotion}
+              {emotionDisplayMap[selectedEmotion]?.label}
             </Button>
           </div>
         )}
@@ -132,34 +192,82 @@ export function DiaryForm() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.5 }}
-        className="flex-1 glass-effect rounded-2xl p-4 shadow-md"
+        className="flex-1 glass-effect rounded-2xl p-4 shadow-md flex flex-col"
       >
         <Textarea
           placeholder="오늘의 이야기를 자유롭게 적어보세요..."
-          className="w-full h-full min-h-[200px] resize-none border-none focus-visible:ring-0 text-base bg-transparent"
+          className="w-full flex-1 resize-none border-none focus-visible:ring-0 text-base bg-transparent p-0"
           value={content}
           onChange={(e) => setContent(e.target.value)}
         />
-
-        {images.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {images.map((img, i) => (
-              <img
-                key={i}
-                src={URL.createObjectURL(img)}
-                alt={`image-${i}`}
-                className="w-20 h-20 object-cover rounded-lg border"
-              />
-            ))}
-          </div>
-        )}
       </motion.div>
+
+      {/* 이미지 미리보기 영역을 일기 입력칸과 버튼들 사이로 이동 */}
+      {images.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mt-4 mb-4 p-2 rounded-xl bg-white/80 backdrop-blur-sm shadow-sm"
+        >
+          <div className="relative">
+            <div className="flex overflow-x-auto pb-1 snap-x snap-mandatory no-scrollbar">
+              {images.map((image) => (
+                <div
+                  key={image.id}
+                  className="relative min-w-[90px] h-[90px] mr-2 rounded-lg overflow-hidden flex-shrink-0 snap-start"
+                >
+                  <Image
+                    src={image.url || "/placeholder.svg"}
+                    alt="첨부 이미지"
+                    fill
+                    className="object-cover"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6 bg-black/50 hover:bg-black/70 rounded-full p-1"
+                    onClick={() => handleRemoveImage(image.id)}
+                    aria-label="이미지 삭제"
+                  >
+                    <X className="h-4 w-4 text-white" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            {/* 이미지 개수 표시 */}
+            {images.length > 1 && (
+              <div className="absolute bottom-0 right-0 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded-tl-md rounded-br-md">
+                {images.length}장
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* 파일 입력 요소 - 카메라와 갤러리 입력을 분리 */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleImageUpload}
+        multiple
+      />
+      <input
+        type="file"
+        ref={cameraInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleCameraCapture}
+        capture="environment"
+      />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.5 }}
-        className="mt-6"
+        className="mt-4 mb-1"
       >
         <div className="flex justify-between items-center">
           <div className="flex gap-2">
@@ -167,11 +275,18 @@ export function DiaryForm() {
               variant="outline"
               size="icon"
               className="rounded-full"
-              onClick={handleImageClick}
+              onClick={openCamera}
+              aria-label="카메라로 사진 촬영"
             >
               <Camera className="h-5 w-5" />
             </Button>
-            <Button variant="outline" size="icon" className="rounded-full">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full"
+              onClick={openGallery}
+              aria-label="갤러리에서 이미지 선택"
+            >
               <ImageIcon className="h-5 w-5" />
             </Button>
             <Button
@@ -179,6 +294,7 @@ export function DiaryForm() {
               size="icon"
               onClick={() => setShowEmotionSelector(true)}
               className="rounded-full"
+              aria-label="감정 선택하기"
             >
               <Smile className="h-5 w-5" />
             </Button>
@@ -193,16 +309,6 @@ export function DiaryForm() {
           </Button>
         </div>
       </motion.div>
-
-      {/* 이미지 업로드용 숨겨진 input */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleImageChange}
-        accept="image/*"
-        multiple
-        hidden
-      />
 
       {showEmotionSelector && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-4">

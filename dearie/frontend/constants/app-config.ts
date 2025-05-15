@@ -18,7 +18,7 @@ export const APP_CONFIG = {
   pwa: {
     enabled: true,
     installPromptDelay: 3000, // 3초 후 설치 프롬프트 표시
-    installPromptCooldown: 7 * 24 * 60 * 60 * 1000, // 7일 동안 다시 표시하지 않음
+    installPromptCooldown: 7 * 24 * 60 * 60 * 1000, // 7일 동안 다시 표시��지 않음
   },
   diary: {
     maxLength: 5000, // 일기 최대 길이
@@ -29,4 +29,4 @@ export const APP_CONFIG = {
     dailyLimit: 3, // 하루에 표시할 미션 수
     refreshTime: "00:00", // 미션 갱신 시간 (자정)
   },
-}
+};
