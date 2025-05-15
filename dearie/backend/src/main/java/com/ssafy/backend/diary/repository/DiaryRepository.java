@@ -22,7 +22,7 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             "LEFT JOIN Bookmark b ON d.id = b.diary.id AND b.user = :user " +
             "WHERE d.user = :user " +
             "AND (:bookmark IS NULL OR :bookmark = false OR (:bookmark = true AND b.id IS NOT NULL)) " +
-            "AND (:keyword IS NULL OR LOWER(d.content) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+            "AND (:keyword IS NULL OR d.content IS NULL OR CAST(d.content AS string) LIKE CONCAT('%', CAST(:keyword AS string), '%'))")
     Page<Diary> findFilteredDiaries(
             @Param("user") User user,
             @Param("bookmark") Boolean bookmark,

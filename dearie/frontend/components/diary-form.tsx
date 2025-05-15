@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Camera, ImageIcon, Smile, Send, X } from "lucide-react";
 import { EmotionSelector } from "./emotion-selector";
 import { motion } from "framer-motion";
+import { EMOTION_MAP } from "@/constants/emotions";
 import Image from "next/image";
 
 export function DiaryForm() {
@@ -87,22 +88,6 @@ export function DiaryForm() {
     };
   }, [images]);
 
-  // 감정태그 매핑
-  const emotionDisplayMap: Record<string, { label: string; emoji: string }> = {
-    JOY: { label: "기쁨", emoji: "😊" },
-    SADNESS: { label: "슬픔", emoji: "😢" },
-    ANGER: { label: "화남", emoji: "😠" },
-    ANXIETY: { label: "불안", emoji: "😰" },
-    NEUTRAL: { label: "평온", emoji: "😌" },
-    BOREDOM: { label: "지루함", emoji: "😑" },
-    EXCITEMENT: { label: "설렘", emoji: "😍" },
-    GRATITUDE: { label: "감사", emoji: "🙏" },
-    SURPRISE: { label: "놀람", emoji: "😲" },
-    CONFUSION: { label: "혼란", emoji: "😵" },
-    HOPE: { label: "희망", emoji: "🌈" },
-    FATIGUE: { label: "피곤", emoji: "😴" },
-  };
-
   // 제출하기
   const handleSubmit = async () => {
     if (!content.trim() || !selectedEmotion) {
@@ -162,7 +147,7 @@ export function DiaryForm() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="mb-4"
+        className="mb-2"
       >
         <div className="text-sm text-gray-500 mb-2">
           {new Date().toLocaleDateString("ko-KR", {
@@ -172,17 +157,16 @@ export function DiaryForm() {
             weekday: "short",
           })}
         </div>
-
         {selectedEmotion && (
-          <div className="flex items-center mb-2">
+          <div className="flex items-center mb-1">
             <Button
               variant="outline"
               size="sm"
               className="text-primary border-primary/20 bg-primary/5 rounded-full"
               onClick={() => setShowEmotionSelector(true)}
             >
-              <Smile className="h-4 w-4 mr-1" />
-              {emotionDisplayMap[selectedEmotion]?.label}
+              {EMOTION_MAP[selectedEmotion]?.emoji}{" "}
+              {EMOTION_MAP[selectedEmotion]?.name}
             </Button>
           </div>
         )}

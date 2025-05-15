@@ -132,6 +132,7 @@ public class DiaryServiceImpl implements DiaryService {
 
                     return new DiaryListItemDto(
                             diary.getId(),
+                            diary.getEmotionTag(),
                             diary.getContent(),
                             diary.getCreatedAt().toLocalDate().toString(),
                             imageUrls
