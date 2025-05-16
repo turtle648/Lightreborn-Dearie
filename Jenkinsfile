@@ -214,7 +214,7 @@ pipeline {
                             "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
                             "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
 
-
+                        // 먼저 info 명령으로 자세한 상태 확인
                         def baseCmd = """
                             docker run --rm \\
                             --network ${networkName} \\
@@ -226,8 +226,6 @@ pipeline {
                             -password=${dbPassword} \\
                             -baselineOnMigrate=true
                         """.stripIndent().trim()
-
-
                         
                         // Flyway info 실행
                         echo "🔍 Checking Flyway info..."
@@ -235,13 +233,29 @@ pipeline {
                             def infoOutput = sh(script: "${baseCmd} info", returnStdout: true)
                             echo "📋 Flyway info output:"
                             echo infoOutput
+                            
+                            // 파일 목록 출력
+                            echo "📋 Migration files in directory:"
+                            sh "ls -la ${hostMigrationPath}"
+                            
+                            // 마이그레이션 파일 내용 미리보기
+                            sh "echo '📋 First few lines of migration files:' && head -n 10 ${hostMigrationPath}/*.sql || true"
                         } catch (err) {
                             echo "⚠️ Info command failed: ${err.message}"
                         }
                         
-                        // 직접 마이그레이션 실행
+                        // 마이그레이션 시도 (경고 표시)
                         echo "🚀 Running Flyway migration..."
-                        sh "${baseCmd} migrate"
+                        try {
+                            sh "${baseCmd} migrate"
+                        } catch (err) {
+                            echo "⚠️ Migration failed: ${err.message}"
+                            echo "💡 Trying to repair the metadata..."
+                            // repair 시도 (메타데이터 정리)
+                            sh "${baseCmd} repair"
+                            echo "🔄 Retrying migration after repair..."
+                            sh "${baseCmd} migrate"
+                        }
                     }
                 }
             }
