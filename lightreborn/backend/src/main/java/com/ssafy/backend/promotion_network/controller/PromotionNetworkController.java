@@ -93,6 +93,13 @@ public class PromotionNetworkController {
         return ResponseEntity.ok(BaseResponse.success(201, "행정동의 홍보물 유형 비율 조회 성공", result));
     }
 
+    @Operation(summary = "각 행정동의 홍보물 최신 정보 조회", description = "각 행정동의 홍보물에 대한 최신 정보를 조회합니다.")
+    @GetMapping("/promotion-latest-data")
+    public ResponseEntity<BaseResponse<List<PromotionDataDTO>>> getPromotionLatestData() throws IOException {
+        List<PromotionDataDTO> result = promotionNetworkService.getPromotionLatestData();
+        return ResponseEntity.ok(BaseResponse.success(201, "행정동의 홍보물 유형 비율 조회 성공", result));
+    }
+
     @Operation(summary = "행정동의 홍보물 상세정보 리스트 다운로드", description = "행정동의 홍보물에 대한 상세정보 리스트를 다운로드 합니다.")
     @GetMapping("/{dong-code}/file")
     public void exportPromotionData(@PathVariable("dong-code") Long dongCode, HttpServletResponse response) throws IOException {
@@ -160,4 +167,6 @@ public class PromotionNetworkController {
         workbook.write(response.getOutputStream());
         workbook.close();
     }
+
+
 }

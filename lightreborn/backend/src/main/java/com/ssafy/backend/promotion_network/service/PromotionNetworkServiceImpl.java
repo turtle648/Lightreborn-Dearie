@@ -285,4 +285,23 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         }).toList();
     }
 
+    @Override
+    public List<PromotionDataDTO> getPromotionLatestData() {
+        List<PromotionStatus> all = promotionStatusRepository.findAll();
+
+        return all.stream().map(promotionStatus ->  PromotionDataDTO.builder()
+                .address(promotionStatus.getAddress())
+                .latitude(promotionStatus.getLatitude())
+                .longitude(promotionStatus.getLongitude())
+                .isPosted(promotionStatus.getIsPublished())
+                .locationType(promotionStatus.getPromotionPlaceType().getPlace_type())
+                .placeName(promotionStatus.getPlace_name())
+                .promotionType(promotionStatus.getPromotionType().getType())
+                .promotionContent(promotionStatus.getPromotionInformation().getContent())
+                .dongName(promotionStatus.getHangjungs().getHangjungName())
+                .dongCode(promotionStatus.getHangjungs().getHangjungCode())
+                .statusChangedAt(promotionStatus.getCreatedAt().toString())
+                        .build()).toList();
+    }
+
 }
