@@ -593,6 +593,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
 
     @Override
     @KafkaListener(topics = "survey-send")
+    @Transactional
     public void getKafkaSurveySendDate(SurveySendRequestDTO requestDTO) {
         Map<String, SurveyQuestion> questions = getQuestions();
 
