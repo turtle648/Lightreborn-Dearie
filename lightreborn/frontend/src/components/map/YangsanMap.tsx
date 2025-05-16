@@ -375,7 +375,7 @@ const YangsanMap = ({
         padding: '12px 16px',
         borderRadius: '8px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        zIndex: 900,
+        zIndex: 500,
         minWidth: '180px'
       }}>
         <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px', color: colors.text.primary }}>
