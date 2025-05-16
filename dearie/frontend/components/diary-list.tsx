@@ -136,8 +136,9 @@ export function DiaryList({
               transition={{ duration: 0.3 }}
             >
               <Link href={`/diary/${diary.diaryId}`} className="block">
-                <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow">
+                <Card>
                   <CardContent className="p-4">
+                    {/* 날짜 표시 */}
                     <div className="flex items-center text-gray-500 text-sm mb-2">
                       <Calendar className="h-3.5 w-3.5 mr-1" />
                       {new Date(diary.date).toLocaleDateString("ko-KR", {
@@ -147,6 +148,8 @@ export function DiaryList({
                         weekday: "short",
                       })}
                     </div>
+
+                    {/* 본문 + 이미지 */}
                     <div className="flex gap-3">
                       <div className="flex-1">
                         <p className="text-gray-700 line-clamp-3">
@@ -165,19 +168,21 @@ export function DiaryList({
                       )}
                     </div>
                   </CardContent>
-                  {emotion && (
-                    <div className="inline-flex items-center text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full mb-2">
-                      <span className="mr-1">{emotion.emoji}</span>
-                      <span>{emotion.name}</span>
-                    </div>
-                  )}
-                  {diary.isBookmarked && (
-                    <CardFooter className="px-4 py-2 flex justify-end">
+
+                  {/* ✅ 하단 감정 + 북마크 */}
+                  <CardFooter className="px-4 py-2 flex justify-between items-center">
+                    {emotion && (
+                      <div className="inline-flex items-center text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                        <span className="mr-1">{emotion.emoji}</span>
+                        <span>{emotion.name}</span>
+                      </div>
+                    )}
+                    {diary.isBookmarked && (
                       <div className="h-6 w-6 rounded-full text-primary bg-primary/10 flex items-center justify-center">
                         <Bookmark className="h-3 w-3 fill-primary" />
                       </div>
-                    </CardFooter>
-                  )}
+                    )}
+                  </CardFooter>
                 </Card>
               </Link>
             </motion.div>
