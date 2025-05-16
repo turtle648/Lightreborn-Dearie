@@ -21,20 +21,16 @@ pipeline {
         MATTERMOST_WEBHOOK_ID = 'MATTERMOST_WEBHOOK'
     }
 
-
-
     stages {
 
-        
-        // 0. 브랜치 기반 ENV 자동 설정
-        stage('Decide Environment') {
-            
-            stage('Clean Workspace') {
-                steps {
-                    cleanWs()
-                 }
-            }
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+                }
+        }
 
+        stage('Decide Environment') {
+        // 0. 브랜치 기반 ENV 자동 설정
             steps {
                 script {
                     def branch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
