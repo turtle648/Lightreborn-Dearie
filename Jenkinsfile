@@ -209,16 +209,25 @@ pipeline {
                         echo "🔍 Debug - Final DB Password: ${dbPassword}"
                     
                         def dbName = project
-
-                        def hostMigrationPath = (params.ENV == 'master') ?
-                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
-                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
-
-                        // 먼저 info 명령으로 자세한 상태 확인
+                        
+                        // ===== 수정 시작: 임시 디렉토리에 파일 복사 =====
+                        def tempDir = "/tmp/${project}_migration_${env.BUILD_NUMBER}"
+                        
+                        // 임시 디렉토리 생성 및 SQL 파일 복사
+                        sh """
+                            mkdir -p ${tempDir}
+                            cp ${migrationPath}/*.sql ${tempDir}/ || true
+                            echo "📋 임시 디렉토리 파일 확인:"
+                            ls -la ${tempDir}
+                            cat ${tempDir}/*.sql | head -n 5
+                        """
+                        // ===== 수정 끝 =====
+                        
+                        // Flyway 명령 기본 템플릿 수정 (볼륨 마운트 경로 변경)
                         def baseCmd = """
                             docker run --rm \\
                             --network ${networkName} \\
-                            -v ${hostMigrationPath}:/flyway/sql \\
+                            -v ${tempDir}:/flyway/sql \\
                             flyway/flyway \\
                             -locations=filesystem:/flyway/sql \\
                             -url='jdbc:postgresql://${dbHost}:5432/${dbName}' \\
@@ -230,16 +239,22 @@ pipeline {
                         // Flyway info 실행
                         echo "🔍 Checking Flyway info..."
                         try {
+                            // 컨테이너 내부 파일 확인
+                            sh """
+                                echo "📋 컨테이너 내부 파일 확인:"
+                                docker run --rm -v ${tempDir}:/flyway/sql alpine ls -la /flyway/sql
+                            """
+                            
                             def infoOutput = sh(script: "${baseCmd} info", returnStdout: true)
                             echo "📋 Flyway info output:"
                             echo infoOutput
                             
                             // 파일 목록 출력
                             echo "📋 Migration files in directory:"
-                            sh "ls -la ${hostMigrationPath}"
+                            sh "ls -la ${tempDir}"
                             
                             // 마이그레이션 파일 내용 미리보기
-                            sh "echo '📋 First few lines of migration files:' && head -n 10 ${hostMigrationPath}/*.sql || true"
+                            sh "echo '📋 First few lines of migration files:' && head -n 10 ${tempDir}/*.sql || true"
                         } catch (err) {
                             echo "⚠️ Info command failed: ${err.message}"
                         }
@@ -247,7 +262,8 @@ pipeline {
                         // 마이그레이션 시도 (경고 표시)
                         echo "🚀 Running Flyway migration..."
                         try {
-                            sh "${baseCmd} migrate"
+                            // 마이그레이션 자세한 로그 활성화 (-X 옵션 추가)
+                            sh "${baseCmd} -X migrate"
                         } catch (err) {
                             echo "⚠️ Migration failed: ${err.message}"
                             echo "💡 Trying to repair the metadata..."
@@ -256,6 +272,9 @@ pipeline {
                             echo "🔄 Retrying migration after repair..."
                             sh "${baseCmd} migrate"
                         }
+                        
+                        // 임시 디렉토리 정리
+                        sh "rm -rf ${tempDir}"
                     }
                 }
             }
