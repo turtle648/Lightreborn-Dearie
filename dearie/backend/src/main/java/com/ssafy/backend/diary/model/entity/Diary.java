@@ -25,6 +25,9 @@ public class Diary {
 
     private LocalDateTime createdAt;
 
+    @Builder.Default
+    private Boolean bookmarked = false;
+
     @Column(columnDefinition = "text")
     private String aiComment;
 

@@ -19,4 +19,5 @@ public class GetDiaryDetailDto {
     private List<String> images;
     private String AiComment;
     private String emotionTag;
+    private Boolean isBookmarked;
 }

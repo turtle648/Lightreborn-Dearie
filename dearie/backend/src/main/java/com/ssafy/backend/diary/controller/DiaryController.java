@@ -89,27 +89,23 @@ public class DiaryController {
         return ResponseEntity.ok(BaseResponse.success(200, message, result));
     }
 
-    @Operation(summary = "북마크 추가", description = "작성한 일기에 대해서 북마크를 추가합니다.")
+    @Operation(summary = "북마크 추가", description = "작성한 일기에 대한 북마크를 추가합니다.")
     @PostMapping("{diaryId}/bookmark")
     public ResponseEntity<BaseResponse<Integer>> addBookmark(
             @AuthenticationPrincipal String userId,
             @PathVariable Long diaryId
     ) {
-        boolean result = diaryService.addBookmark(userId, diaryId);
-
-        String message = result ? "북마크 추가 성공" : "이미 북마크된 일기입니다.";
-        return ResponseEntity.ok(BaseResponse.success(200, message, result ? 1 : 0));
+        diaryService.addBookmark(userId, diaryId);
+        return ResponseEntity.ok(BaseResponse.success(200, "북마크 추가 성공", 1));
     }
 
-    @Operation(summary = "북마크 삭제", description = "작성한 일기에 대한 북마크를 삭제합니다.")
+    @Operation(summary = "북마크 취소", description = "작성한 일기에 대한 북마크를 취소합니다.")
     @DeleteMapping("{diaryId}/bookmark")
     public ResponseEntity<BaseResponse<Integer>> deleteBookmark(
             @AuthenticationPrincipal String userId,
             @PathVariable Long diaryId
     ) {
-        boolean result = diaryService.deleteBookmark(userId, diaryId);
-
-        String message = result ? "북마크 삭제 성공" : "해당 일기에 대한 북마크가 없습니다.";
-        return ResponseEntity.ok(BaseResponse.success(200, message, result ? 1 : 0));
+        diaryService.deleteBookmark(userId, diaryId);
+        return ResponseEntity.ok(BaseResponse.success(200, "북마크 취소 성공", 1));
     }
 }

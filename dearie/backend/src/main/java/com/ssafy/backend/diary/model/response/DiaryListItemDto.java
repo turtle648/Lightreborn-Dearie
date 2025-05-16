@@ -9,5 +9,6 @@ public record DiaryListItemDto(
     Diary.EmotionTag emotionTag,
     String content,
     String date,
-    List<String> images
+    List<String> images,
+    Boolean isBookmarked
 ) {}

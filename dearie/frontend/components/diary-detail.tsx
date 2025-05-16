@@ -18,6 +18,7 @@ interface DiaryDetailData {
   images: string[];
   emotionTag: string;
   aiComment: string;
+  isBookmarked: boolean;
 }
 
 export function DiaryDetail({ id }: DiaryDetailProps) {
@@ -28,6 +29,7 @@ export function DiaryDetail({ id }: DiaryDetailProps) {
   useEffect(() => {
     const fetchDiaryDetail = async () => {
       try {
+        console.log("일기 데이터 가져오기 시작");
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/diaries/${id}`,
           {
@@ -35,12 +37,48 @@ export function DiaryDetail({ id }: DiaryDetailProps) {
           }
         );
         const data = await res.json();
+        console.log("일기 데이터 전체 응답:", data);
+        console.log("일기 데이터 result:", data.result);
+        console.log("북마크 필드 이름과 값 체크:");
+
+        // data.result의 모든 필드 출력
+        if (data.result) {
+          Object.keys(data.result).forEach((key) => {
+            console.log(`${key}: ${data.result[key]}`);
+          });
+        }
+
         if (res.ok) {
           setDiary(data.result);
+          // isBookmarked가 있는지 확인하고 타입 체크
+          if ("isBookmarked" in data.result) {
+            console.log("isBookmarked 타입:", typeof data.result.isBookmarked);
+            console.log("isBookmarked 값:", data.result.isBookmarked);
+            // Boolean으로 명시적 변환
+            setSaved(Boolean(data.result.isBookmarked));
+          } else {
+            console.log(
+              "isBookmarked 필드가 없습니다. 대체 필드를 찾아봅니다."
+            );
+            // bookmarked나 다른 비슷한 필드 찾기
+            const bookmarkField = Object.keys(data.result).find((key) =>
+              key.toLowerCase().includes("bookmark")
+            );
+            if (bookmarkField) {
+              console.log(
+                `대체 필드 발견: ${bookmarkField}:`,
+                data.result[bookmarkField]
+              );
+              setSaved(Boolean(data.result[bookmarkField]));
+            } else {
+              console.log("북마크 관련 필드를 찾을 수 없습니다.");
+            }
+          }
         } else {
           alert(data.message || "일기 불러오기 실패");
         }
       } catch (e) {
+        console.error("일기 데이터 가져오기 오류:", e);
         alert("에러 발생: " + e);
       }
     };
@@ -53,6 +91,52 @@ export function DiaryDetail({ id }: DiaryDetailProps) {
   const { emoji, name } = EMOTION_MAP[diary.emotionTag] || {
     emoji: "❓",
     name: "알 수 없음",
+  };
+
+  const toggleBookmark = async () => {
+    const method = saved ? "DELETE" : "POST";
+    console.log("북마크 토글 시작, 현재 상태:", saved);
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/diaries/${id}/bookmark`,
+        {
+          method,
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await res.json();
+      console.log("북마크 API 응답:", data);
+
+      if (res.ok) {
+        // 북마크 상태 변경 후 최신 데이터 다시 불러오기
+        const diaryRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/diaries/${id}`,
+          {
+            credentials: "include",
+          }
+        );
+        const diaryData = await diaryRes.json();
+        console.log("다시 가져온 일기 데이터:", diaryData);
+
+        if (diaryRes.ok) {
+          setDiary(diaryData.result);
+          setSaved(diaryData.result.isBookmarked);
+          console.log("업데이트된 북마크 상태:", diaryData.result.isBookmarked);
+        }
+
+        alert(data.message || "북마크 변경됨");
+      } else {
+        alert(data.message || "북마크 처리 실패");
+      }
+    } catch (e) {
+      console.error("북마크 토글 오류:", e);
+      alert("에러 발생: " + e);
+    }
   };
 
   return (
@@ -76,7 +160,7 @@ export function DiaryDetail({ id }: DiaryDetailProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setSaved(!saved)}
+              onClick={toggleBookmark}
               className="rounded-full"
             >
               <Bookmark

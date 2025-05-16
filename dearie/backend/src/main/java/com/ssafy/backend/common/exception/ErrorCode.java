@@ -14,7 +14,8 @@ public enum ErrorCode implements BaseErrorCode {
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류 발생"),
 
     DIARY_NOT_FOUND(HttpStatus.NOT_FOUND, "일기를 찾을 수 없습니다."),
-    BOOKMARK_NOT_FOUND(HttpStatus.NOT_FOUND, "북마크가 존재하지 않습니다."),
+    BOOKMARK_ALREADY_EXISTED(HttpStatus.NOT_FOUND, "북마크가 이미 추가되었습니다."),
+    BOOKMARK_ALREADY_DELETED(HttpStatus.NOT_FOUND, "북마크가 이미 삭제되었습니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다.")
     ;
     private final HttpStatus status;

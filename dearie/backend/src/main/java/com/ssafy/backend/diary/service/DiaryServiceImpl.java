@@ -135,7 +135,8 @@ public class DiaryServiceImpl implements DiaryService {
                             diary.getEmotionTag(),
                             diary.getContent(),
                             diary.getCreatedAt().toLocalDate().toString(),
-                            imageUrls
+                            imageUrls,
+                            diary.getBookmarked()
                     );
                 })
                 .toList();
@@ -157,6 +158,7 @@ public class DiaryServiceImpl implements DiaryService {
         result.setContent(diary.getContent());
         result.setAiComment(diary.getAiComment());
         result.setImages(images);
+        result.setIsBookmarked(diary.getBookmarked());
         result.setEmotionTag(diary.getEmotionTag() != null ? diary.getEmotionTag().toString() : "UNKNOWN");
         result.setCreateTime(diary.getCreatedAt().toString());
 
@@ -209,7 +211,7 @@ public class DiaryServiceImpl implements DiaryService {
 
                         diaryImages.add(diaryImage);
                     } catch (Exception e) {
-//                        log.error("이미지 업로드 실패: {}", e.getMessage(), e);
+                        log.error("이미지 업로드 실패: {}", e.getMessage(), e);
                         // 특정 이미지 실패해도 계속 진행
                     }
                 }
@@ -248,33 +250,22 @@ public class DiaryServiceImpl implements DiaryService {
     public Boolean addBookmark(String userId, Long diaryId) {
         Pair<User, Diary> pair = validateAndGetOwnDiaryWithUser(userId, diaryId);
         Diary diary = pair.getRight();
-        User user = pair.getLeft();
 
-        if (bookmarkRepository.existsByUserAndDiary(user, diary)) {
-            return false;
-        }
+        if(diary.getBookmarked()) throw new CustomException(ErrorCode.BOOKMARK_ALREADY_EXISTED);
 
-        Bookmark bookmark = Bookmark.builder()
-                .user(user)
-                .diary(diary)
-                .bookmarkedAt(LocalDateTime.now())
-                .build();
-
-        bookmarkRepository.save(bookmark);
+        diary.setBookmarked(true);
         return true;
     }
 
+    @Transactional
     @Override
     public Boolean deleteBookmark(String userId, Long diaryId) {
         Pair<User, Diary> pair = validateAndGetOwnDiaryWithUser(userId, diaryId);
         Diary diary = pair.getRight();
-        User user = pair.getLeft();
 
-        Bookmark bookmark = bookmarkRepository.findByUserAndDiary(user, diary)
-                .orElseThrow(() -> new CustomException(ErrorCode.BOOKMARK_NOT_FOUND));
+        if(!diary.getBookmarked()) throw new CustomException(ErrorCode.BOOKMARK_ALREADY_DELETED);
 
-        bookmarkRepository.delete(bookmark);
-
+        diary.setBookmarked(false);
         return true;
     }
 
