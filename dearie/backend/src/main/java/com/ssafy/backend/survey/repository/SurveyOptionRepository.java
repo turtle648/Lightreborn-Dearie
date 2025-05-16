@@ -12,15 +12,15 @@ public interface SurveyOptionRepository extends JpaRepository<SurveyOption, Long
     List<SurveyOption> findAllBySurveyQuestionOrderByOptionNumAsc(SurveyQuestion surveyQuestion);
     List<SurveyOption> findAllBySurveyQuestionInOrderBySurveyQuestionIdAscOptionNumAsc(List<SurveyQuestion> surveyQuestions);
 
-    @Query("""
-        SELECT o
-        FROM SurveyOption o
-        WHERE o.score = (
-            SELECT MAX(innerO.score)
-            FROM SurveyOption innerO
-            WHERE innerO.surveyQuestion = o.surveyQuestion
-        )
-        AND o.surveyQuestion IN :surveyQuestions
-    """)
-    List<SurveyOption> findTopOptionsBySurveyQuestions(@Param("surveyQuestions") List<SurveyQuestion> surveyQuestions);
+    @Query(value = """
+        SELECT SUM(max_scores.max_score) as total
+        FROM (
+            SELECT MAX(so.score) AS max_score
+            FROM survey_options so
+            JOIN survey_questions sq ON so.survey_questions_id = sq.id
+            WHERE sq.survey_templates_id = :templateId
+            GROUP BY so.survey_questions_id
+        ) AS max_scores
+    """, nativeQuery = true)
+    Integer getSumOfMaxScoresByTemplateId(@Param("templateId") Long templateId);
 }

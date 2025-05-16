@@ -5,6 +5,9 @@ import com.ssafy.backend.auth.exception.AuthErrorCode;
 import com.ssafy.backend.auth.exception.AuthException;
 import com.ssafy.backend.auth.model.entity.User;
 import com.ssafy.backend.auth.repository.UserRepository;
+import com.ssafy.backend.mission.model.dto.response.DailyMissionResponseDTO;
+import com.ssafy.backend.mission.model.dto.response.MissionResponseDTO;
+import com.ssafy.backend.mission.reader.MissionReader;
 import com.ssafy.backend.survey.exception.SurveyErrorCode;
 import com.ssafy.backend.survey.exception.SurveyException;
 import com.ssafy.backend.survey.model.collector.AgreementCollector;
@@ -13,6 +16,7 @@ import com.ssafy.backend.survey.model.constant.SurveyConstant;
 import com.ssafy.backend.survey.model.dto.request.*;
 import com.ssafy.backend.survey.model.dto.response.*;
 import com.ssafy.backend.survey.model.entity.*;
+import com.ssafy.backend.survey.model.state.SurveyResultAnalysis;
 import com.ssafy.backend.survey.model.vo.SurveyAnswerVO;
 import com.ssafy.backend.survey.model.vo.SurveyConsentLogVO;
 import com.ssafy.backend.survey.model.vo.SurveyVO;
@@ -34,6 +38,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SurveyServiceImpl implements SurveyService {
     private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    private final MissionReader missionReader;
 
     private final UserRepository userRepository;
     private final SurveyRepository surveyRepository;
@@ -112,7 +118,7 @@ public class SurveyServiceImpl implements SurveyService {
         Survey survey = saveSurvey(user, surveyTemplate, answers, options);
 
         // total score 계산하기
-        Integer totalScore = calculateTotalScore(questions);
+        Integer totalScore = surveyOptionRepository.getSumOfMaxScoresByTemplateId(SurveyConstant.DEFAULT_TEMPLATE);
 
         // 이 pk로 answer 저장하기
         List<SurveyAnswerVO> answerVOs = answers.stream()
@@ -204,6 +210,18 @@ public class SurveyServiceImpl implements SurveyService {
         );
     }
 
+    @Override
+    public SurveyResponseDetailDTO getIsolatedYouthSurveyDetailInfo(Long surveyId) {
+        Integer totalScore = surveyOptionRepository.getSumOfMaxScoresByTemplateId(SurveyConstant.DEFAULT_TEMPLATE);
+
+        Survey survey = surveyRepository.findById(surveyId)
+                .orElseThrow(() -> new SurveyException(SurveyErrorCode.SURVEY_REQUIRED));
+        List<MissionResponseDTO> missions = missionReader.getDailyMissionList();
+        SurveyResultAnalysis analysis = SurveyResultAnalysis.getAnalysis(survey.getSurveyResult());
+
+        return SurveyResponseDetailDTO.from(totalScore, survey, analysis, missions);
+    }
+
     private boolean isValidToSendResult (Long surveyId) {
         int totalSize = surveyConsentRepository.countBySurveyTemplateId(SurveyConstant.DEFAULT_TEMPLATE);
         int isAgreedSize = surveyConsentLogRepository.countBySurveyIdAndIsAgreedTrue(surveyId);
@@ -211,18 +229,11 @@ public class SurveyServiceImpl implements SurveyService {
         return totalSize == isAgreedSize;
     }
 
-    private Integer calculateTotalScore (List<SurveyQuestion> questions) {
-        return surveyOptionRepository.findTopOptionsBySurveyQuestions(questions)
-                .stream()
-                .mapToInt(SurveyOption::getScore)
-                .sum();
-    }
-
     private Survey saveSurvey (User user, SurveyTemplate surveyTemplate, List<SurveyAnswerRequestDTO> answers,
                                List<SurveyOption> options) {
         int result = calculateScore(answers, options);
 
-        SurveyVO surveyVO = SurveyVO.of(Integer.toString(result), user, surveyTemplate);
+        SurveyVO surveyVO = SurveyVO.of(result, user, surveyTemplate);
 
         return surveyRepository.save(SurveyVO.toEntity(surveyVO));
     }

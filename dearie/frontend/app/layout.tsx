@@ -1,17 +1,18 @@
-import type React from "react"
-import type { Metadata, Viewport } from "next"
-import { Outfit } from "next/font/google"
-import "@/styles/globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { InstallPWA } from "@/components/common/install-pwa"
-import { OfflineNotice } from "@/components/common/offline-notice"
-import { UpdateNotification } from "@/components/common/update-notification"
+import type React from "react";
+import type { Metadata, Viewport } from "next";
+import { Outfit } from "next/font/google";
+import "react-day-picker/dist/style.css";
+import "@/styles/globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+import { InstallPWA } from "@/components/common/install-pwa";
+import { OfflineNotice } from "@/components/common/offline-notice";
+import { UpdateNotification } from "@/components/common/update-notification";
 
 const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-outfit",
   display: "swap",
-})
+});
 
 export const metadata: Metadata = {
   title: "Dearie - 일기기반 정신건강 자가진단 앱",
@@ -22,8 +23,8 @@ export const metadata: Metadata = {
     title: "Dearie",
     statusBarStyle: "default",
   },
-    generator: 'v0.dev'
-}
+  generator: "v0.dev",
+};
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -32,12 +33,12 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: "cover",
   themeColor: "#f1b29f",
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
@@ -51,7 +52,12 @@ export default function RootLayout({
           메인 콘텐츠로 건너뛰기
         </a>
 
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
           {/* 오프라인 알림 */}
           <OfflineNotice />
 
@@ -68,5 +74,5 @@ export default function RootLayout({
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }

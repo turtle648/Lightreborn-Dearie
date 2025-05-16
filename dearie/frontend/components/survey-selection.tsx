@@ -11,12 +11,12 @@ export function SurveySelection() {
   const surveyTypes = [
     {
       id: "monthly",
-      name: "월간 설문조사",
+      name: "고립/은둔 설문조사",
       path: "/survey/intro",
       icon: BarChart2,
       color: "bg-gradient-to-br from-primary/10 to-primary/30",
       iconColor: "text-primary",
-      description: "이번 달 감정 상태를 분석해 드립니다",
+      description: "고립 은둔 청년 척도 설문조사",
     },
     {
       id: "satisfaction",

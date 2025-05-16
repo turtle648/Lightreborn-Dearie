@@ -1,6 +1,8 @@
 package com.ssafy.backend.mission.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.backend.auth.model.entity.User;
+import com.ssafy.backend.auth.repository.UserRepository;
 import com.ssafy.backend.common.client.YoloClientService;
 import com.ssafy.backend.common.client.dto.YoloDetectionResult;
 import com.ssafy.backend.common.config.S3Uploader;
@@ -9,14 +11,21 @@ import com.ssafy.backend.mission.model.dto.response.DailyMissionResponseDTO;
 import com.ssafy.backend.mission.model.dto.response.MissionCompletionResponseDTO;
 import com.ssafy.backend.mission.model.dto.vo.ImageResultDetail;
 import com.ssafy.backend.mission.model.entity.Mission;
+import com.ssafy.backend.mission.model.entity.UserMission;
 import com.ssafy.backend.mission.model.enums.MissionResultType;
 import com.ssafy.backend.mission.repository.MissionRepository;
+import com.ssafy.backend.mission.repository.UserMissionRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.attribute.UserPrincipal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -27,6 +36,9 @@ public class MissionServiceImpl implements MissionService {
     private final S3Uploader s3Uploader;
     private final YoloClientService yoloClientService;
     private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
+    private final UserMissionRepository userMissionRepository;
+
 
     @Override
     public MissionCompletionResponseDTO<?> verifyMissionCompletion(MissionCompletionRequestDTO request) throws BadRequestException {
@@ -92,9 +104,62 @@ public class MissionServiceImpl implements MissionService {
     }
 
     @Override
-    public List<DailyMissionResponseDTO> getDailyMissionList() {
-        return missionRepository.findRandomMissions().stream()
-                .map(m -> new DailyMissionResponseDTO(m.getId(), m.getContent(), m.getMissionType().getType()))
+    public List<DailyMissionResponseDTO> getDailyMissionList(Long userId) {
+
+        LocalDate today = LocalDate.now();
+
+        List<UserMission> ums = userMissionRepository
+                .findByUser_IdAndDate(userId, today);
+
+
+        return ums.stream()
+                .map(um -> new DailyMissionResponseDTO(
+                        um.getId(),
+                        um.getMission().getId(),
+                        um.getMission().getMissionTitle(),
+                        um.getMission().getContent(),
+                        um.getIsCompleted(),
+                        um.getMission().getMissionType().getType()
+                ))
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public void assignDailyMissionsToAllUsers() {
+        /*
+        * 매일 자정 스케줄러에서 호출
+        * 모든 사용자에게 랜덤 5개 미션을 user_mission에 저장
+        * */
+        List<Mission> allMissions = missionRepository.findAll();
+        List<User> allUsers = userRepository.findAll();
+
+        for(User user : allUsers){
+            // 미션 리스트를 섞어서 앞의 5개만 취하기
+            Collections.shuffle(allMissions);
+            List<Mission> picked = allMissions.stream()
+                    .limit(Math.min(5, allMissions.size()))
+                    .toList();
+
+            List<UserMission> toSave = picked.stream()
+                    .map(m -> UserMission.builder()
+                            .user(user)
+                            .mission(m)
+                            .date(LocalDate.now())
+                            .isCompleted(false)
+                            .build())
+                    .toList();
+
+            userMissionRepository.saveAll(toSave);
+        }
+
+    }
+
+    @Override
+    @Transactional
+    public void deleteStableUserMissions() {
+        // 오늘 기준 5일 전, isCompleted=false인 미션 삭제
+        LocalDate threshold = LocalDate.now().minusDays(5);
+        userMissionRepository.deleteByDateBeforeAndIsCompletedFalse(threshold);
     }
 }

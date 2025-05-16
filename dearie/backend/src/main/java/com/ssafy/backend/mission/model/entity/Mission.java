@@ -24,4 +24,7 @@ public class Mission {
 
     @Column(length = 100)
     private String requiredObjectLabel;
+
+    @Column(length = 50, nullable = false)
+    private String missionTitle;
 }
