@@ -18,6 +18,8 @@ public interface YouthConsultationService {
     SurveyUploadDTO uploadIsolationYouthInfo(MultipartFile file);
     SpeechResponseDTO updateCounselingLog(Long id, UpdateCounselingLogRequestDTO requestDTO);
 
+    void getKafkaSurveySendDate(SurveySendRequestDTO requestDTO);
+
     /**
      * 누적 통계 및 최근 3개월 신규 상담 등록자 통계를 계산하는 함수
      *

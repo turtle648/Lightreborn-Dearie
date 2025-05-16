@@ -13,8 +13,8 @@ import java.time.LocalDate;
 @Builder
 public class UserInfoDTO {
     private String name;
-    private Gender gender;
-    private LocalDate birthDate;
+    private String gender;
+    private String birthDate;
     private Short age;
     private String phoneNumber;
     private String emergencyContact;
@@ -23,8 +23,8 @@ public class UserInfoDTO {
         return UserInfoDTO.builder()
                 .name(user.getName())
                 .age(user.getAge())
-                .birthDate(user.getBirthDate())
-                .gender(user.getGender())
+                .birthDate(user.getBirthDate().toString())
+                .gender(user.getGender().getLabel())
                 .phoneNumber(user.getPhoneNumber())
                 .emergencyContact(user.getEmergencyContact())
                 .build();

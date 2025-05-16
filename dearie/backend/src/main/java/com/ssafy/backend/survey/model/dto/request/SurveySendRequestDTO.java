@@ -13,7 +13,7 @@ import java.util.List;
 @Builder
 public class SurveySendRequestDTO {
     // == survey ==
-    private LocalDateTime createdAt;
+    private String createdAt;
     private String surveyResult;
 
     private UserInfoDTO user;
@@ -21,7 +21,7 @@ public class SurveySendRequestDTO {
 
     public static SurveySendRequestDTO from (Survey survey, UserInfoDTO userInfoDTO, List<SurveyAnswerDTO> answers) {
         return SurveySendRequestDTO.builder()
-                .createdAt(survey.getCreatedAt())
+                .createdAt(survey.getCreatedAt().toString())
                 .surveyResult(survey.getSurveyResult())
                 .user(userInfoDTO)
                 .answers(answers)
