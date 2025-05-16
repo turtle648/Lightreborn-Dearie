@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PromotionDataDTO {
+public class PromotionLatestDataDTO {
 
     private String address;           // 주소
     private double latitude;         // 위도

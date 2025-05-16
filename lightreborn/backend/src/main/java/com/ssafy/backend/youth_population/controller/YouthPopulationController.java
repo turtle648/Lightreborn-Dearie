@@ -71,9 +71,9 @@ public class YouthPopulationController {
     }
 
     @Operation(summary = "전체 행정동 청년 인구 통계 확인", description = "청년 인구 통계에 대한 최신 데이터 확인")
-    @GetMapping("/youthPopulationData/{dong-code}")
-    public ResponseEntity<BaseResponse<List<YouthPopulationRecentDataDTO>>> getYouthPopulationData() throws IOException {
-        List<YouthPopulationRecentDataDTO> result = youthPopulationService.getYouthPopulationRecentData();
+    @GetMapping("/youthPopulationLatestData")
+    public ResponseEntity<BaseResponse<List<YouthPopulationLatestDataDTO>>> getYouthPopulationLatestData() throws IOException {
+        List<YouthPopulationLatestDataDTO> result = youthPopulationService.getYouthPopulationLatestData();
         return ResponseEntity.ok(BaseResponse.success(200, "청년 통계 조회를 성공했습니다.", result));
     }
 }

@@ -108,6 +108,15 @@ public class WelfareCenterController {
         ));
     }
 
+    @Operation(summary = "전체 협력기관 최신 정보 조회", description = "전체 협력기관에 대한 최신 정보를 조회라는 API")
+    @GetMapping("/welfareCenterLatestData")
+    public ResponseEntity<BaseResponse<List<WelfareCenterLatestDataDTO>>> getWelfareCenterLatestData() {
+        return ResponseEntity.ok(BaseResponse.success(
+                200, "협력기관 최신 정보 조회 성공",
+                welfareCenterService.getWelfareCenterLatestData()
+        ));
+    }
+
     @Operation(summary = "전체 협력기관 엑셀 다운로드", description = "전체 협력기관 리스트 엑셀 파일 다운로드 API")
     @GetMapping("/files")
     public void exportWelfareCenterData(HttpServletResponse response) throws IOException {

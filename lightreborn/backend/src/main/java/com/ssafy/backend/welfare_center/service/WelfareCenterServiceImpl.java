@@ -353,6 +353,22 @@ public class WelfareCenterServiceImpl implements WelfareCenterService {
                 .build();
     }
 
+    @Override
+    public List<WelfareCenterLatestDataDTO> getWelfareCenterLatestData() {
+        List<PartnerOrganization> all = welfareCenterRepository.findAll();
+
+        return all.stream().map(partnerOrganization -> WelfareCenterLatestDataDTO.builder()
+                .organizationName(partnerOrganization.getOrganizationName())
+                .address(partnerOrganization.getAddress())
+                .hangjungCode(partnerOrganization.getHangjungs().getHangjungCode())
+                .hangjungName(partnerOrganization.getHangjungs().getHangjungName())
+                .longitude(partnerOrganization.getLatitude())
+                .latitude(partnerOrganization.getLatitude())
+                .callNumber(partnerOrganization.getPhoneNumber())
+                .organizationType(partnerOrganization.getType())
+                .build()).toList();
+    }
+
     /**
      * 소수점 1자리 반올림 유틸 메서드
      */

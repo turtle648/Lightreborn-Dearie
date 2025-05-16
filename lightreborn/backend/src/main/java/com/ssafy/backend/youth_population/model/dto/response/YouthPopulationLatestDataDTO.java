@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @Data
 @Builder
-public class YouthPopulationRecentDataDTO {
+public class YouthPopulationLatestDataDTO {
     private String dongName;                  // 행정동 이름
     private String dongCode;                  // 행정동 코드
     private LocalDate baseDate;               // 기준 날짜

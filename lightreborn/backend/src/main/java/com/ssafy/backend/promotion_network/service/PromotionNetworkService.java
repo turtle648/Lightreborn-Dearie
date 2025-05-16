@@ -31,7 +31,7 @@ public interface PromotionNetworkService {
 
     List<PromotionExportDTO> selectPromotionExportData(Long donCode);
 
-    List<PromotionDataDTO> getPromotionLatestData();
+    List<PromotionLatestDataDTO> getPromotionLatestData();
 }
 
 

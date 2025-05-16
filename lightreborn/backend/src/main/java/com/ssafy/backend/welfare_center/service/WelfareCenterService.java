@@ -42,4 +42,8 @@ public interface WelfareCenterService {
 
     // 대시보드 통합 데이터
     WelfareCenterSummaryDTO getDashboardSummary();
+
+    // 전체 기관에 대한 정보 조회
+    List<WelfareCenterLatestDataDTO> getWelfareCenterLatestData();
+
 }

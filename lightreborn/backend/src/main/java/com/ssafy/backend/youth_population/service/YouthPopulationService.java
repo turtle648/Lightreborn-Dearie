@@ -1,8 +1,6 @@
 package com.ssafy.backend.youth_population.service;
 
-import com.ssafy.backend.youth_population.entity.YouthPopulation;
 import com.ssafy.backend.youth_population.model.dto.response.*;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -44,6 +42,6 @@ public interface YouthPopulationService {
     /*
      * 청년 인구 통계 자료에 대한 최신 데이터 조회
      * */
-    List<YouthPopulationRecentDataDTO> getYouthPopulationRecentData() throws IOException;
+    List<YouthPopulationLatestDataDTO> getYouthPopulationLatestData() throws IOException;
 
 }

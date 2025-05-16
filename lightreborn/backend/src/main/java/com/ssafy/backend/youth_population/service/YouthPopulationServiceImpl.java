@@ -257,7 +257,7 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
 
 
     @Override
-    public List<YouthPopulationRecentDataDTO> getYouthPopulationRecentData() throws IOException {
+    public List<YouthPopulationLatestDataDTO> getYouthPopulationLatestData() throws IOException {
         List<YouthPopulation> latestData = youthPopulationRepository.findLatestYouthPopulations();
         int totalYouth = latestData.stream()
                 .mapToInt(yp -> yp.getYouthPopulation() != null ? yp.getYouthPopulation() : 0)
@@ -273,7 +273,7 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
             int maleOne = yp.getYouthMaleHouseholdCount() != null ? yp.getYouthMaleHouseholdCount() : 0;
             int femaleOne = yp.getYouthFemaleHouseholdCount() != null ? yp.getYouthFemaleHouseholdCount() : 0;
 
-            return YouthPopulationRecentDataDTO.builder()
+            return YouthPopulationLatestDataDTO.builder()
                     .baseDate(yp.getBaseDate())
                     .dongName(yp.getHangjungs().getHangjungName())
                     .dongCode(yp.getHangjungs().getHangjungCode())

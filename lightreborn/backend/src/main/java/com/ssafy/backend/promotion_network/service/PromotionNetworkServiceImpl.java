@@ -12,7 +12,6 @@ import com.ssafy.backend.promotion_network.model.response.*;
 import com.ssafy.backend.promotion_network.repository.PromotionStatusRepository;
 import com.ssafy.backend.promotion_network.repository.PromotionTypeRepository;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
-import com.ssafy.backend.youth_population.entity.YouthPopulation;
 import com.ssafy.backend.youth_population.model.dto.response.YouthStatsByRegionDTO;
 import com.ssafy.backend.youth_population.repository.HangjungsRepository;
 import com.ssafy.backend.youth_population.repository.YouthPopulationRepository;
@@ -286,10 +285,10 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
     }
 
     @Override
-    public List<PromotionDataDTO> getPromotionLatestData() {
+    public List<PromotionLatestDataDTO> getPromotionLatestData() {
         List<PromotionStatus> all = promotionStatusRepository.findAll();
 
-        return all.stream().map(promotionStatus ->  PromotionDataDTO.builder()
+        return all.stream().map(promotionStatus ->  PromotionLatestDataDTO.builder()
                 .address(promotionStatus.getAddress())
                 .latitude(promotionStatus.getLatitude())
                 .longitude(promotionStatus.getLongitude())
