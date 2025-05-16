@@ -211,7 +211,10 @@ pipeline {
                     
                         def dbName = project
 
-                        def hostMigrationPath = "/home/ubuntu/jenkins-data/workspace/soboro/${project}/backend/src/main/resources/db/migration"
+                        def hostMigrationPath = (params.ENV == 'master') ?
+                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
+                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
+
 
                         def baseCmd = """
                             docker run --rm \\
