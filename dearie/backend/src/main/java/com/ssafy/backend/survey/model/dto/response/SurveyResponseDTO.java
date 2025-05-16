@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public class SurveyResponseDTO {
     private Long id;
     private LocalDateTime createdAt;
-    private String surveyResult;
+    private Integer surveyResult;
     private Integer totalScore;
 
     public static SurveyResponseDTO from (Survey survey, Integer totalScore) {

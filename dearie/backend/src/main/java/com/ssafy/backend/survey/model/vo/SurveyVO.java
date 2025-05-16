@@ -11,12 +11,12 @@ import java.time.LocalDateTime;
 public class SurveyVO {
     private final Long id;
     private final LocalDateTime createdAt;
-    private final String surveyResult;
+    private final Integer surveyResult;
     private final Boolean isSend;
     private final User user;
     private final SurveyTemplate surveyTemplate;
 
-    private SurveyVO(Long id, LocalDateTime createdAt, String surveyResult, Boolean isSend, User user,
+    private SurveyVO(Long id, LocalDateTime createdAt, Integer surveyResult, Boolean isSend, User user,
                      SurveyTemplate surveyTemplate) {
         this.id = id;
         this.createdAt = createdAt;
@@ -26,14 +26,14 @@ public class SurveyVO {
         this.surveyTemplate = surveyTemplate;
     }
 
-    public static SurveyVO of (String surveyResult, User user, SurveyTemplate surveyTemplate) {
+    public static SurveyVO of (Integer surveyResult, User user, SurveyTemplate surveyTemplate) {
         LocalDateTime today = LocalDateTime.now();
         Boolean isSend = false;
 
         return new SurveyVO(null, today, surveyResult, isSend, user, surveyTemplate);
     }
 
-    public static SurveyVO of (Long id, String surveyResult, User user, LocalDateTime today,
+    public static SurveyVO of (Long id, Integer surveyResult, User user, LocalDateTime today,
                                Boolean isSend, SurveyTemplate surveyTemplate) {
         return new SurveyVO(id, today, surveyResult, isSend, user, surveyTemplate);
     }

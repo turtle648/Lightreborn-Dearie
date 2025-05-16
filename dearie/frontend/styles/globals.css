@@ -175,3 +175,521 @@
 .skip-link {
   @apply sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-50 focus:p-4 focus:bg-white focus:text-primary;
 }
+
+/* rdp-chevron 클래스 파란색 제거 CSS */
+
+/* rdp-accent-color 변수 재정의 */
+:root {
+  --rdp-accent-color: #f1b29f !important;
+}
+
+/* 화살표 chevron 직접 지정 */
+.rdp-chevron {
+  display: inline-block;
+  fill: #e89a84 !important; /* 직접 색상 지정 */
+}
+
+/* svg 내부 path에도 직접 색상 지정 */
+.rdp-chevron path {
+  fill: #e89a84 !important;
+  stroke: #e89a84 !important;
+}
+
+/* 모든 네비게이션 버튼의 SVG 요소 대상 */
+.rdp-nav button svg,
+.rdp-nav_button svg,
+.rdp-nav_button_previous svg,
+.rdp-nav_button_next svg {
+  fill: #e89a84 !important;
+  color: #e89a84 !important;
+  stroke: #e89a84 !important;
+}
+
+/* 특정 버전의 react-day-picker 대응 */
+button[aria-label="Previous month"] svg,
+button[aria-label="Next month"] svg {
+  fill: #e89a84 !important;
+  color: #e89a84 !important;
+  stroke: #e89a84 !important;
+}
+
+/* svg 요소가 있는 모든 버튼 처리 */
+.rdp button:has(svg) {
+  color: #e89a84 !important;
+}
+
+/* 구체적인 svg 선택자 (더 높은 우선순위) */
+.rdp svg.rdp-chevron,
+.rdp-months svg.rdp-chevron {
+  fill: #e89a84 !important;
+  color: #e89a84 !important;
+}
+
+/* 최대한 구체적인 선택자로 덮어쓰기 */
+.rdp-nav_button svg.rdp-chevron {
+  fill: #e89a84 !important;
+  color: #e89a84 !important;
+}
+
+/* 포커스 상태에서도 색상 유지 */
+.rdp-nav_button:focus svg.rdp-chevron,
+.rdp-nav_button:hover svg.rdp-chevron {
+  fill: #e89a84 !important;
+  color: #e89a84 !important;
+}
+
+/* 전역 CSS 변수 재정의 (모든 가능한 변수명) */
+:root {
+  --rdp-accent-color: #f1b29f !important;
+  --rdp-primary-color: #f1b29f !important;
+  --rdp-highlight-color: #f1b29f !important;
+  --rdp-active-color: #f1b29f !important;
+  --rdp-selected-color: #f1b29f !important;
+}
+
+/* rdp-day_button 클래스 파란색 제거 CSS */
+
+/* 날짜 버튼의 변수 재정의 */
+:root {
+  /* 버튼 변수 재정의 */
+  --rdp-day_button-width: 36px;
+  --rdp-day_button-height: 36px;
+  --rdp-day_button-border: none;
+  --rdp-day_button-border-radius: 9999px;
+
+  /* 색상 변수 재정의 */
+  --rdp-accent-color: #f1b29f !important;
+  --rdp-background-color: rgba(241, 178, 159, 0.1) !important;
+  --rdp-outline: 2px solid #f1b29f !important;
+  --rdp-outline-selected: 2px solid #e89a84 !important;
+  --rdp-selected-color: #f1b29f !important;
+  --rdp-selected-background: #f1b29f !important;
+}
+
+/* 버튼 기본 스타일 수정 */
+.rdp-day_button {
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  width: var(--rdp-day_button-width);
+  height: var(--rdp-day_button-height);
+  border: var(--rdp-day_button-border);
+  border-radius: var(--rdp-day_button-border-radius);
+  /* 추가 스타일 */
+  transition: all 0.2s ease;
+}
+
+/* 버튼 호버 상태 */
+.rdp-day_button:hover:not([disabled]):not(.rdp-day_selected) {
+  background-color: rgba(241, 178, 159, 0.1) !important;
+  color: #e89a84 !important;
+}
+
+/* 선택된 날짜 버튼 */
+.rdp-day_selected .rdp-day_button,
+.rdp-day_selected.rdp-day_button,
+.rdp button.rdp-day_selected {
+  background-color: #f1b29f !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+/* 오늘 날짜 버튼 */
+.rdp-day_today .rdp-day_button,
+.rdp-day_today.rdp-day_button,
+.rdp button.rdp-day_today {
+  border: 1px solid #f1b29f !important;
+  background-color: rgba(241, 178, 159, 0.1) !important;
+  color: #e89a84 !important;
+  font-weight: 600 !important;
+}
+
+/* 포커스 상태 */
+.rdp-day_button:focus-visible,
+.rdp button:focus-visible {
+  outline: 2px solid #f1b29f !important;
+  outline-offset: 2px !important;
+  background-color: rgba(241, 178, 159, 0.1) !important;
+}
+
+/* 터치 상태 */
+.rdp-day_button:active:not([disabled]):not(.rdp-day_selected) {
+  background-color: rgba(241, 178, 159, 0.2) !important;
+  color: #e89a84 !important;
+}
+
+/* 선택된 날짜의 포커스 상태 */
+.rdp-day_selected .rdp-day_button:focus-visible,
+.rdp-day_selected.rdp-day_button:focus-visible,
+.rdp button.rdp-day_selected:focus-visible {
+  outline-color: #e89a84 !important;
+}
+
+/* 선택된 날짜가 오늘인 경우 */
+.rdp-day_today.rdp-day_selected .rdp-day_button,
+.rdp-day_today.rdp-day_selected.rdp-day_button,
+.rdp button.rdp-day_today.rdp-day_selected {
+  background-color: #f1b29f !important;
+  color: white !important;
+  border-color: #e89a84 !important;
+}
+
+/* 일반적인 버튼 포커스 상태 */
+.rdp button:focus {
+  outline-color: #f1b29f !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 2px rgba(241, 178, 159, 0.25) !important;
+}
+
+/* 포커스 링 대체 */
+.rdp button:focus-visible:not([disabled]) {
+  outline: 2px solid #f1b29f !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 2px rgba(241, 178, 159, 0.25) !important;
+}
+
+/* 모든 버튼의 파란색 링 제거 */
+.rdp button {
+  transition: all 0.2s ease;
+}
+
+.rdp button:focus,
+.rdp button:focus-visible {
+  outline-color: #f1b29f !important;
+}
+
+/* 버튼 호버 시 배경색 */
+.rdp button:hover:not([disabled]) {
+  background-color: rgba(241, 178, 159, 0.1) !important;
+  color: #e89a84 !important;
+}
+
+/* react-day-picker의 모든 파란색 요소를 제거하기 위한 종합적인 CSS */
+
+/* 1. 전역 CSS 변수 완전 재정의 */
+:root {
+  /* 기본 색상 변수 재정의 */
+  --rdp-accent-color: #f1b29f !important;
+  --rdp-background-color: rgba(241, 178, 159, 0.1) !important;
+
+  /* 포커스 관련 변수 */
+  --rdp-outline: 2px solid #f1b29f !important;
+  --rdp-outline-selected: 2px solid #e89a84 !important;
+
+  /* 선택된 날짜 관련 변수 */
+  --rdp-selected-color: white !important;
+  --rdp-selected-background: #f1b29f !important;
+
+  /* 크기 관련 변수 */
+  --rdp-cell-size: 40px !important;
+  --rdp-caption-font-size: 1rem !important;
+
+  /* 버튼 관련 변수 */
+  --rdp-button-color: inherit !important;
+  --rdp-button-font-size: 1rem !important;
+
+  /* 원형 버튼 관련 변수 */
+  --rdp-day_button-width: 36px !important;
+  --rdp-day_button-height: 36px !important;
+  --rdp-day_button-border: none !important;
+  --rdp-day_button-border-radius: 9999px !important;
+
+  /* react-day-picker v8 이상 변수 */
+  --rdp-primary: #f1b29f !important;
+  --rdp-primary-light: #f8d5cb !important;
+  --rdp-primary-dark: #e89a84 !important;
+  --rdp-focus: #f1b29f !important;
+  --rdp-hover: rgba(241, 178, 159, 0.1) !important;
+
+  /* 기타 가능한 모든 변수 재정의 */
+  --accent-foreground: #e89a84 !important;
+  --accent-background: rgba(241, 178, 159, 0.1) !important;
+  --focus-ring: #f1b29f !important;
+  --focus-shadow: rgba(241, 178, 159, 0.25) !important;
+}
+
+/* 2. 컴포넌트별 스타일 재정의 */
+
+/* 버튼 기본 스타일 */
+.rdp button,
+.rdp-button {
+  transition: all 0.2s ease;
+  color: inherit !important;
+}
+
+/* 모든 버튼의 포커스 상태 - 파란색 제거 */
+.rdp button:focus,
+.rdp button:focus-visible,
+.rdp-button:focus,
+.rdp-button:focus-visible {
+  outline-color: #f1b29f !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 2px rgba(241, 178, 159, 0.25) !important;
+}
+
+/* 날짜 버튼 */
+.rdp-day_button {
+  border-radius: 9999px !important;
+}
+
+.rdp-day_button:hover:not([disabled]):not(.rdp-day_selected) {
+  background-color: rgba(241, 178, 159, 0.1) !important;
+  color: #e89a84 !important;
+}
+
+/* 선택된 날짜 */
+.rdp-day_selected,
+.rdp-day_selected .rdp-day_button,
+.rdp button.rdp-day_selected {
+  background-color: #f1b29f !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+/* 오늘 날짜 */
+.rdp-day_today,
+.rdp-day_today .rdp-day_button,
+.rdp button.rdp-day_today {
+  border: 1px solid #f1b29f !important;
+  background-color: rgba(241, 178, 159, 0.1) !important;
+  color: #e89a84 !important;
+  font-weight: 600 !important;
+}
+
+/* 오늘 날짜가 선택된 경우 */
+.rdp-day_today.rdp-day_selected,
+.rdp-day_today.rdp-day_selected .rdp-day_button,
+.rdp button.rdp-day_today.rdp-day_selected {
+  background-color: #f1b29f !important;
+  color: white !important;
+  border-color: #e89a84 !important;
+}
+
+/* 화살표 아이콘 */
+.rdp-chevron,
+.rdp-nav svg,
+.rdp-nav button svg {
+  fill: #e89a84 !important;
+  stroke: #e89a84 !important;
+  color: #e89a84 !important;
+}
+
+/* 달력 타이틀 (월/년) */
+.rdp-caption_label,
+.rdp-caption_dropdowns {
+  color: #e89a84 !important;
+  font-weight: 600 !important;
+}
+
+/* 요일 이름 */
+.rdp-weekday {
+  color: rgba(232, 154, 132, 0.7) !important;
+  font-weight: 500 !important;
+}
+
+/* 이전/다음 달 버튼 */
+.rdp-nav_button {
+  border-color: rgba(241, 178, 159, 0.3) !important;
+}
+
+.rdp-nav_button:hover {
+  background-color: rgba(241, 178, 159, 0.1) !important;
+  border-color: rgba(241, 178, 159, 0.7) !important;
+}
+
+/* 월 선택 드롭다운 */
+.rdp-dropdown_month button {
+  color: #e89a84 !important;
+}
+
+.rdp-dropdown_month button:hover {
+  background-color: rgba(241, 178, 159, 0.1) !important;
+}
+
+/* 드롭다운 옵션 */
+.rdp-dropdown_item {
+  color: inherit !important;
+}
+
+.rdp-dropdown_item:hover,
+.rdp-dropdown_item:focus {
+  background-color: rgba(241, 178, 159, 0.1) !important;
+  color: #e89a84 !important;
+}
+
+/* 선택된 드롭다운 옵션 */
+.rdp-dropdown_item[aria-selected="true"] {
+  background-color: rgba(241, 178, 159, 0.2) !important;
+  color: #e89a84 !important;
+}
+
+/* 3. 특정 케이스 처리 */
+
+/* 날짜 범위 선택 */
+.rdp-day_range_start,
+.rdp-day_range_end {
+  background-color: #f1b29f !important;
+  color: white !important;
+}
+
+.rdp-day_range_middle {
+  background-color: rgba(241, 178, 159, 0.3) !important;
+}
+
+/* 비활성화된 날짜 */
+.rdp-day_disabled {
+  opacity: 0.5 !important;
+  color: inherit !important;
+}
+
+/* 모든 가능한 포커스 상태 */
+*:focus {
+  outline-color: #f1b29f !important;
+}
+
+/* 앱 전체 설정 (다른 부분에도 일관성 있게 적용) */
+button:focus-visible {
+  outline-color: #f1b29f !important;
+  box-shadow: 0 0 0 2px rgba(241, 178, 159, 0.25) !important;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: #f1b29f !important;
+  box-shadow: 0 0 0 1px rgba(241, 178, 159, 0.3) !important;
+}
+
+/* 버튼 내부 텍스트에 대한 처리 */
+.rdp-day_today button,
+.rdp-day_today .rdp-button,
+.rdp-day_today .rdp-day_button {
+  color: #e89a84 !important;
+}
+
+/* react-day-picker v8 이상을 위한 추가 선택자 */
+.rdp-day_today:where(:not(.rdp-day_outside)) {
+  color: #e89a84 !important;
+}
+
+/* 가장 높은 우선순위 선택자 - 특수한 경우 대비 */
+.rdp .rdp-table .rdp-row .rdp-day.rdp-day_today:not(.rdp-day_outside) {
+  color: #e89a84 !important;
+}
+
+/* 선택된 상태와 겹칠 때의 우선순위 문제 해결 */
+.rdp .rdp-day.rdp-day_today.rdp-day_selected {
+  color: white !important;
+}
+
+/* 내부 버튼까지 철저히 처리 */
+.rdp-day_today:not(.rdp-outside) > *,
+.rdp-day_today:not(.rdp-outside) button,
+.rdp-day_today:not(.rdp-outside) .rdp-button,
+.rdp-day_today:not(.rdp-outside) .rdp-day_button {
+  color: #e89a84 !important;
+}
+
+/* color: inherit 문제 해결을 위한 CSS */
+
+/* 1. 모든 상속 색상 무효화 */
+.rdp button,
+.rdp-button,
+.rdp-day_button,
+.rdp-nav_button,
+.rdp-cell .rdp-button,
+.rdp-cell button {
+  color: #111 !important; /* 기본 색상으로 재설정 */
+}
+
+/* 2. 오늘 날짜 명시적 색상 지정 */
+.rdp-day_today,
+.rdp-day_today button,
+.rdp button.rdp-day_today,
+.rdp-cell.rdp-day_today .rdp-button,
+.rdp-cell.rdp-day_today button,
+.rdp-cell .rdp-day_today,
+[aria-current="date"],
+button[aria-current="date"] {
+  color: #e89a84 !important; /* 명시적 색상 지정으로 inherit 방지 */
+}
+
+/* 3. 선택된 날짜 명시적 색상 지정 */
+.rdp-day_selected,
+.rdp-day_selected button,
+.rdp button.rdp-day_selected,
+.rdp-cell.rdp-day_selected .rdp-button,
+.rdp-cell.rdp-day_selected button,
+.rdp-cell .rdp-day_selected,
+[aria-selected="true"],
+button[aria-selected="true"] {
+  color: white !important; /* 명시적 색상 지정으로 inherit 방지 */
+}
+
+/* 4. inherit을 사용하는 모든 요소 처리 */
+.rdp [style*="color: inherit"],
+.rdp [class*="rdp"][style*="color: inherit"],
+.rdp button[style*="color: inherit"],
+.rdp div[style*="color: inherit"],
+.rdp span[style*="color: inherit"] {
+  color: #111 !important; /* inherit 대신 명시적 색상 지정 */
+}
+
+/* 5. 동적 스타일에 대응하기 위한 !important 강화 */
+.rdp-day_today button * {
+  color: #e89a84 !important; /* 오늘 날짜 내부의 모든 요소 */
+}
+
+.rdp-day_selected button * {
+  color: white !important; /* 선택된 날짜 내부의 모든 요소 */
+}
+
+/* 6. 모든 상속 방지 및 강제 색상 지정 */
+.rdp-day_today {
+  --text-color: #e89a84 !important;
+  --rdp-text-color: #e89a84 !important;
+  color: #e89a84 !important;
+}
+
+.rdp-day_selected {
+  --text-color: white !important;
+  --rdp-text-color: white !important;
+  color: white !important;
+}
+
+/* 7. CSS 변수 우회하는 인라인 스타일에 대응 */
+.rdp [style*="var"][style*="color"],
+.rdp button[style*="var"][style*="color"] {
+  color: #111 !important; /* 기본 색상으로 재설정 */
+}
+
+.rdp-day_today[style*="var"][style*="color"],
+.rdp-day_today button[style*="var"][style*="color"] {
+  color: #e89a84 !important;
+}
+
+.rdp-day_selected[style*="var"][style*="color"],
+.rdp-day_selected button[style*="var"][style*="color"] {
+  color: white !important;
+}
+
+/* 8. 추가: DOM 삽입 위치에 따른 CSS 변수 재정의 */
+:where(body) {
+  --rdp-text-color: #111 !important;
+  --rdp-today-text-color: #e89a84 !important;
+  --rdp-selected-text-color: white !important;
+}
+
+.download-style {
+  padding: 24px; /* p-6 */
+  background: white;
+  border-radius: 1rem; /* rounded-xl */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb; /* border-gray-200 */
+}
