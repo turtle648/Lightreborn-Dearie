@@ -22,13 +22,6 @@ pipeline {
     }
 
     stages {
-
-        stage('Clean Workspace') {
-            steps {
-                cleanWs()
-                }
-        }
-
         stage('Decide Environment') {
         // 0. 브랜치 기반 ENV 자동 설정
             steps {
