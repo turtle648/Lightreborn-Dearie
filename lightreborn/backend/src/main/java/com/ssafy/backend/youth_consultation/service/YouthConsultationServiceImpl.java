@@ -33,6 +33,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
@@ -588,6 +589,80 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                 .counselor(newLog.getCounselorKeyword())
                 .memos(newLog.getMemoKeyword())
                 .build();
+    }
+
+    @Override
+    @KafkaListener(topics = "survey-send")
+    @Transactional
+    public void getKafkaSurveySendDate(SurveySendRequestDTO requestDTO) {
+        Map<String, SurveyQuestion> questions = getQuestions();
+
+        UserInfoDTO userInfoDTO = requestDTO.getUser();
+        List<SurveyAnswerDTO> answers = requestDTO.getAnswers();
+
+        PersonalInfo user = personalInfoRepository.findByNameAndPhoneNumber(userInfoDTO.getName(), userInfoDTO.getPhoneNumber()).orElse(null);
+
+        SurveyAnswerCollector collector = new SurveyAnswerCollector();
+
+        log.info("[questions] : {}", questions);
+
+        answers.forEach(answer -> {
+            SurveyQuestion question = questions.get(answer.getQuestion());
+            log.info("[] : {}", question);
+
+            if(answer.getAnswerChoice() == null) {
+                collector.addAnswerText(question, answer.getAnswerText());
+            }
+            if(answer.getAnswerChoice() != null) {
+                collector.addAnswerChoice(question, answer.getAnswerChoice());
+            }
+        });
+
+
+        if (user != null) {
+            Optional<SurveyVersion> surveyVersion = surveyVersionRepository.findTopByPersonalInfoOrderByVersionDesc(user);
+
+            if(surveyVersion.isEmpty()) {
+                SurveyVersion newSurveyVersion = surveyVersionRepository.save(
+                        SurveyVersion.builder()
+                                .personalInfo(user)
+                                .build()
+                );
+
+                collector.addVersion(newSurveyVersion);
+            }
+
+            surveyVersion.ifPresent(version -> {
+                SurveyVersion newSurveyVersion = surveyVersionRepository.save(
+                        SurveyVersion.builder()
+                                .version(version.getVersion() + 1L)
+                                .personalInfo(version.getPersonalInfo())
+                                .build()
+                );
+                collector.addVersion(newSurveyVersion);
+            });
+        }
+        if (user == null) {
+            PersonalInfo savedPersonalInfo = personalInfoRepository.save(
+                    PersonalInfo.builder()
+                            .name(userInfoDTO.getName())
+                            .phoneNumber(userInfoDTO.getPhoneNumber())
+                            .emergencyContact(userInfoDTO.getEmergencyContact())
+                            .birthDate(userInfoDTO.getBirthDate())
+                            .build()
+            );
+
+            SurveyVersion newSurveyVersion = surveyVersionRepository.save(
+                    SurveyVersion.builder()
+                            .personalInfo(savedPersonalInfo)
+                            .build()
+            );
+
+            collector.addVersion(newSurveyVersion);
+        }
+
+        surveyAnswerRepository.saveAll(collector.getAnswers());
+
     }
 
     private Map<String, SurveyQuestion> getQuestions() {

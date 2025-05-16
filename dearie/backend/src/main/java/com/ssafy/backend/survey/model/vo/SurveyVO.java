@@ -33,6 +33,12 @@ public class SurveyVO {
         return new SurveyVO(null, today, surveyResult, isSend, user, surveyTemplate);
     }
 
+    public static SurveyVO of (Long id, String surveyResult, User user, LocalDateTime today,
+                               Boolean isSend, SurveyTemplate surveyTemplate) {
+        return new SurveyVO(id, today, surveyResult, isSend, user, surveyTemplate);
+    }
+
+
     public static Survey toEntity (SurveyVO vo) {
         return Survey.builder()
                 .id(vo.id)
