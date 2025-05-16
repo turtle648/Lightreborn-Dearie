@@ -1,11 +1,13 @@
 package com.ssafy.backend.common.exception;
 
 import com.ssafy.backend.common.dto.ApiErrorResponse;
+import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.common.dto.ValidationErrorResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -41,10 +43,20 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new ValidationErrorResponse(ErrorCode.INVALID_REQUEST, fieldErrors), HttpStatus.BAD_REQUEST);
     }
 
+    // ✅ 권한 관련 예외 처리
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<BaseResponse<String>> handleAccessDeniedException(AccessDeniedException e) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(BaseResponse.fail(403, e.getMessage()));
+    }
+
     // ✅ 기타 모든 예외 처리
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleException(Exception ex) {
         log.error("[Unhandled Exception] {}", ex.getClass().getSimpleName(), ex);
         return new ResponseEntity<>(new ApiErrorResponse(ErrorCode.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+
 }

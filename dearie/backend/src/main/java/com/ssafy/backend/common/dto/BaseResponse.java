@@ -44,4 +44,9 @@ public class BaseResponse<T> {
                 .result(result)
                 .build();
     }
+
+    public static <T> BaseResponse<T> fail(int code, String message) {
+        return new BaseResponse<>(code, message, null);
+    }
+
 }

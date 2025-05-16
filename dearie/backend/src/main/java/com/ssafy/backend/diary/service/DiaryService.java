@@ -1,6 +1,27 @@
 package com.ssafy.backend.diary.service;
 
+import com.ssafy.backend.diary.model.entity.Diary;
+import com.ssafy.backend.diary.model.request.CreateDiaryRequestDTO;
+import com.ssafy.backend.diary.model.request.DiarySearchRequest;
+import com.ssafy.backend.diary.model.response.DiaryListResponse;
+import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
 public interface DiaryService {
 
+    GetDiaryDetailDto getDiary(Long DiaryId, String userId);
 
+    Long createDiaryWithImages(String content, Diary.EmotionTag emotionTag, List<MultipartFile> images, String userId);
+
+    String createAiComment(Long DiaryId, String userId);
+
+    Integer deleteDiary(Long DiaryId, String userId);
+
+    Boolean addBookmark(String userId, Long diaryId);
+
+    Boolean deleteBookmark(String userId, Long diaryId);
+
+    DiaryListResponse getMyDiaries(String loginId, DiarySearchRequest request);
 }

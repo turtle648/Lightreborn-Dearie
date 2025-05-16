@@ -1,16 +1,16 @@
-import { AppLayout } from "@/components/app-layout"
-import { DiaryDetail } from "@/components/diary-detail"
-import { Button } from "@/components/ui/button"
-import { Share } from "lucide-react"
+import { AppLayout } from "@/components/app-layout";
+import { DiaryDetail } from "@/components/diary-detail";
+import { Button } from "@/components/ui/button";
+import { Share } from "lucide-react";
 
 interface DiaryDetailPageProps {
   params: {
-    id: string
-  }
+    id: string;
+  };
 }
 
-export default async function DiaryDetailPage({ params }: DiaryDetailPageProps) {
-  const { id } = params
+export default function DiaryDetailPage({ params }: DiaryDetailPageProps) {
+  const { id } = params;
 
   return (
     <AppLayout
@@ -24,5 +24,5 @@ export default async function DiaryDetailPage({ params }: DiaryDetailPageProps) 
     >
       <DiaryDetail id={id} />
     </AppLayout>
-  )
+  );
 }

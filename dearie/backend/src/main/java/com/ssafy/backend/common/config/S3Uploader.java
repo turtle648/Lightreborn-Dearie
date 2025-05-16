@@ -36,7 +36,7 @@ public class S3Uploader {
             String contentType = file.getContentType();
             return uploadBytes(key, data, contentType);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read MultipartFile for S3 upload", e);
+            throw new RuntimeException("❤️Failed to read MultipartFile for S3 upload", e);
         }
     }
 
@@ -44,6 +44,7 @@ public class S3Uploader {
      * 바이트 배열 업로드 (예: JSON, 작은 바이너리)
      */
     public String uploadBytes(String key, byte[] data, String contentType) {
+        System.out.println("❤️ uploadBytes 실행 됨 - " + key);
         PutObjectRequest por = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(key)

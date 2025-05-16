@@ -1,189 +1,244 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Heart, MessageCircle, Bookmark, Smile, Frown, Meh } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { motion } from "framer-motion"
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
+import { EMOTION_MAP } from "@/constants/emotions";
 
 interface DiaryDetailProps {
-  id: string
+  id: string;
+}
+
+interface DiaryDetailData {
+  content: string;
+  createTime: string;
+  images: string[];
+  emotionTag: string;
+  aiComment: string;
+  isBookmarked: boolean;
 }
 
 export function DiaryDetail({ id }: DiaryDetailProps) {
-  // 샘플 데이터 - 실제로는 API에서 가져올 것
-  const diary = {
-    id: Number.parseInt(id),
-    date: "2025 / 04 / 23 (화)",
-    content: `오늘은 눈을 뜨는 것조차 힘들었다. 무언가 해야 할 일이 분명히 있었던 것 같은데, 머릿속은 안개처럼 뿌옇고, 손끝 하나 움직이는 싫었다. 아무도 나를 기다리지 않는다는 생각이 들자, 하루를 시작할 이유가 없어 보였다. 
+  const [diary, setDiary] = useState<DiaryDetailData | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-하지만 창문 밖으로 들어오는 햇살이 내 얼굴을 비추자 조금씩 마음이 움직이기 시작했다. 오랜만에 창가에 앉아 따뜻한 차 한 잔을 마시며 바깥 풍경을 바라보았다. 
+  useEffect(() => {
+    const fetchDiaryDetail = async () => {
+      try {
+        console.log("일기 데이터 가져오기 시작");
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/diaries/${id}`,
+          {
+            credentials: "include",
+          }
+        );
+        const data = await res.json();
+        console.log("일기 데이터 전체 응답:", data);
+        console.log("일기 데이터 result:", data.result);
+        console.log("북마크 필드 이름과 값 체크:");
 
-시간은 느리게 흘러갔지만, 그 느림이 오히려 나에게 위안이 되었다. 아무것도 하지 않아도 괜찮다는 생각이 들었다. 오늘 하루는 그저 나를 위한 시간으로 채워도 충분하다.`,
-    image: "/images/window-view.png",
-    emotion: "슬픔",
-    aiAnalysis: {
-      emotions: [
-        { name: "슬픔", value: 65 },
-        { name: "불안", value: 20 },
-        { name: "평온", value: 15 },
-      ],
-      keywords: ["무기력", "고립감", "위안", "자기수용"],
-      summary:
-        "무기력함과 고립감을 느끼지만 자연과 여유를 통해 위안을 찾고 자기 수용으로 나아가는 과정이 담겨 있습니다.",
-      recommendation: "가벼운 산책이나 명상을 통해 자연과 연결되는 시간을 더 가져보는 것이 도움이 될 수 있습니다.",
-    },
-  }
+        // data.result의 모든 필드 출력
+        if (data.result) {
+          Object.keys(data.result).forEach((key) => {
+            console.log(`${key}: ${data.result[key]}`);
+          });
+        }
 
-  const [liked, setLiked] = useState(false)
-  const [saved, setSaved] = useState(false)
+        if (res.ok) {
+          setDiary(data.result);
+          // isBookmarked가 있는지 확인하고 타입 체크
+          if ("isBookmarked" in data.result) {
+            console.log("isBookmarked 타입:", typeof data.result.isBookmarked);
+            console.log("isBookmarked 값:", data.result.isBookmarked);
+            // Boolean으로 명시적 변환
+            setSaved(Boolean(data.result.isBookmarked));
+          } else {
+            console.log(
+              "isBookmarked 필드가 없습니다. 대체 필드를 찾아봅니다."
+            );
+            // bookmarked나 다른 비슷한 필드 찾기
+            const bookmarkField = Object.keys(data.result).find((key) =>
+              key.toLowerCase().includes("bookmark")
+            );
+            if (bookmarkField) {
+              console.log(
+                `대체 필드 발견: ${bookmarkField}:`,
+                data.result[bookmarkField]
+              );
+              setSaved(Boolean(data.result[bookmarkField]));
+            } else {
+              console.log("북마크 관련 필드를 찾을 수 없습니다.");
+            }
+          }
+        } else {
+          alert(data.message || "일기 불러오기 실패");
+        }
+      } catch (e) {
+        console.error("일기 데이터 가져오기 오류:", e);
+        alert("에러 발생: " + e);
+      }
+    };
 
-  const handleLike = () => {
-    setLiked(!liked)
-  }
+    fetchDiaryDetail();
+  }, [id]);
 
-  const handleSave = () => {
-    setSaved(!saved)
-  }
+  if (!diary) return null;
+
+  const { emoji, name } = EMOTION_MAP[diary.emotionTag] || {
+    emoji: "❓",
+    name: "알 수 없음",
+  };
+
+  const toggleBookmark = async () => {
+    const method = saved ? "DELETE" : "POST";
+    console.log("북마크 토글 시작, 현재 상태:", saved);
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/diaries/${id}/bookmark`,
+        {
+          method,
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await res.json();
+      console.log("북마크 API 응답:", data);
+
+      if (res.ok) {
+        // 북마크 상태 변경 후 최신 데이터 다시 불러오기
+        const diaryRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/diaries/${id}`,
+          {
+            credentials: "include",
+          }
+        );
+        const diaryData = await diaryRes.json();
+        console.log("다시 가져온 일기 데이터:", diaryData);
+
+        if (diaryRes.ok) {
+          setDiary(diaryData.result);
+          setSaved(diaryData.result.isBookmarked);
+          console.log("업데이트된 북마크 상태:", diaryData.result.isBookmarked);
+        }
+
+        alert(data.message || "북마크 변경됨");
+      } else {
+        alert(data.message || "북마크 처리 실패");
+      }
+    } catch (e) {
+      console.error("북마크 토글 오류:", e);
+      alert("에러 발생: " + e);
+    }
+  };
 
   return (
-    <div>
-      {diary.image && (
-        <div className="relative w-full h-72">
-          <Image src={diary.image || "/placeholder.svg"} alt="일기 이미지" fill className="object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent"></div>
-        </div>
-      )}
-
-      <div className="p-6 -mt-16 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="glass-effect rounded-2xl p-6 shadow-xl mb-6"
-        >
-          <div className="mb-4">
-            <h1 className="text-xl font-bold mb-2">{diary.date}</h1>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 rounded-full">
-                {diary.emotion}
-              </Badge>
-              <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-200 rounded-full">
-                AI 분석 완료
-              </Badge>
-            </div>
-          </div>
-
-          <div className="mb-6 whitespace-pre-line">
-            <p className="text-gray-800 leading-relaxed">{diary.content}</p>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={handleLike} className="rounded-full">
-                <Heart className={`h-5 w-5 ${liked ? "fill-primary text-primary" : ""}`} />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <MessageCircle className="h-5 w-5" />
-              </Button>
-            </div>
-            <Button variant="ghost" size="icon" onClick={handleSave} className="rounded-full">
-              <Bookmark className={`h-5 w-5 ${saved ? "fill-primary text-primary" : ""}`} />
+    <div className="p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="glass-effect rounded-2xl p-6 shadow-xl mb-6"
+      >
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <h1 className="text-xl font-bold">
+              {new Date(diary.createTime).toLocaleDateString("ko-KR", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                weekday: "short",
+              })}
+            </h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleBookmark}
+              className="rounded-full"
+            >
+              <Bookmark
+                className={`h-5 w-5 ${
+                  saved ? "fill-primary text-primary" : ""
+                }`}
+              />
             </Button>
           </div>
-        </motion.div>
-
-        <Tabs defaultValue="analysis" className="w-full">
-          <TabsList className="grid grid-cols-2 mb-4 bg-gray-100/80 p-1 rounded-full">
-            <TabsTrigger value="analysis" className="rounded-full">
-              AI 분석
-            </TabsTrigger>
-            <TabsTrigger value="recommendation" className="rounded-full">
-              추천
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="analysis">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="outline"
+              className="bg-primary/10 text-primary border-primary/20 rounded-full"
             >
-              <Card className="border-none shadow-md">
-                <CardContent className="p-5 space-y-5">
-                  <div>
-                    <h3 className="text-sm font-medium mb-3">감정 분석</h3>
-                    <div className="space-y-3">
-                      {diary.aiAnalysis.emotions.map((emotion, index) => (
-                        <div key={index} className="space-y-1">
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center">
-                              {emotion.name === "슬픔" && <Frown className="h-4 w-4 mr-1 text-blue-500" />}
-                              {emotion.name === "불안" && <Meh className="h-4 w-4 mr-1 text-amber-500" />}
-                              {emotion.name === "평온" && <Smile className="h-4 w-4 mr-1 text-green-500" />}
-                              <span className="text-sm">{emotion.name}</span>
-                            </div>
-                            <span className="text-sm">{emotion.value}%</span>
-                          </div>
-                          <Progress value={emotion.value} className="h-2" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+              {emoji} {name}
+            </Badge>
+          </div>
+        </div>
 
-                  <div>
-                    <h3 className="text-sm font-medium mb-3">키워드</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {diary.aiAnalysis.keywords.map((keyword, index) => (
-                        <Badge key={index} variant="secondary" className="bg-gray-100 rounded-full">
-                          {keyword}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
+        <div className="whitespace-pre-line text-gray-800 leading-relaxed mb-6">
+          {diary.content}
+        </div>
 
-                  <div>
-                    <h3 className="text-sm font-medium mb-2">요약</h3>
-                    <p className="text-sm text-gray-600">{diary.aiAnalysis.summary}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-          <TabsContent value="recommendation">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-              <Card className="border-none shadow-md">
-                <CardContent className="p-5">
-                  <h3 className="text-sm font-medium mb-3">추천 활동</h3>
-                  <p className="text-sm text-gray-600 mb-5">{diary.aiAnalysis.recommendation}</p>
+        {diary.images.length > 0 && (
+          <div className="my-6">
+            <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden">
+              <Image
+                src={diary.images[currentImageIndex] || "/placeholder.svg"}
+                alt={`일기 이미지 ${currentImageIndex + 1}`}
+                fill
+                className="object-cover"
+              />
+              {diary.images.length > 1 && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      setCurrentImageIndex((i) =>
+                        i === 0 ? diary.images.length - 1 : i - 1
+                      )
+                    }
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white/90 rounded-full h-8 w-8"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      setCurrentImageIndex((i) =>
+                        i === diary.images.length - 1 ? 0 : i + 1
+                      )
+                    }
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white/90 rounded-full h-8 w-8"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </>
+              )}
+            </div>
+            {diary.images.length > 1 && (
+              <div className="mt-2 text-xs text-gray-500 text-center">
+                {currentImageIndex + 1} / {diary.images.length}
+              </div>
+            )}
+          </div>
+        )}
 
-                  <div className="space-y-3">
-                    <Button variant="outline" className="w-full justify-start gap-2 rounded-full">
-                      <Smile className="h-4 w-4 text-primary" />
-                      <span>5분 명상하기</span>
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start gap-2 rounded-full">
-                      <Smile className="h-4 w-4 text-primary" />
-                      <span>가벼운 산책하기</span>
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start gap-2 rounded-full">
-                      <Smile className="h-4 w-4 text-primary" />
-                      <span>감사일기 쓰기</span>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-        </Tabs>
-      </div>
+        <hr className="my-6 border-gray-200" />
+
+        <div className="mt-4">
+          <h3 className="text-sm font-medium mb-2 text-primary">
+            따뜻한 한마디
+          </h3>
+          <p className="text-gray-700 leading-relaxed">{diary.aiComment}</p>
+        </div>
+      </motion.div>
     </div>
-  )
+  );
 }
