@@ -5,6 +5,7 @@ import com.ssafy.backend.survey.model.dto.request.PostSurveyAgreementRequestDTO;
 import com.ssafy.backend.survey.model.dto.request.PostSurveyRequestDTO;
 import com.ssafy.backend.survey.model.dto.response.SurveyConsentLogResponseDTO;
 import com.ssafy.backend.survey.model.dto.response.SurveyResponseDTO;
+import com.ssafy.backend.survey.model.dto.response.SurveyResponseDetailDTO;
 import com.ssafy.backend.survey.model.dto.response.YouthSurveyQuestionDTO;
 import com.ssafy.backend.survey.service.SurveyService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -55,6 +56,14 @@ public class SurveyController {
             @PathVariable("surveyId") Long surveyId
     ) {
         surveyService.sendDataToDashBoard(userId, surveyId);
-        return ResponseEntity.ok(BaseResponse.success(201, "청년 온라인 자가점검 설문 개인정보 수집 동의를 완료하였습니다."));
+        return ResponseEntity.ok(BaseResponse.success(201, "청년 온라인 자가점검 설문을 대시보드로 전송 완료하였습니다."));
+    }
+
+    @GetMapping("/isolated-youth/{surveyId}/results")
+    public ResponseEntity<BaseResponse<SurveyResponseDetailDTO>> getIsolatedYouthSurveyDetailInfo (
+            @PathVariable("surveyId") Long surveyId
+    ) {
+        SurveyResponseDetailDTO surveyResponseDetailDTO = surveyService.getIsolatedYouthSurveyDetailInfo(surveyId);
+        return ResponseEntity.ok(BaseResponse.success("청년 온라인 자가점검 설문 결과를 가져오는데 성공하였습니다.", surveyResponseDetailDTO));
     }
 }

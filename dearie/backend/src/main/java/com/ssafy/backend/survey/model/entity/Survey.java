@@ -22,7 +22,7 @@ public class Survey {
     private LocalDateTime createdAt;
 
     @Column(name = "survey_result")
-    private String surveyResult;
+    private Integer surveyResult;
 
     @Column(name = "is_send")
     private Boolean isSend;

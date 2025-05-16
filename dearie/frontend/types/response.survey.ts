@@ -30,3 +30,18 @@ export interface PostSurveyAnswerResponse {
   surveyResult: string;
   totalScore: number;
 }
+
+export interface SurveyAnswerDetailInfo {
+  totalScore: number;
+  resultScore: number;
+  label: string;
+  analysis: string;
+  recommend: string;
+  missions: RecommendMission[];
+}
+
+export interface RecommendMission {
+  missionId: number;
+  content: string;
+  missionType: string;
+}

@@ -685,3 +685,11 @@ button[aria-selected="true"] {
   --rdp-today-text-color: #e89a84 !important;
   --rdp-selected-text-color: white !important;
 }
+
+.download-style {
+  padding: 24px; /* p-6 */
+  background: white;
+  border-radius: 1rem; /* rounded-xl */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb; /* border-gray-200 */
+}

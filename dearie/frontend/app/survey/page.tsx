@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSurveyQuestions, postSurveyAnswer } from "@/apis/survey-api";
-import { YouthSurveyQuestionDTO } from "@/types/response.survey";
+import {
+  PostSurveyAnswerResponse,
+  YouthSurveyQuestionDTO,
+} from "@/types/response.survey";
 import { PostSurveyRequestDTO, PostSurveyAnswer } from "@/types/request.survey";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -144,8 +147,10 @@ export default function SurveyPage() {
     setIsSubmitting(true);
     try {
       const requestDto: PostSurveyRequestDTO = formattedAnswers(answers);
-      await postSurveyAnswer(requestDto);
-      router.push("/survey/results");
+      const responseDTO: PostSurveyAnswerResponse = await postSurveyAnswer(
+        requestDto
+      );
+      router.push(`/survey/results?resultId=${responseDTO.id}`);
     } catch (e) {
       console.error("설문 제출 실패:", e);
       setIsSubmitting(false);

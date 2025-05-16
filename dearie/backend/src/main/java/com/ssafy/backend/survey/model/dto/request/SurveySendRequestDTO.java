@@ -14,7 +14,7 @@ import java.util.List;
 public class SurveySendRequestDTO {
     // == survey ==
     private String createdAt;
-    private String surveyResult;
+    private Integer surveyResult;
 
     private UserInfoDTO user;
     private List<SurveyAnswerDTO> answers;
