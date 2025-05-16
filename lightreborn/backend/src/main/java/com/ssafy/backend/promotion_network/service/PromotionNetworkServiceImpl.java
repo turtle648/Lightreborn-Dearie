@@ -165,13 +165,6 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         dto.setPromotionPlaceType(status.getPromotionPlaceType() != null ? status.getPromotionPlaceType().getPlace_type() : null);
         dto.setPromotionInformationId(status.getPromotionInformation() != null ? status.getPromotionInformation().getId() : null);
         dto.setPromotionType(status.getPromotionType().getType());
-//
-//        // 문자열로 매핑
-//        if (status.getPromotionType() != null) {
-//            dto.setPromotionType(status.getPromotionType().getType()); // 예: 현수막
-//        } else {
-//            dto.setPromotionType(null); // 혹시모를 예외 처리
-//        }
 
         return dto; // 연관 관계 주의
     }
