@@ -68,7 +68,7 @@ export function DiaryCard({ diary }: DiaryCardProps) {
           </div>
         </Link>
 
-        <div className="absolute top-3 right-3 z-10">
+        {/* <div className="absolute top-3 right-3 z-10">
           <Button
             variant="ghost"
             size="icon"
@@ -82,7 +82,7 @@ export function DiaryCard({ diary }: DiaryCardProps) {
               className={`h-4 w-4 ${saved ? "fill-primary text-primary" : ""}`}
             />
           </Button>
-        </div>
+        </div> */}
 
         <CardContent className="p-4">
           <p className="text-sm line-clamp-2">{diary.content}</p>
