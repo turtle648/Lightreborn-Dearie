@@ -1,6 +1,9 @@
 package com.ssafy.backend.mission.controller;
 
+import com.ssafy.backend.auth.exception.AuthErrorCode;
+import com.ssafy.backend.auth.exception.AuthException;
 import com.ssafy.backend.auth.model.dto.response.LoginResponseDTO;
+import com.ssafy.backend.auth.repository.UserRepository;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.mission.model.dto.request.MissionCompletionRequestDTO;
@@ -12,9 +15,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.attribute.UserPrincipal;
 import java.util.List;
 
 @RestController
@@ -25,6 +31,7 @@ public class MissionController {
 
     private final MissionService missionService;
     private final AuthService authService;
+    private final UserRepository userRepository;
 
     @PostMapping(value = "/{missionId}/completions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
@@ -51,11 +58,14 @@ public class MissionController {
                     📋 **오늘 사용자가 수행해야하는 5개의 미션을 제공합니다.**
             """
     )
-    public ResponseEntity<BaseResponse<List<DailyMissionResponseDTO>>> getDailyMissionList() {
+    public ResponseEntity<BaseResponse<List<DailyMissionResponseDTO>>> getDailyMissionList(
+            @AuthenticationPrincipal String userId) {
+        Long uuid = userRepository.findByLoginId(userId)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND))
+                .getId();
 
-        List<DailyMissionResponseDTO> dailyMissions = missionService.getDailyMissionList();
+        List<DailyMissionResponseDTO> dailyMissions = missionService.getDailyMissionList(uuid);
 
         return ResponseEntity.ok().body(BaseResponse.success("오늘의 미션을 검색했습니다.", dailyMissions));
     }
-
 }

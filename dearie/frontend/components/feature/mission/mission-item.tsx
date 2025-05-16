@@ -1,70 +1,58 @@
-"use client"
+"use client";
 
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ChevronRight } from "lucide-react"
-import { useState, useEffect } from "react"
-import { cn } from "@/utils/cn"
-import { motion } from "framer-motion"
-import { useRouter } from "next/navigation"
-import { updateMissionStatus } from "@/apis/mission-api"
-import { Icon } from "@/assets/icons"
-import type { Mission } from "@/types/mission"
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, ChevronRight, Award } from "lucide-react";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { updateMissionStatus } from "@/apis/mission-api";
+import type { DailyMissionResponseDTO } from "@/types/mission";
+import * as LucideIcons from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 interface MissionItemProps {
-  mission: Mission
+  mission: DailyMissionResponseDTO;
 }
 
+interface IconComponentProps {
+  icon: keyof typeof LucideIcons;
+  className?: string;
+}
+
+const IconComponent = ({ icon, className }: IconComponentProps) => {
+  // 1) LucideReact 에서 가져온 심볼을 LucideIcon 타입으로 캐스트
+  const RawIcon = LucideIcons[icon] as LucideIcon;
+
+  // 2) 혹시 undefined 일 때 대비
+  if (!RawIcon) {
+    return null;
+  }
+
+  // 3) 이제 JSX 로 안전하게 렌더링
+  return <RawIcon className={className} />;
+};
+
 export function MissionItem({ mission }: MissionItemProps) {
-  const router = useRouter()
-  const [completed, setCompleted] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
+  const router = useRouter();
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // 완료된 미션 상태 가져오기
-  useEffect(() => {
-    const storedCompletedMissions = localStorage.getItem("completedMissions")
-    if (storedCompletedMissions) {
-      const completedMissions = JSON.parse(storedCompletedMissions) as number[]
-      setCompleted(completedMissions.includes(mission.id))
+  const handleAction = async () => {
+    if (isUpdating || mission.isCompleted) return;
+
+    setIsUpdating(true);
+    try {
+      await updateMissionStatus(mission.id, true);
+      router.push(mission.route);
+    } catch (e) {
+      console.error("미션 상태 업데이트 오류", e);
+    } finally {
+      setIsUpdating(false);
     }
-  }, [mission.id])
+  };
 
-  const handleMissionAction = async () => {
-    if (isUpdating) return
-
-    if (completed) {
-      setIsUpdating(true)
-      try {
-        await updateMissionStatus(mission.id, false)
-        setCompleted(false)
-      } catch (error) {
-        console.error("미션 상태 업데이트 중 오류 발생:", error)
-      } finally {
-        setIsUpdating(false)
-      }
-    } else {
-      if (mission.route) {
-        router.push(mission.route)
-      } else {
-        setIsUpdating(true)
-        try {
-          await updateMissionStatus(mission.id, true)
-          setCompleted(true)
-        } catch (error) {
-          console.error("미션 상태 업데이트 중 오류 발생:", error)
-        } finally {
-          setIsUpdating(false)
-        }
-      }
-    }
-  }
-
-  // 아이콘 컴포넌트 동적 생성
-  const IconComponent = ({ className }: { className?: string }) => {
-    const iconName = mission.icon as any
-    return <Icon name={iconName} className={cn(className, mission.color)} />
-  }
+  
 
   return (
     <motion.div
@@ -74,48 +62,37 @@ export function MissionItem({ mission }: MissionItemProps) {
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
-      <Card
-        className={cn(
-          "overflow-hidden transition-all border-none shadow-md",
-          completed ? "bg-primary/10" : "bg-white",
-        )}
-      >
+      <Card className={mission.isCompleted ? "bg-primary/10 shadow-md" : "bg-white shadow-md"}>
         <CardContent className="p-5">
-          <div className="flex items-start justify-between">
+          <div className="flex justify-between items-start">
+            {/* 미션 정보 */}
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <IconComponent className="h-5 w-5" />
-                <h3 className="font-semibold">{mission.title}</h3>
-              </div>
-              <p className="text-sm text-gray-600 mb-3">{mission.description}</p>
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="text-xs bg-primary/10 text-primary border-primary/20 rounded-full"
-                >
-                  {mission.difficulty}
-                </Badge>
-                <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600 border-gray-200 rounded-full">
-                  {mission.category}
-                </Badge>
-              </div>
+              <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                <IconComponent icon={mission.icon as keyof typeof LucideIcons} className={`w-6 h-6 ${mission.color}`} />
+                 {mission.missionTitle}
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                {mission.content}
+              </p>
+              <Badge variant="outline" className="text-xs rounded-full">
+                {mission.missionType === "STATIC" ? "마음챙김" : "활동"}
+              </Badge>
             </div>
-            <div className="flex items-center">
+
+            {/* 액션 버튼 */}
+            <div>
               <Button
-                variant={completed ? "outline" : "default"}
                 size="sm"
-                className={cn(
-                  "rounded-full shadow-sm",
-                  completed
-                    ? "border-primary text-primary bg-white hover:bg-primary/5"
-                    : "bg-gradient-soft hover:opacity-90",
-                )}
-                onClick={handleMissionAction}
+                variant={mission.isCompleted ? "outline" : "default"}
+                className={`rounded-full ${
+                  mission.isCompleted ? "text-gray-500 border-gray-300" : ""
+                }`}
+                onClick={handleAction}
                 disabled={isUpdating}
               >
                 {isUpdating ? (
                   "처리 중..."
-                ) : completed ? (
+                ) : mission.isCompleted ? (
                   <>
                     <CheckCircle className="h-4 w-4 mr-1" />
                     완료
@@ -132,5 +109,5 @@ export function MissionItem({ mission }: MissionItemProps) {
         </CardContent>
       </Card>
     </motion.div>
-  )
-} 
+  );
+}
