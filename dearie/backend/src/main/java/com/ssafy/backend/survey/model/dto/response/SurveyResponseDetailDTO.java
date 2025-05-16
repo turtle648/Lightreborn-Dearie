@@ -1,6 +1,7 @@
 package com.ssafy.backend.survey.model.dto.response;
 
 import com.ssafy.backend.mission.model.dto.response.DailyMissionResponseDTO;
+import com.ssafy.backend.mission.model.dto.response.MissionResponseDTO;
 import com.ssafy.backend.survey.model.entity.Survey;
 import com.ssafy.backend.survey.model.state.SurveyResultAnalysis;
 import lombok.Builder;
@@ -22,11 +23,11 @@ public class SurveyResponseDetailDTO {
     // 권장 문구
     private String recommend;
     // 추천 활동
-    private List<DailyMissionResponseDTO> missions;
+    private List<MissionResponseDTO> missions;
 
 
     public static SurveyResponseDetailDTO from (Integer totalScore, Survey survey, SurveyResultAnalysis analysis,
-                                                List<DailyMissionResponseDTO> missions) {
+                                                List<MissionResponseDTO> missions) {
         return SurveyResponseDetailDTO.builder()
                 .totalScore(totalScore)
                 .resultScore(survey.getSurveyResult())

@@ -111,6 +111,7 @@ public class MissionServiceImpl implements MissionService {
         List<UserMission> ums = userMissionRepository
                 .findByUser_IdAndDate(userId, today);
 
+
         return ums.stream()
                 .map(um -> new DailyMissionResponseDTO(
                         um.getId(),

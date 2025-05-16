@@ -6,6 +6,7 @@ import com.ssafy.backend.auth.exception.AuthException;
 import com.ssafy.backend.auth.model.entity.User;
 import com.ssafy.backend.auth.repository.UserRepository;
 import com.ssafy.backend.mission.model.dto.response.DailyMissionResponseDTO;
+import com.ssafy.backend.mission.model.dto.response.MissionResponseDTO;
 import com.ssafy.backend.mission.reader.MissionReader;
 import com.ssafy.backend.survey.exception.SurveyErrorCode;
 import com.ssafy.backend.survey.exception.SurveyException;
@@ -215,7 +216,7 @@ public class SurveyServiceImpl implements SurveyService {
 
         Survey survey = surveyRepository.findById(surveyId)
                 .orElseThrow(() -> new SurveyException(SurveyErrorCode.SURVEY_REQUIRED));
-        List<DailyMissionResponseDTO> missions = missionReader.getDailyMissionList();
+        List<MissionResponseDTO> missions = missionReader.getDailyMissionList();
         SurveyResultAnalysis analysis = SurveyResultAnalysis.getAnalysis(survey.getSurveyResult());
 
         return SurveyResponseDetailDTO.from(totalScore, survey, analysis, missions);
