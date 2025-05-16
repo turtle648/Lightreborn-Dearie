@@ -11,5 +11,9 @@ public interface MissionService {
 
     MissionCompletionResponseDTO<?> verifyMissionCompletion(MissionCompletionRequestDTO request) throws BadRequestException;
 
-    List<DailyMissionResponseDTO> getDailyMissionList();
+    List<DailyMissionResponseDTO> getDailyMissionList(Long userId);
+
+    void assignDailyMissionsToAllUsers();
+
+    void deleteStableUserMissions();
 }

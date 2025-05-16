@@ -20,7 +20,6 @@ public class UserMission {
 
     private LocalDate date;
 
-    private Boolean isSelected;   // 미션 추천 중 선택했는지 여부
     private Boolean isCompleted;  // 수행 완료 여부
 
     @ManyToOne(fetch = FetchType.LAZY)

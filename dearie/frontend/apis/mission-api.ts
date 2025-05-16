@@ -2,49 +2,30 @@
  * 미션 관련 API 호출 함수
  */
 import axios from "axios"
-import type { Mission, MissionCategory } from "@/types/mission"
+import type { Mission, MissionCategory, DailyMissionResponseDTO } from "@/types/mission"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api"
 
-/**
- * 미션 목록을 가져오는 함수
- */
-export async function getMissions(category?: MissionCategory): Promise<Mission[]> {
-  try {
-    // 실제 구현에서는 fetch 사용
-    // const url = category
-    //   ? `${API_BASE_URL}/missions?category=${category}`
-    //   : `${API_BASE_URL}/missions`
-    // const response = await fetch(url)
-    // if (!response.ok) throw new Error('Failed to fetch missions')
-    // return await response.json()
+// 쿠키 실어서 요청
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+})
 
-    // 목업 데이터 반환
-    const allMissions = getMockMissions()
-    return category ? allMissions.filter((mission) => mission.category === category) : allMissions
-  } catch (error) {
-    console.error("미션 목록을 가져오는 중 오류 발생:", error)
-    return getMockMissions()
-  }
+interface BaseResponse<T> {
+  code: number;
+  message: string;
+  result: T;
 }
 
 /**
- * 오늘의 추천 미션을 가져오는 함수
+ * 오늘의 미션을 가져오기기
  */
-export async function getDailyMissions(limit = 2): Promise<Mission[]> {
-  try {
-    // 실제 구현에서는 fetch 사용
-    // const response = await fetch(`${API_BASE_URL}/missions/daily?limit=${limit}`)
-    // if (!response.ok) throw new Error('Failed to fetch daily missions')
-    // return await response.json()
-
-    // 목업 데이터에서 랜덤으로 선택
-    const allMissions = getMockMissions()
-    return allMissions.slice(0, limit)
-  } catch (error) {
-    console.error("오늘의 미션을 가져오는 중 오류 발생:", error)
-    return getMockMissions().slice(0, limit)
-  }
+export async function getDailyMissions(limit: number): Promise<DailyMissionResponseDTO[]> {
+  const res = await api.get<BaseResponse<DailyMissionResponseDTO[]>>(
+    '/missions/today'
+  )
+  return res.data.result.slice(0, limit)
 }
 
 /**
@@ -81,62 +62,6 @@ export async function updateMissionStatus(id: number, completed: boolean): Promi
     console.error(`미션 ${id}의 상태를 업데이트하는 중 오류 발생:`, error)
     return false
   }
-}
-
-// 목업 데이터
-function getMockMissions(): Mission[] {
-  return [
-    {
-      id: 1,
-      title: "오늘의 추천 미션",
-      description: "창문 밖 풍경을 5분간 바라보며 깊게 호흡하기",
-      difficulty: "쉬움",
-      category: "mindfulness",
-      icon: "Sparkles",
-      color: "text-primary",
-      route: "/mission/mindfulness",
-    },
-    {
-      id: 2,
-      title: "감정 표현하기",
-      description: "오늘 느낀 감정을 3가지 단어로 표현해보기",
-      difficulty: "보통",
-      category: "emotion",
-      icon: "Award",
-      color: "text-amber-500",
-      route: "/mission/emotion",
-    },
-    {
-      id: 3,
-      title: "5분 명상하기",
-      description: "조용한 곳에서 5분간 명상하며 마음 가다듬기",
-      difficulty: "보통",
-      category: "mindfulness",
-      icon: "Clock",
-      color: "text-blue-500",
-      route: "/mission/meditation",
-    },
-    {
-      id: 4,
-      title: "감사일기 쓰기",
-      description: "오늘 감사했던 일 3가지 적어보기",
-      difficulty: "쉬움",
-      category: "emotion",
-      icon: "Sparkles",
-      color: "text-green-500",
-      route: "/mission/gratitude",
-    },
-    {
-      id: 5,
-      title: "산책하기",
-      description: "15분 동안 천천히 걸으며 주변 환경 관찰하기",
-      difficulty: "쉬움",
-      category: "activity",
-      icon: "Award",
-      color: "text-violet-500",
-      route: "/mission/walking",
-    },
-  ]
 }
 
 export interface WalkRecordResponse {

@@ -2,13 +2,12 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Mission, MissionCategory } from "@/types/mission";
+import type { MissionCategory, DailyMissionResponseDTO } from "@/types/mission";
 import {
-  getMissions,
   getDailyMissions,
   updateMissionStatus,
-  WalkRecordResponse,
   endWalk,
+  WalkRecordResponse,
 } from "@/apis/mission-api";
 
 interface LatLng {
@@ -17,13 +16,13 @@ interface LatLng {
 }
 
 interface MissionStore {
-  missions: Mission[];
-  daily: Mission[];
-  loading: boolean;
-  error?: string;
+  all: DailyMissionResponseDTO[]    // 5개 전체
+  preview: DailyMissionResponseDTO[]// 미리보기용 (2개)
+  loading: boolean
+  error: string | null
 
   // 기존 미션 API
-  fetchAll: (category?: MissionCategory) => Promise<void>;
+  fetchAll: (limit?: number) => Promise<void>;
   fetchDaily: (limit?: number) => Promise<void>;
   setStatus: (id: number, completed: boolean) => Promise<void>;
 
@@ -40,55 +39,84 @@ interface MissionStore {
   ) => Promise<void>;
 }
 
+// 미션 id별 메타 정보 할당 함수
+function getMissionMetaById(missionId: number) {
+  if (missionId === 2) {
+    return { icon: "Music", color: "text-blue-500", route: "/mission/music" };
+  }
+  if ([9, 12, 25].includes(missionId)) {
+    return { icon: "Footprints", color: "text-green-500", route: "/mission/walking" };
+  }
+  if ([8, 10, 14].includes(missionId)) {
+    return { icon: "Camera", color: "text-violet-500", route: "/mission/photo" };
+  }
+  // 기본: 텍스트 미션
+  return { icon: "Notebook", color: "text-orange-500", route: "/mission/text" };
+}
+
 export const useMissionStore = create<MissionStore>()(
   persist(
     (set, get) => ({
       // 초기 state
-      missions: [],
-      daily: [],
+      all: [],
+      preview: [],
       loading: false,
-      error: undefined,
-      walkRecord: undefined,
-      walkLoading: false,
-      walkError: undefined,
+      error: null,
 
-      // 미션 CRUD 액션
-      fetchAll: async (category) => {
-        set({ loading: true, error: undefined });
+      fetchAll: async (limit = 5) => {
+        set({ loading: true, error: null });
         try {
-          const list = await getMissions(category);
-          set({ missions: list });
+          const data = await getDailyMissions(limit);
+          // id별로 icon, color, route 할당
+          const withMeta = data.map(m => ({ ...m, ...getMissionMetaById(m.missionId) }));
+          set({ preview: withMeta });
         } catch (e: any) {
-          set({ error: e.message || "미션 불러오기 실패" });
+          set({ error: e.message || '미션 불러오기 실패' });
         } finally {
           set({ loading: false });
         }
       },
 
       fetchDaily: async (limit = 2) => {
-        set({ loading: true, error: undefined });
+        set({ loading: true, error: null });
         try {
-          const list = await getDailyMissions(limit);
-          set({ daily: list });
+          const data = await getDailyMissions(limit);
+          // id별로 icon, color, route 할당
+          const withMeta = data.map(m => ({ ...m, ...getMissionMetaById(m.missionId) }));
+          set({ preview: withMeta });
         } catch (e: any) {
-          set({ error: e.message || "오늘의 미션 불러오기 실패" });
+          set({ error: e.message || '미션 불러오기 실패' });
         } finally {
           set({ loading: false });
         }
       },
 
       setStatus: async (id, completed) => {
-        set({ loading: true, error: undefined });
+        set({ loading: true, error: null });
         try {
-          await updateMissionStatus(id, completed);
-          // 상태 변경 후 리스트 재조회
-          get().fetchAll();
+          const success = await updateMissionStatus(id, completed);
+          if (success) {
+            set(state => ({
+              all: state.all.map(m =>
+                m.id === id ? { ...m, isCompleted: completed } : m
+              ),
+              preview: state.preview.map(m =>
+                m.id === id ? { ...m, isCompleted: completed } : m
+              ),
+            }));
+          } else {
+            throw new Error('미션 상태 업데이트 실패');
+          }
         } catch (e: any) {
-          set({ error: e.message || "미션 상태 업데이트 실패" });
+          set({ error: e.message || '미션 상태 업데이트 중 오류' });
         } finally {
           set({ loading: false });
         }
       },
+
+      walkRecord: undefined,
+      walkLoading: false,
+      walkError: undefined,
 
       stopRecording: async (userMissionId, path, snapshot, endTime) => {
         set({ walkLoading: true, walkError: undefined });
