@@ -4,7 +4,10 @@ import {
   YouthSurveyQuestionDTO,
 } from "@/types/response.survey";
 import api from "./axiosClient";
-import { PostSurveyRequestDTO } from "@/types/request.survey";
+import {
+  PostAgreementRequestDTO,
+  PostSurveyRequestDTO,
+} from "@/types/request.survey";
 
 export const getSurveyQuestions = (): Promise<YouthSurveyQuestionDTO> => {
   return api.get("/survey/isolated-youth/questions").then((res) => {
@@ -43,4 +46,37 @@ export const getSurveyAnswerDetailInfo = (
       "고립 은둔 청년 설문 조사 질문 결과 조회에 문제가 발생하였습니다."
     );
   });
+};
+
+export const postAgreement = async (
+  PostAgreementRequestDTO: PostAgreementRequestDTO
+): Promise<boolean> => {
+  try {
+    const res = await api.post(
+      "/survey/isolated-youth/agreement",
+      PostAgreementRequestDTO
+    );
+    return res.status === 200;
+  } catch (error) {
+    console.error(
+      "고립 은둔 청년 설문 조사 질문 전송 동의에 문제가 발생하였습니다.",
+      error
+    );
+    return false;
+  }
+};
+
+export const postSurveyResultToDashboard = async (
+  surveyId: number
+): Promise<boolean> => {
+  try {
+    const res = await api.post(`/survey/isolated-youth/${surveyId}/send`);
+    return res.status === 200;
+  } catch (error) {
+    console.error(
+      "고립 은둔 청년 설문 조사 질문 결과 전송에 문제가 발생하였습니다.",
+      error
+    );
+    return false;
+  }
 };
