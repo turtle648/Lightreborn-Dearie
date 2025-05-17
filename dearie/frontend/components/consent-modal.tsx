@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import type { AgreementDTO } from "@/types/response.survey";
 
 export interface ConsentItem {
   id: string;
@@ -14,11 +15,13 @@ export interface ConsentItem {
 interface ConsentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit: (consents: Record<string, boolean>) => void;
   title: string;
   submitButtonText: string;
   cancelButtonText?: string;
   consentItems: ConsentItem[];
+  agreements: AgreementDTO[];
+  isSubmitting: boolean; // ✅ 외부 로딩 상태 prop
 }
 
 export function ConsentModal({
@@ -29,48 +32,50 @@ export function ConsentModal({
   submitButtonText,
   cancelButtonText = "닫기",
   consentItems,
+  agreements,
+  isSubmitting,
 }: ConsentModalProps) {
   const [consents, setConsents] = useState<Record<string, boolean>>({});
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isAllChecked, setIsAllChecked] = useState(false);
   const [allConsented, setAllConsented] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 컴포넌트가 마운트될 때 동의 항목 초기화
   useEffect(() => {
-    const initialConsents: Record<string, boolean> = {};
+    const initial: Record<string, boolean> = {};
     consentItems.forEach((item) => {
-      initialConsents[item.id] = false;
+      initial[item.id] = false;
     });
-    setConsents(initialConsents);
+    setConsents(initial);
+    setIsAllChecked(false);
   }, [consentItems]);
 
-  // 모든 필수 항목이 체크되었는지 확인
   useEffect(() => {
     const requiredItems = consentItems.filter((item) => item.required);
-    const allRequiredChecked = requiredItems.every((item) => consents[item.id]);
-    setAllConsented(allRequiredChecked);
+    const allChecked = requiredItems.every((item) => consents[item.id]);
+    setAllConsented(allChecked);
   }, [consents, consentItems]);
 
   const handleConsentChange = (id: string, checked: boolean) => {
     setConsents((prev) => ({ ...prev, [id]: checked }));
+    setIsAllChecked(false);
   };
 
   const handleAllConsent = (checked: boolean) => {
-    const newConsents: Record<string, boolean> = {};
+    const updated: Record<string, boolean> = {};
     consentItems.forEach((item) => {
-      newConsents[item.id] = checked;
+      updated[item.id] = checked;
     });
-    setConsents(newConsents);
+    setConsents(updated);
+    setIsAllChecked(checked);
   };
 
   const handleSubmit = async () => {
-    if (!allConsented) return;
+    if (!allConsented || isSubmitting) return;
+    await onSubmit(consents);
+  };
 
-    setIsSubmitting(true);
-    try {
-      await onSubmit();
-    } finally {
-      setIsSubmitting(false);
-    }
+  const toggleExpand = (id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
   };
 
   return (
@@ -88,22 +93,27 @@ export function ConsentModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 100 }}
             transition={{ duration: 0.3 }}
-            className="bg-white w-full rounded-t-xl overflow-hidden shadow-xl h-[50vh]"
+            className="relative bg-white w-full rounded-t-xl overflow-hidden shadow-xl h-[50vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 모달 콘텐츠 */}
+            {/* ✅ 전송 중 로딩 오버레이 */}
+            {isSubmitting && (
+              <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500" />
+              </div>
+            )}
+
             <div className="p-5 w-full h-full flex flex-col">
               <h2 className="text-lg font-bold mb-4 text-center">{title}</h2>
 
               <div className="overflow-y-auto flex-1">
-                {/* 전체 동의 옵션 */}
                 {consentItems.length > 1 && (
                   <div className="flex items-center justify-between py-3 border-b">
                     <div className="flex items-center">
                       <input
                         type="checkbox"
                         id="allConsent"
-                        checked={allConsented}
+                        checked={isAllChecked}
                         onChange={(e) => handleAllConsent(e.target.checked)}
                         className="h-5 w-5 text-blue-500 rounded-full border-gray-300 focus:ring-blue-500"
                       />
@@ -117,35 +127,66 @@ export function ConsentModal({
                   </div>
                 )}
 
-                {/* 개별 동의 항목 */}
-                {consentItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between py-3 border-b"
-                  >
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={item.id}
-                        checked={consents[item.id] || false}
-                        onChange={(e) =>
-                          handleConsentChange(item.id, e.target.checked)
-                        }
-                        className="h-5 w-5 text-blue-500 rounded-full border-gray-300 focus:ring-blue-500"
-                      />
-                      <label
-                        htmlFor={item.id}
-                        className="ml-3 text-sm text-blue-500"
-                      >
-                        {item.label}
-                      </label>
+                {consentItems.map((item) => {
+                  const isExpanded = expandedId === item.id;
+                  const agreement = agreements.find(
+                    (a) => `agreement-${a.agreementId}` === item.id
+                  );
+
+                  return (
+                    <div key={item.id} className="py-3 border-b">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id={item.id}
+                            checked={consents[item.id] || false}
+                            onChange={(e) =>
+                              handleConsentChange(item.id, e.target.checked)
+                            }
+                            className="h-5 w-5 text-blue-500 rounded-full border-gray-300 focus:ring-blue-500"
+                          />
+                          <label
+                            htmlFor={item.id}
+                            className="ml-3 text-sm text-blue-500"
+                          >
+                            {item.label}
+                          </label>
+                        </div>
+                        {agreement && (
+                          <button
+                            onClick={() => toggleExpand(item.id)}
+                            className="text-sm text-gray-500"
+                          >
+                            <ChevronRight
+                              className={`h-5 w-5 transition-transform ${
+                                isExpanded ? "rotate-90" : ""
+                              }`}
+                            />
+                          </button>
+                        )}
+                      </div>
+
+                      {isExpanded && agreement && (
+                        <div className="mt-2 ml-7 text-xs text-muted-foreground space-y-1 bg-muted/20 p-3 rounded-md">
+                          <div>
+                            <strong>목적:</strong> {agreement.purpose}
+                          </div>
+                          <div>
+                            <strong>수집 항목:</strong> {agreement.items}
+                          </div>
+                          <div>
+                            <strong>보관 기간:</strong>{" "}
+                            {agreement.retentionPeriod}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              {/* 하단 버튼 */}
+              {/* 버튼 영역 */}
               <div className="mt-4">
                 <Button
                   className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-xl font-medium"

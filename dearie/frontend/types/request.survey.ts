@@ -7,3 +7,13 @@ export interface PostSurveyAnswer {
 export interface PostSurveyRequestDTO {
   answers: PostSurveyAnswer[];
 }
+
+export interface PostAgreementDTO {
+  agreementId: number;
+  isAgreed: boolean;
+}
+
+export interface PostAgreementRequestDTO {
+  surveyId: number;
+  agreements: PostAgreementDTO[];
+}
