@@ -209,11 +209,14 @@ pipeline {
                         sh """
                             echo "🚀 Docker CP 방식으로 Flyway 마이그레이션 실행"
                             
+                            # 이전 컨테이너 정리
+                            docker rm -f flyway_tmp_${project} || true
+                            
                             # 임시 컨테이너 생성
                             docker create --name flyway_tmp_${project} flyway/flyway
                             
-                            # 디렉토리 생성
-                            docker exec -u root flyway_tmp_${project} mkdir -p /flyway/sql
+                            # 디렉토리 생성 및 SQL 파일 복사
+                            docker exec -i flyway_tmp_${project} /bin/sh -c 'mkdir -p /flyway/sql' || true
                             
                             # SQL 파일 복사
                             for sql_file in ${migrationPath}/*.sql; do
@@ -223,13 +226,13 @@ pipeline {
                             
                             # 파일 확인
                             echo "📋 컨테이너 내 SQL 파일 확인:"
-                            docker exec flyway_tmp_${project} ls -la /flyway/sql/
+                            docker exec flyway_tmp_${project} ls -la /flyway/sql/ || true
                             
                             # 마이그레이션 실행
                             docker start -a flyway_tmp_${project} -- -url=jdbc:postgresql://${dbHost}:5432/${dbName} -user=${dbUser} -password=${dbPassword} -baselineOnMigrate=true migrate
                             
                             # 컨테이너 정리
-                            docker rm flyway_tmp_${project} || true
+                            docker rm -f flyway_tmp_${project} || true
                         """
                     }
                 }
