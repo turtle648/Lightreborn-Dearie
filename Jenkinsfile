@@ -178,61 +178,50 @@ pipeline {
             steps {
                 script {
                     def projects = ['dearie', 'lightreborn']
-                    
+
                     projects.each { project ->
                         def projUpper = project.toUpperCase()
-                        
+
                         def migrationPath = (params.ENV == 'master') ?
                             "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
                             "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
-                        
-                        echo "🔍 Debug - Migration Path: ${migrationPath}"
-                        
-                        // 마이그레이션 파일 존재 확인
-                        sh "echo '📋 마이그레이션 파일 확인:' && ls -la ${migrationPath} || true"
-                        
-                        def hasMigrationFiles = sh(script: "ls ${migrationPath}/*.sql 2>/dev/null", returnStatus: true) == 0
-                        
-                        if (!hasMigrationFiles) {
-                            echo "⚠️ No migration files found in ${migrationPath}, skipping Flyway for ${project}"
-                            return
-                        }
-                        
-                        // 네트워크 이름 정의
+
                         def networkName = "${project}-net"
                         def dbHost = "${project}-db"
                         def dbUser = envProps.get("${projUpper}_DB_USER") ?: "ssafy"
                         def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"
                         def dbName = project
-                        
-                        // Docker CP 방식으로 마이그레이션 실행
+                        def tempDir = "/tmp/flywaysql${project}_${env.BUILD_NUMBER}"
                         sh """
-                            echo "🚀 Docker CP 방식으로 Flyway 마이그레이션 실행"
-                            
-                            # 이전 컨테이너 정리
-                            docker rm -f flyway_tmp_${project} || true
-                            
-                            # 임시 컨테이너 생성
-                            docker create --name flyway_tmp_${project} flyway/flyway
-                            
-                            # 디렉토리 생성 및 SQL 파일 복사
-                            docker exec -i flyway_tmp_${project} /bin/sh -c 'mkdir -p /flyway/sql' || true
-                            
-                            # SQL 파일 복사
-                            for sql_file in ${migrationPath}/*.sql; do
-                                echo "📄 SQL 파일 복사: \$sql_file"
-                                docker cp \$sql_file flyway_tmp_${project}:/flyway/sql/
-                            done
-                            
-                            # 파일 확인
-                            echo "📋 컨테이너 내 SQL 파일 확인:"
-                            docker exec flyway_tmp_${project} ls -la /flyway/sql/ || true
-                            
-                            # 마이그레이션 실행
-                            docker start -a flyway_tmp_${project} -- -url=jdbc:postgresql://${dbHost}:5432/${dbName} -user=${dbUser} -password=${dbPassword} -baselineOnMigrate=true migrate
-                            
-                            # 컨테이너 정리
-                            docker rm -f flyway_tmp_${project} || true
+                            echo "🔍 Flyway 마이그레이션 경로: ${migrationPath}"
+                            # SQL 파일 있는지 확인
+                            if [ -z "\$(ls ${migrationPath}/.sql 2>/dev/null)" ]; then
+                            echo "⚠️ No .sql files found in ${migrationPath}, skipping migration for ${project}"
+                            exit 0
+                            fi
+                            echo "🚀 Flyway 마이그레이션 시작 (프로젝트: ${project})"
+                            # 임시 디렉토리 생성
+                            mkdir -p ${tempDir}
+                            cp ${migrationPath}/.sql ${tempDir}/
+                            echo "📋 복사된 마이그레이션 파일 목록:"
+                            ls -la ${tempDir}
+                            echo "📋 파일 미리보기 (앞부분):"
+                            head -n 10 ${tempDir}/.sql || true
+                            echo "📋 파일 미리보기 (뒷부분):"
+                            tail -n 10 ${tempDir}/.sql || true
+                            echo "📦 Flyway 컨테이너 실행 중..."
+                            docker run --rm \\
+                                --network ${networkName} \\
+                                -v ${tempDir}:/flyway/sql \\
+                                flyway/flyway \\
+                                -locations=filesystem:/flyway/sql \\
+                                -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
+                                -user=${dbUser} \\
+                                -password=${dbPassword} \\
+                                -baselineOnMigrate=true \\
+                                -X migrate
+                            echo "🧹 임시 디렉토리 정리: ${tempDir}"
+                            rm -rf ${tempDir}
                         """
                     }
                 }
