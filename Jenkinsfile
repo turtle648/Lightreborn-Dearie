@@ -198,76 +198,47 @@ pipeline {
                             return
                         }
                         
-                        // 네트워크 이름을 먼저 정의
+                        // 네트워크 이름 정의
                         def networkName = "${project}-net"
                         def dbHost = "${project}-db"
-                        
-                        // 프로젝트별 DB 사용자/비밀번호 설정
-                        def dbUser = envProps.get("${projUpper}_DB_USER") ?: envProps["${projUpper}_DB_USER"] ?: "ssafy"
-                        def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: envProps["${projUpper}_DB_PASSWORD"] ?: "ssafy"
-                        
-                        echo "🔍 Debug - Final DB User: ${dbUser}"
-                        echo "🔍 Debug - Final DB Password: ${dbPassword}"
-                    
+                        def dbUser = envProps.get("${projUpper}_DB_USER") ?: "ssafy"
+                        def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"
                         def dbName = project
                         
-                        // ===== 수정된 부분: 워크스페이스 경로 직접 사용 =====
+                        // 임시 디렉토리에 복사 (호스트 시스템에서 접근 가능한 위치)
+                        def tempDir = "/home/ubuntu/flyway_tmp_${project}_${env.BUILD_NUMBER}"
                         
-                        // 마이그레이션 파일 내용 미리보기
                         sh """
-                            echo "📋 마이그레이션 파일 내용 미리보기:"
-                            ls -la ${migrationPath}
-                            cat ${migrationPath}/*.sql | head -n 5 || true
-                        """
-                        // ===== 수정 끝 =====
-                        
-                        // Flyway 명령 기본 템플릿 수정 (워크스페이스 경로를 직접 마운트)
-                        def baseCmd = """
+                            echo "🚀 호스트 임시 디렉토리 사용 방식으로 Flyway 마이그레이션 실행"
+                            
+                            # 호스트 임시 디렉토리 생성
+                            mkdir -p ${tempDir}
+                            
+                            # SQL 파일 복사
+                            cp ${migrationPath}/*.sql ${tempDir}/
+                            
+                            # 파일 권한 설정
+                            chmod -R 777 ${tempDir}
+                            
+                            # 파일 확인
+                            echo "📋 호스트 임시 디렉토리 파일 확인:"
+                            ls -la ${tempDir}/
+                            
+                            # Flyway 실행
                             docker run --rm \\
-                            --network ${networkName} \\
-                            -v ${migrationPath}:/flyway/sql \\
-                            flyway/flyway \\
-                            -locations=filesystem:/flyway/sql \\
-                            -url='jdbc:postgresql://${dbHost}:5432/${dbName}' \\
-                            -user=${dbUser} \\
-                            -password=${dbPassword} \\
-                            -baselineOnMigrate=true
-                        """.stripIndent().trim()
-                        
-                        // Flyway info 실행
-                        echo "🔍 Checking Flyway info..."
-                        try {
-                            // 컨테이너 내부 파일 확인 (테스트용)
-                            sh """
-                                echo "📋 컨테이너 내부 파일 확인:"
-                                docker run --rm -v ${migrationPath}:/flyway/sql alpine ls -la /flyway/sql
-                            """
+                                --network ${networkName} \\
+                                -v ${tempDir}:/flyway/sql \\
+                                flyway/flyway \\
+                                -locations=filesystem:/flyway/sql \\
+                                -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
+                                -user=${dbUser} \\
+                                -password=${dbPassword} \\
+                                -baselineOnMigrate=true \\
+                                migrate
                             
-                            def infoOutput = sh(script: "${baseCmd} info", returnStdout: true)
-                            echo "📋 Flyway info output:"
-                            echo infoOutput
-                            
-                            // 마이그레이션 파일 내용 미리보기
-                            sh "echo '📋 First few lines of migration files:' && head -n 10 ${migrationPath}/*.sql || true"
-                        } catch (err) {
-                            echo "⚠️ Info command failed: ${err.message}"
-                        }
-                        
-                        // 마이그레이션 시도
-                        echo "🚀 Running Flyway migration..."
-                        try {
-                            // 마이그레이션 자세한 로그 활성화 (-X 옵션 추가)
-                            sh "${baseCmd} -X migrate"
-                        } catch (err) {
-                            echo "⚠️ Migration failed: ${err.message}"
-                            echo "💡 Trying to repair the metadata..."
-                            // repair 시도 (메타데이터 정리)
-                            sh "${baseCmd} repair"
-                            echo "🔄 Retrying migration after repair..."
-                            sh "${baseCmd} migrate"
-                        }
-                        
-                        // 임시 디렉토리 정리 코드 제거 (임시 디렉토리를 사용하지 않으므로)
+                            # 임시 디렉토리 정리
+                            rm -rf ${tempDir}
+                        """
                     }
                 }
             }
