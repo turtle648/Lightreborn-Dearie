@@ -212,6 +212,9 @@ pipeline {
                             # 임시 컨테이너 생성
                             docker create --name flyway_tmp_${project} flyway/flyway
                             
+                            # 디렉토리 생성
+                            docker exec -u root flyway_tmp_${project} mkdir -p /flyway/sql
+                            
                             # SQL 파일 복사
                             for sql_file in ${migrationPath}/*.sql; do
                                 echo "📄 SQL 파일 복사: \$sql_file"
@@ -226,7 +229,7 @@ pipeline {
                             docker start -a flyway_tmp_${project} -- -url=jdbc:postgresql://${dbHost}:5432/${dbName} -user=${dbUser} -password=${dbPassword} -baselineOnMigrate=true migrate
                             
                             # 컨테이너 정리
-                            docker rm flyway_tmp_${project}
+                            docker rm flyway_tmp_${project} || true
                         """
                     }
                 }
