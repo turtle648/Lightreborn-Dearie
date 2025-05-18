@@ -1,7 +1,7 @@
 package com.ssafy.backend.common.client;
 
-import com.ssafy.backend.common.client.dto.PlaceCheckResult;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -9,6 +9,7 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class GeoSearchService {
 
@@ -50,6 +51,8 @@ public class GeoSearchService {
      * @return 검색 결과
      */
     public Mono<Map> searchByCategory(String categoryGroupCode, Double x, Double y, Integer radius, Integer page, Integer size) {
+        String apiKey = "53ba64d73976935d1286d226089381ff";
+        log.info("Kakao API Key for request: {}", apiKey);
         return kakaoWebClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/v2/local/search/category.json")
