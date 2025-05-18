@@ -205,39 +205,28 @@ pipeline {
                         def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"
                         def dbName = project
                         
-                        // 임시 디렉토리에 복사 (호스트 시스템에서 접근 가능한 위치)
-                        def tempDir = "/home/ubuntu/flyway_tmp_${project}_${env.BUILD_NUMBER}"
-                        
+                        // Docker CP 방식으로 마이그레이션 실행
                         sh """
-                            echo "🚀 호스트 임시 디렉토리 사용 방식으로 Flyway 마이그레이션 실행"
+                            echo "🚀 Docker CP 방식으로 Flyway 마이그레이션 실행"
                             
-                            # 호스트 임시 디렉토리 생성
-                            mkdir -p ${tempDir}
+                            # 임시 컨테이너 생성
+                            docker create --name flyway_tmp_${project} flyway/flyway
                             
                             # SQL 파일 복사
-                            cp ${migrationPath}/*.sql ${tempDir}/
-                            
-                            # 파일 권한 설정
-                            chmod -R 777 ${tempDir}
+                            for sql_file in ${migrationPath}/*.sql; do
+                                echo "📄 SQL 파일 복사: \$sql_file"
+                                docker cp \$sql_file flyway_tmp_${project}:/flyway/sql/
+                            done
                             
                             # 파일 확인
-                            echo "📋 호스트 임시 디렉토리 파일 확인:"
-                            ls -la ${tempDir}/
+                            echo "📋 컨테이너 내 SQL 파일 확인:"
+                            docker exec flyway_tmp_${project} ls -la /flyway/sql/
                             
-                            # Flyway 실행
-                            docker run --rm \\
-                                --network ${networkName} \\
-                                -v ${tempDir}:/flyway/sql \\
-                                flyway/flyway \\
-                                -locations=filesystem:/flyway/sql \\
-                                -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
-                                -user=${dbUser} \\
-                                -password=${dbPassword} \\
-                                -baselineOnMigrate=true \\
-                                migrate
+                            # 마이그레이션 실행
+                            docker start -a flyway_tmp_${project} -- -url=jdbc:postgresql://${dbHost}:5432/${dbName} -user=${dbUser} -password=${dbPassword} -baselineOnMigrate=true migrate
                             
-                            # 임시 디렉토리 정리
-                            rm -rf ${tempDir}
+                            # 컨테이너 정리
+                            docker rm flyway_tmp_${project}
                         """
                     }
                 }
