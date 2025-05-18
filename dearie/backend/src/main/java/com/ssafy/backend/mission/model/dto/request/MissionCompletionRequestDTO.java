@@ -18,6 +18,8 @@ public class MissionCompletionRequestDTO {
     //이미지 미션
     MultipartFile imageFile;
     String imageKeyword;
+    Double longitude;
+    Double latitude;
 
     //음악 감상 미션
     private String title;

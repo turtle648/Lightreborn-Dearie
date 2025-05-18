@@ -11,8 +11,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class WebClientConfig {
 
-//    @Value("${yolo.server.base-url}")
-    private String YOLO_BASE_URL;
+    @Value("${KAKAO_REST_API_KEY}")
+    private String apiKey;
 
     @Bean
     public WebClient openAiWebClient(
@@ -26,18 +26,20 @@ public class WebClientConfig {
     }
 
     @Bean
-    @Qualifier("yoloWebClient")
-    public WebClient yoloWebClient(WebClient.Builder webClientBuilder) {
-        return webClientBuilder
-                .baseUrl("")
-                .build();
-    }
-
-    @Bean
     @Qualifier("itunesWebClient")
     public WebClient itunesWebClient(WebClient.Builder webClientBuilder) {
         return webClientBuilder
                 .baseUrl("https://itunes.apple.com")
                 .build();
     }
+
+    @Bean
+    @Qualifier("kakaoWebClient")
+    public WebClient kakaoWebClient(WebClient.Builder webClientBuilder) {
+        return WebClient.builder()
+                .baseUrl("https://dapi.kakao.com")
+                .defaultHeader("Authorization", "KakaoAK " + apiKey)
+                .build();
+    }
+
 }

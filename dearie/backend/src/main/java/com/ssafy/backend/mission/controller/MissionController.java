@@ -1,8 +1,8 @@
 package com.ssafy.backend.mission.controller;
 
+import ai.djl.translate.TranslateException;
 import com.ssafy.backend.auth.exception.AuthErrorCode;
 import com.ssafy.backend.auth.exception.AuthException;
-import com.ssafy.backend.auth.model.dto.response.LoginResponseDTO;
 import com.ssafy.backend.auth.repository.UserRepository;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.dto.BaseResponse;
@@ -16,11 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.nio.file.attribute.UserPrincipal;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -43,12 +41,11 @@ public class MissionController {
     public ResponseEntity<BaseResponse<MissionCompletionResponseDTO<?>>> verifyMissionCompletion(
             @PathVariable Long missionId,
             @ModelAttribute @Validated MissionCompletionRequestDTO req
-    ) {
-        req.setMissionId(missionId);
-        //missionService.verifyMissionCompletion(req);
-        MissionCompletionResponseDTO resp = new MissionCompletionResponseDTO();
+    ) throws IOException, TranslateException {
 
-        return ResponseEntity.ok().body(BaseResponse.success("상담 대상자를 성공적으로 검색하였습니다.", resp));
+        MissionCompletionResponseDTO<?> resp = missionService.verifyMissionCompletion(req);
+
+        return ResponseEntity.ok().body(BaseResponse.success("미션 검증에 성공했습니다.", resp));
     }
 
     @GetMapping(value = "/today")
