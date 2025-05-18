@@ -19,7 +19,7 @@ RUN chmod +x gradlew
 RUN ./gradlew build -x test --no-daemon
 
 # 실제 런타임 이미지
-FROM openjdk:21-jdk
+FROM openjdk:21-jdk-slim
 
 WORKDIR /app
 
@@ -33,7 +33,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libavformat-dev \
     libswscale-dev && \
     rm -rf /var/lib/apt/lists/*
-
 
 # jar 파일 복사
 COPY --from=build /app/build/libs/*.jar dearie-backend.jar
