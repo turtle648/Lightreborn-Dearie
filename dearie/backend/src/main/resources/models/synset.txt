@@ -1,0 +1,4 @@
+flower
+leaves
+bench
+cup

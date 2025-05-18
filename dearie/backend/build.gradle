@@ -69,11 +69,12 @@ dependencies {
 	implementation 'software.amazon.awssdk:regions:2.20.0'
 	implementation 'software.amazon.awssdk:apache-client:2.20.0'
 
-	//deep java library
-	implementation 'ai.djl:api:0.25.0'
-	implementation 'ai.djl.onnxruntime:onnxruntime-engine:0.25.0'
-	implementation 'ai.djl.tensorflow:tensorflow-engine:0.25.0'
+	// DJL API
+	implementation "ai.djl:api:0.25.0"
+	implementation "ai.djl:basicdataset:0.25.0" // (필요하다면) 모델 로더 유틸만 추가
 
+	//OpenCV 의존성 추가
+	implementation 'org.openpnp:opencv:4.8.1-0'
 }
 
 tasks.named('test') {
