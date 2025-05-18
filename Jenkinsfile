@@ -177,38 +177,54 @@ pipeline {
         stage('Flyway Check and Migration') {
             steps {
                 script {
+                    // 환경 변수 디버그 출력
+                    echo "🔍 Jenkins Workspace: ${env.WORKSPACE}"
+                    
                     def projects = ['dearie', 'lightreborn']
-
+                    
                     projects.each { project ->
                         def projUpper = project.toUpperCase()
-
+                        
                         def migrationPath = (params.ENV == 'master') ?
                             "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
                             "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
-
+                        
+                        echo "🔍 Full Migration Path: ${migrationPath}"
+                        
                         def networkName = "${project}-net"
                         def dbHost = "${project}-db"
                         def dbUser = envProps.get("${projUpper}_DB_USER") ?: "ssafy"
                         def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"
                         def dbName = project
-                        def tempDir = "/tmp/flywaysql${project}_${env.BUILD_NUMBER}"
+                        def tempDir = "/tmp/flyway_sql_${project}_${env.BUILD_NUMBER}"
                         sh """
-                            echo "🔍 Flyway 마이그레이션 경로: ${migrationPath}"
-                            # SQL 파일 있는지 확인
-                            if [ -z "\$(ls ${migrationPath}/.sql 2>/dev/null)" ]; then
-                            echo "⚠️ No .sql files found in ${migrationPath}, skipping migration for ${project}"
+                            echo "🔍 환경 변수 확인:"
+                            echo "- Workspace: ${env.WORKSPACE}"
+                            echo "- Migration Path: ${migrationPath}"
+                            echo "- Build Number: ${env.BUILD_NUMBER}"
+                            
+                            # 경로의 실제 내용 확인
+                            echo "📋 경로 내용 확인 (ls -la):"
+                            ls -la ${migrationPath} || echo "경로를 찾을 수 없습니다!"
+                            
+                            # 정확한 SQL 파일 검색 방법
+                            file_count=\$(find ${migrationPath} -name "*.sql" 2>/dev/null | wc -l)
+                            
+                            if [ \$file_count -eq 0 ]; then
+                            echo "⚠️ No SQL files found in ${migrationPath}, skipping migration for ${project}"
                             exit 0
                             fi
-                            echo "🚀 Flyway 마이그레이션 시작 (프로젝트: ${project})"
+                            
+                            echo "🚀 Flyway 마이그레이션 시작 (프로젝트: ${project}, SQL 파일 수: \$file_count)"
+                            echo "📋 SQL 파일 목록:"
+                            find ${migrationPath} -name "*.sql" 2>/dev/null
+                            
                             # 임시 디렉토리 생성
                             mkdir -p ${tempDir}
-                            cp ${migrationPath}/.sql ${tempDir}/
+                            cp ${migrationPath}/*.sql ${tempDir}/
                             echo "📋 복사된 마이그레이션 파일 목록:"
                             ls -la ${tempDir}
-                            echo "📋 파일 미리보기 (앞부분):"
-                            head -n 10 ${tempDir}/.sql || true
-                            echo "📋 파일 미리보기 (뒷부분):"
-                            tail -n 10 ${tempDir}/.sql || true
+                            
                             echo "📦 Flyway 컨테이너 실행 중..."
                             docker run --rm \\
                                 --network ${networkName} \\
@@ -220,6 +236,7 @@ pipeline {
                                 -password=${dbPassword} \\
                                 -baselineOnMigrate=true \\
                                 -X migrate
+                            
                             echo "🧹 임시 디렉토리 정리: ${tempDir}"
                             rm -rf ${tempDir}
                         """
@@ -227,7 +244,7 @@ pipeline {
                 }
             }
         }
-
+        
         // 7. 빌드 성공 여부 상태 반영
         stage('Mark Image Build Success') {
             steps {
