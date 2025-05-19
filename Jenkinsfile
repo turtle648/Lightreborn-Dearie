@@ -216,7 +216,6 @@ pipeline {
                             # 마이그레이션 경로가 존재하는지 확인
                             if [ ! -d "${migrationPath}" ]; then
                                 echo "⚠️ 마이그레이션 경로가 존재하지 않습니다: ${migrationPath}"
-                                exit 0
                             fi
                             
                             # 경로 내용 확인
@@ -229,7 +228,6 @@ pipeline {
                             
                             if [ \$FILE_COUNT -eq 0 ]; then
                                 echo "⚠️ SQL 파일을 찾을 수 없습니다: ${migrationPath}"
-                                exit 0
                             fi
                             
                             echo "🚀 파일 \$FILE_COUNT개가 발견되었습니다."
