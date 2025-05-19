@@ -37,7 +37,7 @@ pipeline {
                     }
                     env.ENV = selectedEnv
 
-                    env.CUSTOM_WORKSPACE = workspace
+                    // env.CUSTOM_WORKSPACE = workspace
                 }
             }
         }
@@ -185,11 +185,11 @@ pipeline {
                     
                     projects.each { project ->
                         def projUpper = project.toUpperCase()
-                        def workspace = env.CUSTOM_WORKSPACE
+                        // def workspace = env.CUSTOM_WORKSPACE
                         
                         def migrationPath = (params.ENV == 'develop') ?
-                            "${workspace}/${project}/backend/src/main/resources/db/migration" :
-                            "${workspace}/${project}/backend/src/main/resources/db/migration_master"
+                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration" :
+                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master"
                         
                         echo "🔍 Full Migration Path: ${migrationPath}"
                         
@@ -211,7 +211,6 @@ pipeline {
                             echo "- DB 호스트: ${dbHost}"
                             echo "- 빌드 번호: ${buildNumber}"
                             echo "- 임시 디렉토리: ${tempDir}"
-                            echo "- ❤️workspace: ${workspace}"
                             
                             # 마이그레이션 경로가 존재하는지 확인
                             if [ ! -d "${migrationPath}" ]; then
