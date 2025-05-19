@@ -263,8 +263,9 @@ pipeline {
                                 -baselineOnMigrate=true \\
                                 -baselineVersion=0 \\
                                 -outOfOrder=true \\
-                                -X -Xdebug migrate
-
+                                -X \\
+                                -logLevel=DEBUG \\
+                                migrate
                             
                             # 디버깅 완료 후 임시 디렉토리 정리 (나중에 제거해도 됨)
                             echo "🧹 임시 디렉토리 정리: ${tempDir}"
