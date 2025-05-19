@@ -16,4 +16,5 @@ public class ImageResultDetail {
     private List<YoloDetectionResult> detections;
     private String requiredObjectLabel;
     private boolean isVerified;
+    private String s3ImageUrl;
 }

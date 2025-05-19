@@ -3,7 +3,6 @@ package com.ssafy.backend.mission.service.verification;
 import com.ssafy.backend.common.client.dto.YoloDetectionResult;
 import com.ssafy.backend.mission.model.dto.request.MissionCompletionRequestDTO;
 import com.ssafy.backend.mission.model.dto.vo.ImageResultDetail;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +22,7 @@ public class ParkImageVerifier implements ImageVerifier {
 
         log.info("벤치 객체 검증 결과: {}", isBenchDetected);
 
-        return new ImageResultDetail(detections, request.getImageKeyword(), isBenchDetected);
+        return new ImageResultDetail(detections, request.getImageKeyword(), isBenchDetected, imageUrl);
     }
 
     @Override

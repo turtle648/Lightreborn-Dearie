@@ -11,4 +11,5 @@ import lombok.Setter;
 @AllArgsConstructor
 public class TextResultDetail {
     private String content;
+    private boolean isVerified;
 }

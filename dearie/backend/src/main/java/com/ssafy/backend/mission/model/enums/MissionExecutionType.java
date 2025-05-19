@@ -1,5 +1,5 @@
 package com.ssafy.backend.mission.model.enums;
 
-public enum MissionResultType {
+public enum MissionExecutionType {
     WALK, IMAGE, TEXT, MUSIC
 }

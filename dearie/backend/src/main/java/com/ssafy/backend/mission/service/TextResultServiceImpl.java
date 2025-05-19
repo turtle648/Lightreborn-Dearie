@@ -2,7 +2,6 @@ package com.ssafy.backend.mission.service;
 
 import com.ssafy.backend.mission.model.entity.TextResult;
 import com.ssafy.backend.mission.repository.TextResultRepository;
-import com.ssafy.backend.mission.service.TextResultService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

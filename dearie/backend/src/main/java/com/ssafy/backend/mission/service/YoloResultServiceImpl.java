@@ -2,7 +2,6 @@ package com.ssafy.backend.mission.service;
 
 import com.ssafy.backend.mission.model.entity.YoloResult;
 import com.ssafy.backend.mission.repository.YoloResultRepository;
-import com.ssafy.backend.mission.service.YoloResultService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

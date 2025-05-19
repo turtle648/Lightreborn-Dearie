@@ -2,6 +2,7 @@ package com.ssafy.backend.mission.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 

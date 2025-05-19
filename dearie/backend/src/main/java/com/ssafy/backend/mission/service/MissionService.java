@@ -6,6 +6,7 @@ import com.ssafy.backend.mission.model.dto.response.DailyMissionResponseDTO;
 import com.ssafy.backend.mission.model.dto.response.MissionCompletionResponseDTO;
 import com.ssafy.backend.mission.model.dto.response.MissionDetailResponseDTO;
 import com.ssafy.backend.mission.model.dto.response.RecentMissionResponseDTO;
+import com.ssafy.backend.mission.model.enums.MissionExecutionType;
 import org.apache.coyote.BadRequestException;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,6 +27,6 @@ public interface MissionService {
 
     List<RecentMissionResponseDTO> getRecentCompleteMissions(Long userId, int page);
 
-    MissionDetailResponseDTO<?> getCompletedMissionDetail(Long userMissionId, Long userId);
+    MissionDetailResponseDTO<?> getCompletedMissionDetail(Long userMissionId, Long userId, MissionExecutionType executionType);
 
 }
