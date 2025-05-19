@@ -191,7 +191,7 @@ pipeline {
 
                         def networkName = "${project}-net"
                         def dbHost = "${project}-db"
-                        def dbPort = (project == "dearie") ? 5433 : 5432
+                        def dbPort = 5432
                         def dbUser = envProps.get("${projUpper}_DB_USER") ?: "ssafy"
                         def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"
                         def dbName = project
