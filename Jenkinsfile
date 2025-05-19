@@ -179,6 +179,9 @@ pipeline {
         stage('Flyway Check and Migration') {
             steps{
                 script{
+
+                    def projects = ['dearie', 'lightreborn']
+
                     // Flyway 스테이지에서
                     // 1. Jenkins 컨테이너 내의 SQL 파일 실제 경로
                     def sqlPathInJenkinsContainer = "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration" // (또는 _master)
