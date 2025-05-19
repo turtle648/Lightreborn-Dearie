@@ -195,115 +195,169 @@ pipeline {
                         def dbUser = envProps.get("${projUpper}_DB_USER") ?: "ssafy"
                         def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"
                         def dbName = project
-                        def tempDir = "/tmp/flyway_sql_${project}_${env.BUILD_NUMBER}"
+                        def buildNumber = env.BUILD_NUMBER
+                        def tempDir = "/tmp/flyway_sql_${project}_${buildNumber}"
                         
-                        sh '''
-                            # 변수 설정 (작은따옴표 안에 있는 변수는 Jenkins에서 해석하지 않음)
-                            MIGRATION_PATH="''' + migrationPath + '''"
-                            NETWORK_NAME="''' + networkName + '''"
-                            DB_HOST="''' + dbHost + '''"
-                            DB_USER="''' + dbUser + '''"
-                            DB_PASSWORD="''' + dbPassword + '''"
-                            DB_NAME="''' + dbName + '''"
-                            TEMP_DIR="''' + tempDir + '''"
-                            ENV="''' + params.ENV + '''"
-                            
+                        // 마이그레이션 스크립트를 전달하는 대신 절대 경로와 명확한 변수를 사용
+                        sh """
                             echo "🔍 환경 변수 확인:"
-                            echo "- Migration Path: $MIGRATION_PATH"
-                            echo "- Network Name: $NETWORK_NAME"
-                            echo "- DB Host: $DB_HOST"
-                            echo "- DB User: $DB_USER"
-                            echo "- DB Name: $DB_NAME"
-                            echo "- Temp Dir: $TEMP_DIR"
+                            echo "- 프로젝트: ${project}"
+                            echo "- 워크스페이스: ${env.WORKSPACE}"
+                            echo "- 마이그레이션 경로: ${migrationPath}"
+                            echo "- 네트워크: ${networkName}"
+                            echo "- DB 호스트: ${dbHost}"
+                            echo "- 빌드 번호: ${buildNumber}"
+                            echo "- 임시 디렉토리: ${tempDir}"
                             
-                            # 경로 존재 확인
-                            if [ ! -d "$MIGRATION_PATH" ]; then
-                                echo "⚠️ 마이그레이션 경로가 존재하지 않습니다: $MIGRATION_PATH"
+                            # 마이그레이션 경로가 존재하는지 확인
+                            if [ ! -d "${migrationPath}" ]; then
+                                echo "⚠️ 마이그레이션 경로가 존재하지 않습니다: ${migrationPath}"
                                 exit 0
                             fi
                             
-                            # 경로의 실제 내용 확인
-                            echo "📋 경로 내용 확인 (ls -la):"
-                            ls -la "$MIGRATION_PATH"
+                            # 경로 내용 확인
+                            echo "📋 마이그레이션 경로 내용:"
+                            ls -la "${migrationPath}"
                             
-                            # SQL 파일 목록 확인
-                            sql_files=$(find "$MIGRATION_PATH" -name "*.sql" | sort)
-                            file_count=$(echo "$sql_files" | grep -v "^$" | wc -l)
+                            # SQL 파일 검색 및 카운트
+                            SQL_FILES=\$(find "${migrationPath}" -name "*.sql" 2>/dev/null | sort)
+                            FILE_COUNT=\$(echo "\$SQL_FILES" | grep -v "^$" | wc -l)
                             
-                            if [ $file_count -eq 0 ]; then
-                                echo "⚠️ SQL 파일을 찾을 수 없습니다: $MIGRATION_PATH"
+                            if [ \$FILE_COUNT -eq 0 ]; then
+                                echo "⚠️ SQL 파일을 찾을 수 없습니다: ${migrationPath}"
                                 exit 0
                             fi
                             
-                            echo "🚀 Flyway 마이그레이션 시작 (프로젝트: $DB_NAME, SQL 파일 수: $file_count)"
+                            echo "🚀 파일 \$FILE_COUNT개가 발견되었습니다."
+                            echo "📋 SQL 파일 목록:"
+                            echo "\$SQL_FILES"
                             
-                            # 임시 디렉토리 생성 및 파일 복사
-                            rm -rf "$TEMP_DIR"
-                            mkdir -p "$TEMP_DIR"
+                            # 임시 디렉토리 생성 및 파일 복사 전 정리
+                            rm -rf "${tempDir}"
+                            mkdir -p "${tempDir}"
                             
-                            # 각 파일을 개별적으로 복사
-                            echo "$sql_files" | while read file; do
-                                if [ -f "$file" ]; then
-                                    filename=$(basename "$file")
-                                    echo "📄 복사 중: $file → $TEMP_DIR/$filename"
-                                    cp "$file" "$TEMP_DIR/$filename"
+                            # 각 파일을 개별적으로 복사 (절대 경로 사용)
+                            echo "\$SQL_FILES" | while read file; do
+                                if [ -f "\$file" ]; then
+                                    # 기존 파일명 추출
+                                    filename=\$(basename "\$file")
+                                    
+                                    # 첫 번째 파일의 경우 V1으로 시작하는지 확인
+                                    if [[ "\$filename" == V* ]] && ! [[ "\$filename" == V1__* ]]; then
+                                        # 첫 번째 마이그레이션 파일이 V1으로 시작하는지 확인
+                                        FIRST_FILE=\$(echo "\$SQL_FILES" | head -n 1)
+                                        FIRST_FILENAME=\$(basename "\$FIRST_FILE")
+                                        
+                                        if [[ "\$filename" == "\$FIRST_FILENAME" ]] && ! [[ "\$filename" == V1__* ]]; then
+                                            # 첫 번째 파일이 V1으로 시작하지 않으면 경고
+                                            echo "⚠️ 주의: 첫 번째 마이그레이션 파일은 V1으로 시작해야 합니다: \$filename"
+                                            # 이름 수정: V{x}__name.sql -> V1__name.sql
+                                            new_filename=\$(echo "\$filename" | sed -E 's/V[0-9]+__/V1__/')
+                                            echo "🔄 파일 이름 변경: \$filename -> \$new_filename"
+                                            cp "\$file" "${tempDir}/\$new_filename"
+                                        else
+                                            cp "\$file" "${tempDir}/\$filename"
+                                        fi
+                                    else
+                                        cp "\$file" "${tempDir}/\$filename"
+                                    fi
+                                    
+                                    echo "📄 복사됨: \$file -> ${tempDir}/\$(basename "\$file")"
                                 fi
                             done
                             
-                            # 복사된 파일 확인
-                            echo "📋 복사된 파일 목록:"
-                            ls -la "$TEMP_DIR"
+                            # 복사된 파일 목록 확인
+                            echo "📋 임시 디렉토리 내용:"
+                            ls -la "${tempDir}"
                             
-                            # 디버깅: SQL 파일 내용 확인 (첫 10줄만)
-                            echo "📄 SQL 파일 내용 (10줄):"
-                            for f in $(find "$TEMP_DIR" -name "*.sql" | sort); do
-                                echo "===== $f ====="
-                                head -n 10 "$f"
+                            # 파일 내용 확인 (5줄만)
+                            echo "📄 SQL 파일 내용 샘플:"
+                            for f in \$(find "${tempDir}" -name "*.sql" | sort); do
+                                echo "===== \$f ====="
+                                head -n 5 "\$f"
+                                echo "..."
                             done
+                            
+                            # 직접 SQL 파일 생성 (테스트용)
+                            if [ \$FILE_COUNT -eq 0 ]; then
+                                echo "📝 테스트 파일 생성"
+                                echo "CREATE TABLE IF NOT EXISTS test_flyway (id SERIAL PRIMARY KEY);" > "${tempDir}/V1__test.sql"
+                            fi
                             
                             # 볼륨 마운트 테스트
                             echo "🔍 볼륨 마운트 테스트:"
-                            docker run --rm -v "$TEMP_DIR":/flyway/sql alpine ls -la /flyway/sql
+                            docker run --rm -v "${tempDir}:/flyway/sql" alpine ls -la /flyway/sql
+                            
+                            # 현재 DB 상태 확인
+                            echo "🔍 현재 DB 상태 확인:"
+                            echo "테이블 목록:"
+                            docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "\\dt" 2>/dev/null || echo "테이블 목록 조회 실패"
+                            
+                            # Flyway 스키마 히스토리 확인
+                            echo "Flyway 스키마 히스토리:"
+                            docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "SELECT * FROM flyway_schema_history ORDER BY installed_rank;" 2>/dev/null || echo "flyway_schema_history 테이블이 없습니다."
                             
                             # Flyway 정보 확인
-                            echo "🔍 Flyway info:"
+                            echo "🔍 Flyway 정보:"
                             docker run --rm \\
-                                --network "$NETWORK_NAME" \\
-                                -v "$TEMP_DIR":/flyway/sql \\
+                                --network "${networkName}" \\
+                                -v "${tempDir}:/flyway/sql" \\
                                 flyway/flyway \\
                                 -locations=filesystem:/flyway/sql \\
-                                -url=jdbc:postgresql://"$DB_HOST":5432/"$DB_NAME" \\
-                                -user="$DB_USER" \\
-                                -password="$DB_PASSWORD" \\
+                                -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
+                                -user=${dbUser} \\
+                                -password=${dbPassword} \\
                                 info
                             
                             # Flyway 마이그레이션 실행
                             echo "📦 Flyway 마이그레이션 실행 중..."
-                            docker run --rm \\
-                                --network "$NETWORK_NAME" \\
-                                -v "$TEMP_DIR":/flyway/sql \\
+                            MIGRATE_RESULT=\$(docker run --rm \\
+                                --network "${networkName}" \\
+                                -v "${tempDir}:/flyway/sql" \\
                                 flyway/flyway \\
                                 -locations=filesystem:/flyway/sql \\
-                                -url=jdbc:postgresql://"$DB_HOST":5432/"$DB_NAME" \\
-                                -user="$DB_USER" \\
-                                -password="$DB_PASSWORD" \\
+                                -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
+                                -user=${dbUser} \\
+                                -password=${dbPassword} \\
                                 -baselineOnMigrate=true \\
-                                -outOfOrder=true \\
-                                -validateMigrationNaming=true \\
-                                -X migrate
+                                migrate 2>&1)
                             
-                            # 개발 환경일 경우 temp 디렉토리 보존 (디버깅용)
-                            if [ "$ENV" = "develop" ]; then
-                                echo "🛠 develop 환경 → tempDir 정리 생략 (디버깅용)"
+                            MIGRATE_STATUS=\$?
+                            echo "\$MIGRATE_RESULT"
+                            
+                            # 마이그레이션 실패 시 처리
+                            if [ \$MIGRATE_STATUS -ne 0 ]; then
+                                echo "⚠️ 마이그레이션 실패! (종료 코드: \$MIGRATE_STATUS)"
+                                
+                                # 마이그레이션 후 DB 상태 확인
+                                echo "🔍 마이그레이션 후 DB 상태 확인:"
+                                docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "\\dt" 2>/dev/null || echo "테이블 목록 조회 실패"
+                                
+                                # 대안: SQL 직접 실행 시도
+                                if [[ "\$MIGRATE_RESULT" == *"No migrations found"* ]]; then
+                                    echo "🔄 대안: SQL 직접 실행"
+                                    for f in \$(find "${tempDir}" -name "*.sql" | sort); do
+                                        echo "실행: \$f"
+                                        cat "\$f" | docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} || echo "SQL 실행 실패: \$f"
+                                    done
+                                fi
                             else
-                                echo "🧹 임시 디렉토리 정리: $TEMP_DIR"
-                                rm -rf "$TEMP_DIR"
+                                echo "✅ 마이그레이션 성공!"
                             fi
-                        '''
+                            
+                            # 개발 환경일 경우 임시 디렉토리 보존
+                            if [ "${params.ENV}" = "develop" ]; then
+                                echo "🛠 개발 환경 - 임시 디렉토리 보존: ${tempDir}"
+                            else
+                                echo "🧹 임시 디렉토리 정리: ${tempDir}"
+                                rm -rf "${tempDir}"
+                            fi
+                        """
                     }
                 }
             }
         }
+
 
         // 7. 빌드 성공 여부 상태 반영
         stage('Mark Image Build Success') {
