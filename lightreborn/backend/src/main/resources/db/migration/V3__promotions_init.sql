@@ -23,7 +23,7 @@ INSERT INTO promotion_place_type (id, place_type) VALUES
                                                       (10, '보건소');
 
 
-INSERT INTO promotion_types (promotion_type_id, type_name) VALUES
+INSERT INTO promotion_types (id, type) VALUES
     (1, '현수막'),
     (2, 'X배너'),
     (3, '포스터');
