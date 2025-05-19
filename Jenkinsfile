@@ -211,6 +211,7 @@ pipeline {
                             echo "- DB 호스트: ${dbHost}"
                             echo "- 빌드 번호: ${buildNumber}"
                             echo "- 임시 디렉토리: ${tempDir}"
+                            echo "- ❤️workspace: ${workspace}"
                             
                             # 마이그레이션 경로가 존재하는지 확인
                             if [ ! -d "${migrationPath}" ]; then
