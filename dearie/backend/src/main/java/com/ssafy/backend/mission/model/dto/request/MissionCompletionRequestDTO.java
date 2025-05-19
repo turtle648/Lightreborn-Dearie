@@ -1,6 +1,6 @@
 package com.ssafy.backend.mission.model.dto.request;
 
-import com.ssafy.backend.mission.model.enums.MissionResultType;
+import com.ssafy.backend.mission.model.enums.MissionExecutionType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -18,7 +18,7 @@ public class MissionCompletionRequestDTO {
     private Long missionId;
     
     @NotNull
-    private MissionResultType missionResultType;
+    private MissionExecutionType missionExecutionType;
 
     //이미지 미션
     MultipartFile imageFile;

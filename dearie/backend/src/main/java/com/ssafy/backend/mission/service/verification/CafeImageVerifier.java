@@ -83,7 +83,7 @@ public class CafeImageVerifier implements ImageVerifier {
         boolean isVerified = isLocationVerified && isCupDetected;
         log.info("카페 미션 최종 검증 결과: {}", isVerified);
 
-        return new ImageResultDetail(detections, request.getImageKeyword(), isVerified);
+        return new ImageResultDetail(detections, request.getImageKeyword(), isVerified, imageUrl);
     }
 
     /**

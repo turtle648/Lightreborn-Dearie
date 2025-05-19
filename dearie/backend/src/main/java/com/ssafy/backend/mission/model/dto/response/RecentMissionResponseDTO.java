@@ -1,6 +1,6 @@
 package com.ssafy.backend.mission.model.dto.response;
 
-import com.ssafy.backend.mission.model.enums.MissionResultType;
+import com.ssafy.backend.mission.model.enums.MissionExecutionType;
 
 import java.time.LocalDate;
 
@@ -10,7 +10,7 @@ public record RecentMissionResponseDTO(
         LocalDate date,
         String content,
         String missionType,  // STATIC or DYNAMIC
-        MissionResultType resultType,
+        MissionExecutionType missionExecutionType,
         String imageUrl
 ) {}
 

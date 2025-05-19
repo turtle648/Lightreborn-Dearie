@@ -22,7 +22,7 @@ public class FlowerImageVerifier implements ImageVerifier {
 
         log.info("꽃 검증 결과: {}", isFlowerDetected);
 
-        return new ImageResultDetail(detections, request.getImageKeyword(), isFlowerDetected);
+        return new ImageResultDetail(detections, request.getImageKeyword(), isFlowerDetected, imageUrl);
     }
 
     @Override

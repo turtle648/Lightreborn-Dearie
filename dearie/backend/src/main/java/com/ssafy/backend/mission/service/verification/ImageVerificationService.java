@@ -46,7 +46,7 @@ public class ImageVerificationService {
                     .anyMatch(obj -> obj.getLabel().equalsIgnoreCase(request.getImageKeyword()) &&
                             obj.getConfidence() > 0.5);
 
-            return new ImageResultDetail(detections, request.getImageKeyword(), isDetected);
+            return new ImageResultDetail(detections, request.getImageKeyword(), isDetected, imageUrl);
         }
 
         @Override

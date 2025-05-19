@@ -4,23 +4,17 @@ import ai.djl.translate.TranslateException;
 import com.ssafy.backend.auth.exception.AuthErrorCode;
 import com.ssafy.backend.auth.exception.AuthException;
 import com.ssafy.backend.auth.repository.UserRepository;
-import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.mission.model.dto.request.MissionCompletionRequestDTO;
 import com.ssafy.backend.mission.model.dto.response.DailyMissionResponseDTO;
 import com.ssafy.backend.mission.model.dto.response.MissionCompletionResponseDTO;
 import com.ssafy.backend.mission.model.dto.response.MissionDetailResponseDTO;
 import com.ssafy.backend.mission.model.dto.response.RecentMissionResponseDTO;
-import com.ssafy.backend.mission.model.entity.MissionResult;
-import com.ssafy.backend.mission.model.entity.UserMission;
+import com.ssafy.backend.mission.model.enums.MissionExecutionType;
 import com.ssafy.backend.mission.service.MissionService;
-import com.ssafy.backend.mission.service.MusicResultService;
-import com.ssafy.backend.mission.service.TextResultService;
-import com.ssafy.backend.mission.service.YoloResultService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.BadRequestException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,7 +22,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.attribute.UserPrincipal;
 import java.io.IOException;
 import java.util.List;
 
@@ -39,7 +32,6 @@ import java.util.List;
 public class MissionController {
 
     private final MissionService missionService;
-    private final AuthService authService;
     private final UserRepository userRepository;
 
     @PostMapping(value = "/{userMissionId}/completions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -53,12 +45,9 @@ public class MissionController {
     public ResponseEntity<BaseResponse<MissionCompletionResponseDTO<?>>> verifyMissionCompletion(
             @PathVariable Long userMissionId,
             @ModelAttribute @Validated MissionCompletionRequestDTO req,
-//            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile,
             @RequestPart(value = "snapshotFile", required = false) MultipartFile snapshotFile,
             @AuthenticationPrincipal String userId
     ) throws IOException, TranslateException {
-//        req.setImageFile(imageFile);
-//        req.setSnapshotFile(snapshotFile);
 
         Long uuid = userRepository.findByLoginId(userId)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND))
@@ -68,11 +57,12 @@ public class MissionController {
         return ResponseEntity.ok().body(BaseResponse.success("미션 검증 완료", response));
     }
 
+
     @GetMapping(value = "/today")
     @Operation(
             summary = "오늘의 미션 검색 API",
             description = """
-                    📋 **오늘 사용자가 수행해야하는 5개의 미션을 제공합니다.**
+                    📋 **오늘 사용자가 수행해야하는 5개의 미션을 조회합니다.**
             """
     )
     public ResponseEntity<BaseResponse<List<DailyMissionResponseDTO>>> getDailyMissionList(
@@ -100,17 +90,18 @@ public class MissionController {
         return ResponseEntity.ok().body(BaseResponse.success("최근 완료 미션 조회 성공", result));
     }
 
-    @GetMapping("/recent-success/{userMissionId}")
+    @GetMapping("/recent-success/{userMissionId}/{missionExecutionType}")
     @Operation(summary = "완료된 미션 상세 조회", description = "유저가 완료한 하나의 미션의 상세 정보를 반환합니다.")
     public ResponseEntity<BaseResponse<MissionDetailResponseDTO<?>>> getCompletedMissionDetail(
             @PathVariable Long userMissionId,
+            @PathVariable MissionExecutionType missionExecutionType,
             @AuthenticationPrincipal String userId
     ) {
         Long uuid = userRepository.findByLoginId(userId)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND))
                 .getId();
 
-        MissionDetailResponseDTO<?> detail = missionService.getCompletedMissionDetail(userMissionId, uuid);
+        MissionDetailResponseDTO<?> detail = missionService.getCompletedMissionDetail(userMissionId, uuid, missionExecutionType);
         return ResponseEntity.ok(BaseResponse.success("미션 상세 조회 성공", detail));
     }
 }

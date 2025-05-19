@@ -24,5 +24,6 @@ public class WalkResultDetail {
     // 관계된 PK 값만 꺼내서 노출
     private Long userMissionId;
     private Long missionResultId;
-    private Long userId;
+
+    private boolean isVerified;
 }

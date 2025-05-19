@@ -13,4 +13,5 @@ public class MusicResultDetail {
     String title;
     String artist;
     String thumbnailImageUrl;
+    boolean isVerified;
 }

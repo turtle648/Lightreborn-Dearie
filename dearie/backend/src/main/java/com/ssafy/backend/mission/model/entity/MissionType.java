@@ -2,7 +2,10 @@ package com.ssafy.backend.mission.model.entity;
 
 import com.ssafy.backend.mission.model.enums.MissionTypeMapping;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "mission_types")

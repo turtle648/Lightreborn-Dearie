@@ -1,7 +1,11 @@
 package com.ssafy.backend.mission.model.entity;
 
+import com.ssafy.backend.mission.model.enums.MissionExecutionType;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "missions")
@@ -21,6 +25,10 @@ public class Mission {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mission_type_id")
     private MissionType missionType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MissionExecutionType missionExecutionType;  // WALK, IMAGE, TEXT, MUSIC 등
 
     @Column(length = 100)
     private String requiredObjectLabel;

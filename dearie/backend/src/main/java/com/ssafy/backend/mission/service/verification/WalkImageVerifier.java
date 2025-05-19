@@ -23,7 +23,7 @@ public class WalkImageVerifier implements ImageVerifier {
 
         log.info("산책 검증 결과: {}", isWalkDetected);
 
-        return new ImageResultDetail(detections, request.getImageKeyword(), isWalkDetected);
+        return new ImageResultDetail(detections, request.getImageKeyword(), isWalkDetected, imageUrl);
     }
 
     @Override
