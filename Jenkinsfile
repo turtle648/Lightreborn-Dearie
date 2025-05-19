@@ -223,21 +223,23 @@ pipeline {
                             mkdir -p ${tempDir}
                             cp ${migrationPath}/*.sql ${tempDir}/
                             
-                            # 파일 내용 및 인코딩 확인 (디버깅용)
-                            echo "📋 복사된 마이그레이션 파일 목록 및 내용:"
+                            # 복사된 파일 리스트 확인
+                            echo "📋 복사된 마이그레이션 파일 목록:"
                             ls -la ${tempDir}
-                            file -i ${tempDir}/*.sql
                             
-                            # 디버깅: SQL 파일 내용 출력
-                            echo "📄 SQL 파일 내용:"
-                            cat ${tempDir}/*.sql
+                            # 디버깅: SQL 파일 내용 확인 (첫 10줄만)
+                            echo "📄 SQL 파일 내용 (첫 10줄):"
+                            for f in ${tempDir}/*.sql; do
+                                echo "===== \$f ====="
+                                head -n 10 \$f || echo "파일 읽기 실패"
+                            done
                             
-                            # 복제 방지를 위해 기존 테이블 확인
-                            echo "🔍 기존 스키마와 테이블 확인:"
-                            docker exec ${project}-db psql -U ${dbUser} -d ${dbName} -c "\\dt" || echo "테이블 목록 조회 실패"
+                            # 볼륨 마운트 테스트 (alpine 이미지는 대부분 기본적으로 가능)
+                            echo "🔍 볼륨 마운트 테스트:"
+                            docker run --rm -v ${tempDir}:/test alpine ls -la /test
                             
-                            # Flyway DB 정보 확인
-                            echo "🔍 Flyway DB 상태 확인:"
+                            # Flyway 정보 확인
+                            echo "🔍 Flyway 정보 확인:"
                             docker run --rm \\
                                 --network ${networkName} \\
                                 -v ${tempDir}:/flyway/sql \\
@@ -248,11 +250,7 @@ pipeline {
                                 -password=${dbPassword} \\
                                 info
                             
-                            # 볼륨 마운트 테스트 (디버깅용)
-                            echo "🔍 볼륨 마운트 테스트:"
-                            docker run --rm -v ${tempDir}:/flyway/sql alpine ls -la /flyway/sql
-                            
-                            # 파일 마운트 확인 후 마이그레이션 실행
+                            # Flyway 마이그레이션 실행
                             echo "📦 Flyway 마이그레이션 실행 중..."
                             docker run --rm \\
                                 --network ${networkName} \\
@@ -267,9 +265,9 @@ pipeline {
                                 -outOfOrder=true \\
                                 -X migrate
                             
-                            # 디버깅을 위해 임시 디렉토리를 유지 (나중에 필요 없으면 삭제 코드 활성화)
-                            echo "🔍 디버깅을 위해 임시 디렉토리 유지: ${tempDir}"
-                            # rm -rf ${tempDir}  # 디버깅이 완료되면 이 줄의 주석을 제거
+                            # 디버깅 완료 후 임시 디렉토리 정리 (나중에 제거해도 됨)
+                            echo "🧹 임시 디렉토리 정리: ${tempDir}"
+                            rm -rf ${tempDir}
                         """
                     }
                 }
