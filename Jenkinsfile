@@ -202,6 +202,13 @@ pipeline {
                             echo "- Workspace: ${env.WORKSPACE}"
                             echo "- Migration Path: ${migrationPath}"
                             echo "- Build Number: ${env.BUILD_NUMBER}"
+                            echo "- Network Name: ${networkName}"
+                            echo "- DB Host: ${dbHost}"
+                            echo "- DB User: ${dbUser}"
+                            echo "- DB Password: ${dbPassword}"
+                            echo "- DB Name: ${dbName}"
+                            echo "- Temp Dir: ${tempDir}"
+                            echo "- ENV: ${env.ENV}"
                             
                             # 경로의 실제 내용 확인
                             echo "📋 경로 내용 확인 (ls -la):"
@@ -272,6 +279,7 @@ pipeline {
                 }
             }
         }
+
         // 7. 빌드 성공 여부 상태 반영
         stage('Mark Image Build Success') {
             steps {
