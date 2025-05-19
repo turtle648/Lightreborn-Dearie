@@ -2,7 +2,6 @@ def envProps
 def buildSuccess = false
 def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
 
-
 def generateEnvString = { keys ->
     keys.collect { key -> "${key}=${envProps[key]}" }.join('\n')
 }
@@ -185,9 +184,9 @@ pipeline {
                     projects.each { project ->
                         def projUpper = project.toUpperCase()
                         
-                        def migrationPath = (params.ENV == 'master') ?
-                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
-                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
+                        def migrationPath = (params.ENV == 'develop') ?
+                            "${workspace}/${project}/backend/src/main/resources/db/migration" :
+                            "${workspace}/${project}/backend/src/main/resources/db/migration_master"
                         
                         echo "🔍 Full Migration Path: ${migrationPath}"
                         
