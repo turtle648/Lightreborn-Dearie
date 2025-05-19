@@ -1,7 +1,6 @@
 def envProps
 def buildSuccess = false
 
-
 def generateEnvString = { keys ->
     keys.collect { key -> "${key}=${envProps[key]}" }.join('\n')
 }
@@ -21,14 +20,14 @@ pipeline {
         MATTERMOST_WEBHOOK_ID = 'MATTERMOST_WEBHOOK'
     }
 
-
     stages {
-        // 0. 브랜치 기반 ENV 자동 설정
         stage('Decide Environment') {
+        // 0. 브랜치 기반 ENV 자동 설정
             steps {
                 script {
                     def branch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                     def selectedEnv = params.ENV?.trim()?.toLowerCase()
+                    def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
 
                     if (!selectedEnv || !(selectedEnv in ['develop', 'master'])) {
                         selectedEnv = (branch == 'develop') ? 'develop' : 'master'
@@ -37,6 +36,8 @@ pipeline {
                         echo "✅ ENV manually selected: ${selectedEnv}"
                     }
                     env.ENV = selectedEnv
+
+                    // env.CUSTOM_WORKSPACE = workspace
                 }
             }
         }
@@ -79,7 +80,7 @@ pipeline {
                         'LIGHT_DB_URL', 'LIGHT_DB_USER', 'LIGHT_DB_PASSWORD', 'LIGHT_DB_NAME', 'LIGHT_JWT_SECRET',
                         'KAFKA_BOOTSTRAP_SERVERS', 'KAFKA_TOPIC_NAME', 'KAFKA_CONSUMER_GROUP_ID',
                         'OPENAI_API_KEY', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET_DEARIE', 'S3_BUCKET_LIGHTREBORN',
-                        'NEXT_PUBLIC_NAVER_CLIENT_ID'
+                        'NEXT_PUBLIC_NAVER_CLIENT_ID', 'KAKAO_REST_API_KEY'
                     ]
 
                     requiredVars.each { var ->
@@ -121,6 +122,7 @@ pipeline {
                     NEXT_PUBLIC_MAPBOX_TOKEN=${envProps.NEXT_PUBLIC_MAPBOX_TOKEN}
                     NEXT_PUBLIC_MAPTILER_KEY=${envProps.NEXT_PUBLIC_MAPTILER_KEY}
                     NEXT_PUBLIC_NAVER_CLIENT_ID=${envProps.NEXT_PUBLIC_NAVER_CLIENT_ID}
+                    KAKAO_REST_API_KEY=${envProps.KAKAO_REST_API_KEY}
                     """.stripIndent().trim()
 
                     writeFile file: "${env.WORKSPACE}/dearie/frontend/.env.dearie.production", text: frontendEnv
@@ -175,79 +177,56 @@ pipeline {
         
         // 5. Flyway 데이터 마이그레이션
         stage('Flyway Check and Migration') {
-            steps {
-                script {
+            steps{
+                script{
+
                     def projects = ['dearie', 'lightreborn']
                     
                     projects.each { project ->
+
                         def projUpper = project.toUpperCase()
-                        
-                        def migrationPath = (params.ENV == 'master') ?
-                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
-                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
-                        
-                        echo "🔍 Debug - Migration Path: ${migrationPath}"
-                        
-                        // 마이그레이션 파일 존재 확인
-                        sh "echo '📋 마이그레이션 파일 확인:' && ls -la ${migrationPath} || true"
-                        
-                        def hasMigrationFiles = sh(script: "ls ${migrationPath}/*.sql 2>/dev/null", returnStatus: true) == 0
-                        
-                        if (!hasMigrationFiles) {
-                            echo "⚠️ No migration files found in ${migrationPath}, skipping Flyway for ${project}"
-                            return
-                        }
-                        
-                        // 네트워크 이름을 먼저 정의
                         def networkName = "${project}-net"
                         def dbHost = "${project}-db"
-                        
-                        // 프로젝트별 DB 사용자/비밀번호 설정
-                        def dbUser = envProps.get("${projUpper}_DB_USER") ?: envProps["${projUpper}_DB_USER"] ?: "ssafy"
-                        def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: envProps["${projUpper}_DB_PASSWORD"] ?: "ssafy"
-                        
-                        echo "🔍 Debug - Final DB User: ${dbUser}"
-                        echo "🔍 Debug - Final DB Password: ${dbPassword}"
-                    
+                        def dbUser = envProps["${projUpper}_DB_USER"] ?: "ssafy"
+                        def dbPassword = envProps["${projUpper}_DB_PASSWORD"] ?: "ssafy"
                         def dbName = project
 
-                        def hostMigrationPath = (params.ENV == 'master') ?
-                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
-                            "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
+                        // Flyway 스테이지에서
+                        // 1. Jenkins 컨테이너 내의 SQL 파일 실제 경로
+                        def sqlPathInJenkinsContainer = "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration" // (또는 _master)
 
+                        // 2. Jenkins 컨테이너의 env.WORKSPACE가 호스트와 매핑된 경로 (추정)
+                        // 이 부분은 Jenkins 컨테이너 시작 시 설정된 볼륨 매핑에 따라 결정됩니다.
+                        // 예: env.WORKSPACE가 /var/jenkins_home/workspace/soboro 이고, 이것이 호스트의 /home/ubuntu/jenkins-data/workspace/soboro 와 매핑되었다고 가정
+                        def hostPathToWorkspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data") // 이 변환이 실제 호스트 경로와 일치해야 함
+                        def hostSqlPath = "${hostPathToWorkspace}/${project}/backend/src/main/resources/db/migration" // (또는 _master)
 
-                        def baseCmd = """
+                        sh """
+                            echo "Jenkins 컨테이너 내 SQL 경로: ${sqlPathInJenkinsContainer}"
+                            echo "호스트 머신에서 접근 가능한 SQL 추정 경로: ${hostSqlPath}"
+
+                            if [ ! -d "${sqlPathInJenkinsContainer}" ]; then
+                                echo "⚠️ SQL 파일 경로가 Jenkins 컨테이너 내에 존재하지 않습니다: ${sqlPathInJenkinsContainer}"
+                                exit 1
+                            fi
+                            ls -la "${sqlPathInJenkinsContainer}"
+
                             docker run --rm \\
-                            --network ${networkName} \\
-                            -v ${hostMigrationPath}:/flyway/sql \\
-                            flyway/flyway \\
-                            -locations=filesystem:/flyway/sql \\
-                            -url='jdbc:postgresql://${dbHost}:5432/${dbName}' \\
-                            -user=${dbUser} \\
-                            -password=${dbPassword} \\
-                            -baselineOnMigrate=true
-                        """.stripIndent().trim()
-
-
-                        
-                        // Flyway info 실행
-                        echo "🔍 Checking Flyway info..."
-                        try {
-                            def infoOutput = sh(script: "${baseCmd} info", returnStdout: true)
-                            echo "📋 Flyway info output:"
-                            echo infoOutput
-                        } catch (err) {
-                            echo "⚠️ Info command failed: ${err.message}"
-                        }
-                        
-                        // 직접 마이그레이션 실행
-                        echo "🚀 Running Flyway migration..."
-                        sh "${baseCmd} migrate"
+                                --network "${networkName}" \\
+                                -v "${hostSqlPath}:/flyway/sql" \\
+                                flyway/flyway \\
+                                -locations=filesystem:/flyway/sql \\
+                                -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
+                                -user=${dbUser} \\
+                                -password=${dbPassword} \\
+                                migrate
+                            """
                     }
                 }
             }
         }
 
+        
         // 7. 빌드 성공 여부 상태 반영
         stage('Mark Image Build Success') {
             steps {
@@ -258,7 +237,7 @@ pipeline {
                 }
             }
         }
-    }
+    } // 여기에 stages 섹션을 닫는 중괄호 추가
 
     post {
         always {

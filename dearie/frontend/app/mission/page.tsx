@@ -34,9 +34,9 @@ export default function MissionPage() {
 
         <Tabs defaultValue="all" className="w-full" onValueChange={(value) => setSelectedType(value as any)}>
           <TabsList className="grid grid-cols-3 mb-6 bg-gray-100/80 p-1 rounded-full">
-            <TabsTrigger value="all" className="rounded-full">전체</TabsTrigger>
-            <TabsTrigger value="STATIC" className="rounded-full">마음챙김</TabsTrigger>
-            <TabsTrigger value="DYNAMIC" className="rounded-full">활동</TabsTrigger>
+            <TabsTrigger value="all" className="rounded-full data-[state=active]:text-white data-[state=active]:bg-black">전체</TabsTrigger>
+            <TabsTrigger value="STATIC" className="rounded-full data-[state=active]:text-white data-[state=active]:bg-black">마음챙김</TabsTrigger>
+            <TabsTrigger value="DYNAMIC" className="rounded-full data-[state=active]:text-white data-[state=active]:bg-black">활동</TabsTrigger>
           </TabsList>
           <div className="space-y-3">
             {loading && <div>로딩 중...</div>}

@@ -80,6 +80,10 @@ ${resultUrl}
     }
   };
 
+  function handleConsultationRequest(): void {
+    router.push("/survey/consultation-intro");
+  }
+
   return (
     <div className="container mx-auto py-8 px-4 max-w-md min-h-screen flex flex-col">
       <div className="mb-8">
@@ -168,6 +172,20 @@ ${resultUrl}
             <div className="bg-blue-50 border-l-4 border-blue-500 p-3 mb-4">
               <p className="text-sm">{recommend}</p>
             </div>
+            {label !== "정상" && (
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-gray-800 mb-3">
+                  정상 범위에서 벗어났습니다. 전문가의 도움이 필요할 수
+                  있습니다.
+                </p>
+                <Button
+                  className="w-full bg-primary hover:bg-primary/90"
+                  onClick={handleConsultationRequest}
+                >
+                  상담 신청하기
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-4 mb-6">

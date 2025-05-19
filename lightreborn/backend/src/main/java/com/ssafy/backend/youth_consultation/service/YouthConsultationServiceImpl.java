@@ -595,54 +595,69 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     @KafkaListener(topics = "survey-send")
     @Transactional
     public void getKafkaSurveySendDate(SurveySendRequestDTO requestDTO) {
+        log.info("📥 [Kafka 수신] survey-send 토픽 수신: {}", requestDTO);
+
         Map<String, SurveyQuestion> questions = getQuestions();
+        log.debug("🧠 [질문 로드] 전체 질문 수: {}", questions.size());
 
         UserInfoDTO userInfoDTO = requestDTO.getUser();
-        List<SurveyAnswerDTO> answers = requestDTO.getAnswers();
+        log.info("👤 [사용자 정보] 이름: {}, 전화번호: {}", userInfoDTO.getName(), userInfoDTO.getPhoneNumber());
 
-        PersonalInfo user = personalInfoRepository.findByNameAndPhoneNumber(userInfoDTO.getName(), userInfoDTO.getPhoneNumber()).orElse(null);
+        List<SurveyAnswerDTO> answers = requestDTO.getAnswers();
+        log.info("📊 [응답 수] 총 응답 수: {}", answers.size());
+
+        PersonalInfo user = personalInfoRepository
+                .findByNameAndPhoneNumber(userInfoDTO.getName(), userInfoDTO.getPhoneNumber())
+                .orElse(null);
+
+        if (user != null) {
+            log.info("✅ [기존 사용자] 이름: {}, ID: {}", user.getName(), user.getId());
+        } else {
+            log.info("🆕 [신규 사용자] 등록 필요");
+        }
 
         SurveyAnswerCollector collector = new SurveyAnswerCollector();
 
-        log.info("[questions] : {}", questions);
-
-        answers.forEach(answer -> {
+        for (SurveyAnswerDTO answer : answers) {
             SurveyQuestion question = questions.get(answer.getQuestion());
-            log.info("[] : {}", question);
 
-            if(answer.getAnswerChoice() == null) {
-                collector.addAnswerText(question, answer.getAnswerText());
+            if (question == null) {
+                log.warn("⚠️ [오류] 질문 코드 '{}'에 해당하는 질문이 존재하지 않음", answer.getQuestion());
+                continue;
             }
-            if(answer.getAnswerChoice() != null) {
+
+            log.debug("📝 [응답 처리] 질문: {}", question.getContent());
+
+            if (answer.getAnswerChoice() == null) {
+                log.debug("🔤 [주관식 응답] {}", answer.getAnswerText());
+                collector.addAnswerText(question, answer.getAnswerText());
+            } else {
+                log.debug("⭕ [객관식 응답] {}", answer.getAnswerChoice());
                 collector.addAnswerChoice(question, answer.getAnswerChoice());
             }
-        });
-
+        }
 
         if (user != null) {
             Optional<SurveyVersion> surveyVersion = surveyVersionRepository.findTopByPersonalInfoOrderByVersionDesc(user);
 
-            if(surveyVersion.isEmpty()) {
+            if (surveyVersion.isEmpty()) {
+                log.info("📌 [설문 버전 없음] 초기 버전 생성");
+                SurveyVersion newSurveyVersion = surveyVersionRepository.save(
+                        SurveyVersion.builder().personalInfo(user).build()
+                );
+                collector.addVersion(newSurveyVersion);
+            } else {
+                log.info("📌 [기존 설문 버전] 최신 버전: {}", surveyVersion.get().getVersion());
                 SurveyVersion newSurveyVersion = surveyVersionRepository.save(
                         SurveyVersion.builder()
+                                .version(surveyVersion.get().getVersion() + 1L)
                                 .personalInfo(user)
                                 .build()
                 );
-
                 collector.addVersion(newSurveyVersion);
             }
 
-            surveyVersion.ifPresent(version -> {
-                SurveyVersion newSurveyVersion = surveyVersionRepository.save(
-                        SurveyVersion.builder()
-                                .version(version.getVersion() + 1L)
-                                .personalInfo(version.getPersonalInfo())
-                                .build()
-                );
-                collector.addVersion(newSurveyVersion);
-            });
-        }
-        if (user == null) {
+        } else {
             PersonalInfo savedPersonalInfo = personalInfoRepository.save(
                     PersonalInfo.builder()
                             .name(userInfoDTO.getName())
@@ -651,18 +666,20 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                             .birthDate(userInfoDTO.getBirthDate())
                             .build()
             );
+            log.info("💾 [신규 사용자 저장] ID: {}", savedPersonalInfo.getId());
 
             SurveyVersion newSurveyVersion = surveyVersionRepository.save(
                     SurveyVersion.builder()
                             .personalInfo(savedPersonalInfo)
                             .build()
             );
+            log.info("🆕 [설문 버전 생성] 신규 사용자용 버전 생성");
 
             collector.addVersion(newSurveyVersion);
         }
 
         surveyAnswerRepository.saveAll(collector.getAnswers());
-
+        log.info("📤 [저장 완료] 설문 응답 총 {}건 저장됨", collector.getAnswers().size());
     }
 
     private Map<String, SurveyQuestion> getQuestions() {

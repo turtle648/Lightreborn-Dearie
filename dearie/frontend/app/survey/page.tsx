@@ -21,6 +21,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { useAgreementStore } from "@/stores/agreement-store";
 
 interface UIQuestion {
   id: number;
@@ -76,11 +77,18 @@ export default function SurveyPage() {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { agreements, hasHydrated, setAgreements } = useAgreementStore();
 
   useEffect(() => {
+    if (!hasHydrated) return;
+
     const fetchSurvey = async () => {
       try {
-        const surveyInfo: YouthSurveyQuestionDTO = await getSurveyQuestions();
+        const surveyInfo = await getSurveyQuestions();
+
+        console.log("받은 agreements:", surveyInfo.agreements);
+        setAgreements(surveyInfo.agreements); // 조건 없이 저장
+
         const mapped = surveyInfo.questions.map((q) => ({
           id: q.questionId,
           code: q.code,
@@ -98,8 +106,9 @@ export default function SurveyPage() {
         setIsLoading(false);
       }
     };
+
     fetchSurvey();
-  }, []);
+  }, [hasHydrated]);
 
   const handleAnswer = (value: string) => {
     const currentId = surveyQuestions[currentQuestionIndex]?.id;
@@ -143,6 +152,8 @@ export default function SurveyPage() {
     }
   };
 
+  const { setSurveyId } = useAgreementStore(); // ✅ Zustand setter 포함
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
@@ -150,6 +161,11 @@ export default function SurveyPage() {
       const responseDTO: PostSurveyAnswerResponse = await postSurveyAnswer(
         requestDto
       );
+
+      if (responseDTO.id) {
+        setSurveyId(responseDTO.id);
+      }
+
       router.push(`/survey/results?resultId=${responseDTO.id}`);
     } catch (e) {
       console.error("설문 제출 실패:", e);

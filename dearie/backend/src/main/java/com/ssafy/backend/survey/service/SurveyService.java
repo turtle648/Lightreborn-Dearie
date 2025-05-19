@@ -1,6 +1,7 @@
 package com.ssafy.backend.survey.service;
 
 import com.ssafy.backend.survey.model.dto.request.PostSurveyAgreementRequestDTO;
+import com.ssafy.backend.survey.model.dto.request.PostSurveyByGuestRequestDTO;
 import com.ssafy.backend.survey.model.dto.request.PostSurveyRequestDTO;
 import com.ssafy.backend.survey.model.dto.response.SurveyConsentLogResponseDTO;
 import com.ssafy.backend.survey.model.dto.response.SurveyResponseDTO;
@@ -11,6 +12,8 @@ public interface SurveyService {
     YouthSurveyQuestionDTO getIsolatedYouthSurveyQuestions();
 
     SurveyResponseDTO postIsolatedYouthSurvey(String userId, PostSurveyRequestDTO requestDTO);
+
+    SurveyResponseDTO postIsolatedYouthSurveyByGuest(PostSurveyByGuestRequestDTO requestDTO);
 
     SurveyConsentLogResponseDTO postIsolatedYouthSurveyAgreement(PostSurveyAgreementRequestDTO requestDTO);
 

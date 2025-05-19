@@ -4,39 +4,36 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IntroductionScreen } from "@/components/introduction-screen";
 import { ConsentModal, type ConsentItem } from "@/components/consent-modal";
+import { useAgreementStore } from "@/stores/agreement-store";
+import { AgreementDTO } from "@/types/response.survey";
+import { postAgreement, postSurveyResultToDashboard } from "@/apis/survey-api";
 
 export default function ConsultationIntroPage() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ 추가
 
-  // 동의 항목 정의
-  const consentItems: ConsentItem[] = [
-    {
-      id: "serviceTerms",
-      label: "[필수] 서비스 이용 약관(토스)",
-      required: true,
-    },
-    {
-      id: "personalInfoUsage",
-      label: "[필수] 개인정보 수집·이용 동의(토스)",
-      required: true,
-    },
-    {
-      id: "personalInfoProvision",
-      label: "[필수] 이용 약관(공정거래위원회)",
-      required: true,
-    },
-    {
-      id: "personalInfoThirdParty",
-      label: "[필수] 개인정보 수집·이용 동의(공정거래위원회)",
-      required: true,
-    },
-    {
-      id: "marketingConsent",
-      label: "[필수] 개인정보 수집·이용 동의(휴대폰 인증)",
-      required: true,
-    },
-  ];
+  const { agreements, hasHydrated } = useAgreementStore();
+
+  if (!hasHydrated) {
+    return null; // 또는 <LoadingScreen />
+  }
+
+  if (agreements.length === 0) {
+    return (
+      <div className="text-center text-sm py-10 text-muted-foreground">
+        설문 동의 정보를 찾을 수 없습니다.
+      </div>
+    );
+  }
+
+  const consentItems: ConsentItem[] = agreements.map(
+    (agreement: AgreementDTO) => ({
+      id: `agreement-${agreement.agreementId}`,
+      label: agreement.title,
+      required: agreement.isRequired,
+    })
+  );
 
   const handleOpenModal = () => {
     setShowModal(true);
@@ -46,14 +43,46 @@ export default function ConsultationIntroPage() {
     setShowModal(false);
   };
 
-  const handleConsentSubmit = async () => {
+  const handleConsentSubmit = async (consents: Record<string, boolean>) => {
     try {
-      // 여기서 실제 API 호출을 통해 설문 결과와 동의 정보를 전송합니다
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const { surveyId, agreements } = useAgreementStore.getState();
+
+      if (!surveyId || agreements.length === 0) {
+        console.warn("전송 불가: surveyId 또는 agreements 없음");
+        return;
+      }
+
+      setIsSubmitting(true); // ✅ 로딩 시작
+
+      const agreementPayload = agreements.map((agreement) => ({
+        agreementId: agreement.agreementId,
+        isAgreed: consents[`agreement-${agreement.agreementId}`] ?? false,
+      }));
+
+      const payload = {
+        surveyId,
+        agreements: agreementPayload,
+      };
+
+      const agreementSuccess = await postAgreement(payload);
+
+      if (!agreementSuccess) {
+        alert("동의 전송에 실패했습니다. 다시 시도해주세요.");
+        return;
+      }
+
+      const resultSuccess = await postSurveyResultToDashboard(surveyId); // ✅ 추가
+
+      if (!resultSuccess) {
+        alert("설문 결과 전송에 실패했습니다. 다시 시도해주세요.");
+        return;
+      }
+
       router.push("/survey/consultation-complete");
     } catch (error) {
-      console.error("동의 제출 중 오류 발생:", error);
+      console.error("동의 또는 결과 제출 중 오류 발생:", error);
     } finally {
+      setIsSubmitting(false);
       setShowModal(false);
     }
   };
@@ -78,7 +107,6 @@ export default function ConsultationIntroPage() {
         onButtonClick={handleOpenModal}
       />
 
-      {/* 동의 모달 컴포넌트 - 부모 컴포넌트에서 관리 */}
       <ConsentModal
         isOpen={showModal}
         onClose={handleCloseModal}
@@ -86,6 +114,8 @@ export default function ConsultationIntroPage() {
         title="전송을 위해선 동의가 필요해요"
         submitButtonText="동의하고 전송하기"
         consentItems={consentItems}
+        agreements={agreements}
+        isSubmitting={isSubmitting} // ✅ 전달
       />
     </>
   );

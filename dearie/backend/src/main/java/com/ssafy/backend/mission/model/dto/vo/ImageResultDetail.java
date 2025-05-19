@@ -15,5 +15,6 @@ import java.util.List;
 public class ImageResultDetail {
     private List<YoloDetectionResult> detections;
     private String requiredObjectLabel;
-    private boolean containsRequiredObject;
+    private boolean isVerified;
+    private String s3ImageUrl;
 }

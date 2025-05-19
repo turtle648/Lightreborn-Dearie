@@ -141,6 +141,55 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     @Override
+    public SurveyResponseDTO postIsolatedYouthSurveyByGuest(PostSurveyByGuestRequestDTO requestDTO) {
+        List<SurveyAnswerRequestDTO> answers = requestDTO.getAnswers();
+
+        // 설문 질문들 가져오기
+        List<Long> questionIds = answers.stream()
+                .map(SurveyAnswerRequestDTO::getQuestionId)
+                .toList();
+        List<SurveyQuestion> questions = surveyQuestionRepository.findAllById(questionIds);
+
+        // 보기 문항들 가져오기
+        List<Long> optionIds = answers.stream()
+                .map(SurveyAnswerRequestDTO::getOptionId)
+                .toList();
+        List<SurveyOption> options = surveyOptionRepository.findAllById(optionIds);
+
+        // 질문/보기 pk-객체 묶어 놓기 (검색 효율을 위함)
+        Map<Long, SurveyQuestion> questionMap = questions.stream()
+                .collect(Collectors.toMap(SurveyQuestion::getId, Function.identity()));
+        Map<Long, SurveyOption> answerMap = options.stream()
+                .collect(Collectors.toMap(SurveyOption::getId, Function.identity()));
+
+        List<SurveyAnswerVO> answerVOs = answers.stream()
+                .map(answer -> {
+                    SurveyQuestion question = questionMap.get(answer.getQuestionId());
+                    if (question == null) throw new SurveyException(SurveyErrorCode.QUESTION_NOT_FOUND);
+
+                    SurveyOption answerChoice = answer.getOptionId() == null ? null : answerMap.get(answer.getOptionId());
+                    if (answer.getOptionId() != null && answerChoice == null) throw new SurveyException(SurveyErrorCode.OPTION_NOT_FOUND);
+
+                    return SurveyAnswerVO.of(answer.getAnswerText(), answerChoice, question);
+                })
+                .toList();
+
+
+        List<SurveyAnswerDTO> answerDTOS = answerVOs.stream().map(request -> {
+            SurveyAnswer answer = SurveyAnswerVO.toEntity(request);
+            return SurveyAnswerDTO.from(answer);
+        }).toList();
+
+        int result = calculateScore(answers, options);
+
+        SurveySendRequestDTO surveySendRequestDTO = SurveySendRequestDTO.from(requestDTO.getPersonalInfo(), answerDTOS, result);
+
+        kafkaTemplate.send(topicName, surveySendRequestDTO);
+
+        return null;
+    }
+
+    @Override
     public SurveyConsentLogResponseDTO postIsolatedYouthSurveyAgreement(PostSurveyAgreementRequestDTO requestDTO) {
         List<Long> consentIds = requestDTO.getAgreements()
                 .stream()

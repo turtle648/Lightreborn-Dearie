@@ -19,9 +19,20 @@ RUN chmod +x gradlew
 RUN ./gradlew build -x test --no-daemon
 
 # 실제 런타임 이미지
-FROM openjdk:21-jdk
+FROM openjdk:21-jdk-slim
 
 WORKDIR /app
+
+# OpenCV 관련 필수 라이브러리 설치
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libopencv-dev \
+    libtbb-dev \
+    libgtk2.0-dev \
+    pkg-config \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 # jar 파일 복사
 COPY --from=build /app/build/libs/*.jar dearie-backend.jar

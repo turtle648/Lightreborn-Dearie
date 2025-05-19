@@ -2,12 +2,14 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { MissionCategory, DailyMissionResponseDTO } from "@/types/mission";
+import type { MissionCategory, DailyMissionResponseDTO, RecentMissionResponseDTO, MissionDetailResponseDTO } from "@/types/mission";
 import {
   getDailyMissions,
   updateMissionStatus,
   endWalk,
   WalkRecordResponse,
+  getCompletedMission,
+  getCompletedMissionDetail,
 } from "@/apis/mission-api";
 
 interface LatLng {
@@ -21,10 +23,23 @@ interface MissionStore {
   loading: boolean
   error: string | null
 
+  // 최근 완료 미션
+  recentMissions: RecentMissionResponseDTO[]
+  missionDetail: MissionDetailResponseDTO<any> | null
+  recentLoading: boolean
+  detailLoading: boolean
+  recentError: string | null
+  detailError: string | null
+  hasMore: boolean
+  setHasMore: (hasMore: boolean) => void
+
   // 기존 미션 API
   fetchAll: (limit?: number) => Promise<void>;
   fetchDaily: (limit?: number) => Promise<void>;
   setStatus: (id: number, completed: boolean) => Promise<void>;
+
+  fetchRecentMissions: (page?: number) => Promise<void>
+  fetchMissionDetail: (userMissionId: number) => Promise<void>
 
   // 산책 기록 관련 상태
   walkRecord?: WalkRecordResponse;
@@ -51,7 +66,7 @@ function getMissionMetaById(missionId: number) {
     return { icon: "Camera", color: "text-violet-500", route: "/mission/photo" };
   }
   // 기본: 텍스트 미션
-  return { icon: "Notebook", color: "text-orange-500", route: "/mission/text" };
+  return { icon: "Notebook", color: "text-red-500", route: "/mission/text" };
 }
 
 export const useMissionStore = create<MissionStore>()(
@@ -62,6 +77,16 @@ export const useMissionStore = create<MissionStore>()(
       preview: [],
       loading: false,
       error: null,
+
+      recentMissions: [],
+      missionDetail: null,
+      recentLoading: false,
+      detailLoading: false,
+      recentError: null,
+      detailError: null,
+
+      hasMore: true,
+      setHasMore: (hasMore: boolean) => set({ hasMore }),
 
       fetchAll: async (limit = 5) => {
         set({ loading: true, error: null });
@@ -111,6 +136,42 @@ export const useMissionStore = create<MissionStore>()(
           set({ error: e.message || '미션 상태 업데이트 중 오류' });
         } finally {
           set({ loading: false });
+        }
+      },
+
+      fetchRecentMissions: async (page = 0) => {
+        set({ recentLoading: true, recentError: null });
+      
+        try {
+          const result = await getCompletedMission(page);
+      
+          set(state => {
+            const existingIds = new Set(state.recentMissions.map(m => m.userMissionId));
+            const newMissions = result.filter(m => !existingIds.has(m.userMissionId));
+            return {
+              recentMissions: page === 0
+                ? result
+                : [...state.recentMissions, ...newMissions],
+              hasMore: result.length === 5, // 5개 미만이면 더 이상 없음
+            };
+          });
+        } catch (e: any) {
+          set({ recentError: e.message || "최근 미션 불러오기 실패" });
+        } finally {
+          set({ recentLoading: false });
+        }
+      },
+      
+
+      fetchMissionDetail: async (userMissionId) => {
+        set({ detailLoading: true, detailError: null });
+        try {
+          const detail = await getCompletedMissionDetail(userMissionId);
+          set({ missionDetail: detail });
+        } catch (e: any) {
+          set({ detailError: e.message || "미션 상세 조회 실패" });
+        } finally {
+          set({ detailLoading: false });
         }
       },
 
