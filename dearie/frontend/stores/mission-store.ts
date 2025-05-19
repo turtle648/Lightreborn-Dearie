@@ -2,10 +2,10 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { MissionCategory, DailyMissionResponseDTO, RecentMissionResponseDTO, MissionDetailResponseDTO } from "@/types/mission";
+import type { MissionCategory, DailyMissionResponseDTO, RecentMissionResponseDTO, MissionDetailResponseDTO, MissionCompletionRequest } from "@/types/mission";
 import {
   getDailyMissions,
-  updateMissionStatus,
+  submitMissionCompletion,
   endWalk,
   WalkRecordResponse,
   getCompletedMission,
@@ -18,6 +18,9 @@ interface LatLng {
 }
 
 interface MissionStore {
+  missionContent: string;
+  setMissionContent: (content: string) => void;
+  
   all: DailyMissionResponseDTO[]    // 5개 전체
   preview: DailyMissionResponseDTO[]// 미리보기용 (2개)
   loading: boolean
@@ -36,10 +39,10 @@ interface MissionStore {
   // 기존 미션 API
   fetchAll: (limit?: number) => Promise<void>;
   fetchDaily: (limit?: number) => Promise<void>;
-  setStatus: (id: number, completed: boolean) => Promise<void>;
+  setStatus: (userMissionId: number, request: MissionCompletionRequest) => Promise<void>;
 
   fetchRecentMissions: (page?: number) => Promise<void>
-  fetchMissionDetail: (userMissionId: number) => Promise<void>
+  fetchMissionDetail: (userMissionId: number, executionResultType: any) => Promise<void>
 
   // 산책 기록 관련 상태
   walkRecord?: WalkRecordResponse;
@@ -60,10 +63,10 @@ function getMissionMetaById(missionId: number) {
     return { icon: "Music", color: "text-blue-500", route: "/mission/music" };
   }
   if ([9, 12, 25].includes(missionId)) {
-    return { icon: "Footprints", color: "text-green-500", route: "/mission/walking" };
+    return { icon: "Footprints", color: "text-green-500", route: "/mission/walk" };
   }
   if ([8, 10, 14].includes(missionId)) {
-    return { icon: "Camera", color: "text-violet-500", route: "/mission/photo" };
+    return { icon: "Camera", color: "text-violet-500", route: "/mission/image" };
   }
   // 기본: 텍스트 미션
   return { icon: "Notebook", color: "text-red-500", route: "/mission/text" };
@@ -72,6 +75,9 @@ function getMissionMetaById(missionId: number) {
 export const useMissionStore = create<MissionStore>()(
   persist(
     (set, get) => ({
+      missionContent: "",
+      setMissionContent: (content: string) => set({ missionContent: content }),
+
       // 초기 state
       all: [],
       preview: [],
@@ -116,17 +122,17 @@ export const useMissionStore = create<MissionStore>()(
         }
       },
 
-      setStatus: async (id, completed) => {
+      setStatus: async (userMissionId, request) => {
         set({ loading: true, error: null });
         try {
-          const success = await updateMissionStatus(id, completed);
-          if (success) {
+          const response = await submitMissionCompletion(userMissionId, request);
+          if (response && response.code === 200) {
             set(state => ({
               all: state.all.map(m =>
-                m.id === id ? { ...m, isCompleted: completed } : m
+                m.id === userMissionId ? { ...m, isCompleted: true } : m
               ),
               preview: state.preview.map(m =>
-                m.id === id ? { ...m, isCompleted: completed } : m
+                m.id === userMissionId ? { ...m, isCompleted: true } : m
               ),
             }));
           } else {
@@ -163,10 +169,10 @@ export const useMissionStore = create<MissionStore>()(
       },
       
 
-      fetchMissionDetail: async (userMissionId) => {
+      fetchMissionDetail: async (userMissionId, executionResultType) => {
         set({ detailLoading: true, detailError: null });
         try {
-          const detail = await getCompletedMissionDetail(userMissionId);
+          const detail = await getCompletedMissionDetail(userMissionId, executionResultType);
           set({ missionDetail: detail });
         } catch (e: any) {
           set({ detailError: e.message || "미션 상세 조회 실패" });

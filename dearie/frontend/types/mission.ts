@@ -3,7 +3,8 @@
  */
 
 export type MissionCategory = 'STATIC' | 'DYNAMIC';
-export type MissionResultType = 'TEXT' | 'IMAGE' | 'MUSIC' | 'WALK';
+export type MissionExecutionType = 'TEXT' | 'IMAGE' | 'MUSIC' | 'WALK';
+export type requiredObjectLabel = 'flower' | 'leaves' | 'bench' | 'cup';
 
 export interface Mission {
   id: number
@@ -29,12 +30,8 @@ export interface DailyMissionResponseDTO {
   isCompleted: boolean;
   /** mission_type.type */
   missionType: MissionCategory;
-  /** 아이콘 이름 (예: 'Award', 'Sparkles' 등) */
-  icon: string;
-  /** Tailwind 색상 클래스 (예: 'text-orange-500') */
-  color: string;
-  /** 라우트 경로 (예: '/mission/walking') */
-  route: string;
+  missionExecutionType: MissionExecutionType;
+  requiredObjectLabel: requiredObjectLabel;
 }
 
 export interface RecentMissionResponseDTO {
@@ -43,7 +40,7 @@ export interface RecentMissionResponseDTO {
   date: string // ISO string
   content: string
   missionType: MissionCategory
-  resultType: MissionResultType
+  missionExecutionType: MissionExecutionType
   imageUrl: string | null
 }
 
@@ -51,6 +48,34 @@ export interface MissionDetailResponseDTO<T> {
   missionTitle: string
   missionContent: string
   date: string // ISO string
-  resultType: MissionResultType
+  missionExecutionType: MissionExecutionType
   detail: T
+}
+
+export interface MissionCompletionRequest {
+  missionId: number;
+  missionExecutionType: "WALK" | "IMAGE" | "TEXT" | "MUSIC";
+
+  // 이미지 미션
+  imageFile?: File;
+  imageKeyword?: string;
+  longitude?: number;
+  latitude?: number;
+
+  // 음악 미션
+  title?: string;
+  artist?: string;
+  musicImageUrl?: string;
+
+  // 텍스트 미션
+  textContent?: string;
+
+  // 산책 미션
+  startTime?: string; // ISO string
+  endTime?: string;   // ISO string
+  pathJson?: string;
+  distance?: number;
+
+  // snapshotFile 따로 전달
+  snapshotFile?: File;
 }

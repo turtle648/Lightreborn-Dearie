@@ -7,23 +7,32 @@ import { CheckCircle, ChevronRight, Award } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { updateMissionStatus } from "@/apis/mission-api";
+import { submitMissionCompletion } from "@/apis/mission-api";
 import type { DailyMissionResponseDTO } from "@/types/mission";
 import * as LucideIcons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useMissionStore } from "@/stores/mission-store";
+
 
 interface MissionItemProps {
   mission: DailyMissionResponseDTO;
 }
 
 interface IconComponentProps {
-  icon: keyof typeof LucideIcons;
+  executionType: string;
   className?: string;
 }
 
-const IconComponent = ({ icon, className }: IconComponentProps) => {
-  // 1) LucideReact 에서 가져온 심볼을 LucideIcon 타입으로 캐스트
-  const RawIcon = LucideIcons[icon] as LucideIcon;
+const executionTypeToIcon = {
+  MUSIC: "Music",
+  WALK: "Footprints",
+  IMAGE: "Image",
+  TEXT: "Text",
+} as const;
+
+const IconComponent = ({ executionType, className }: IconComponentProps) => {
+  const iconName = executionTypeToIcon[executionType as keyof typeof executionTypeToIcon];
+  const RawIcon = LucideIcons[iconName as keyof typeof LucideIcons] as LucideIcon;
 
   // 2) 혹시 undefined 일 때 대비
   if (!RawIcon) {
@@ -42,14 +51,19 @@ export function MissionItem({ mission }: MissionItemProps) {
     if (isUpdating || mission.isCompleted) return;
 
     setIsUpdating(true);
-    try {
-      await updateMissionStatus(mission.id, true);
-      router.push(mission.route);
-    } catch (e) {
-      console.error("미션 상태 업데이트 오류", e);
-    } finally {
-      setIsUpdating(false);
+    useMissionStore.getState().setMissionContent(mission.content);
+
+    const query = new URLSearchParams({
+      userMissionId: mission.id.toString(),
+      missionId: mission.missionId.toString(),
+    });
+    if (mission.requiredObjectLabel) {
+      query.set("label", mission.requiredObjectLabel);
     }
+    router.push(`/mission/${mission.missionExecutionType.toLowerCase()}?${query.toString()}`);
+    
+    setIsUpdating(false);
+    
   };
 
   
@@ -68,7 +82,12 @@ export function MissionItem({ mission }: MissionItemProps) {
             {/* 미션 정보 */}
             <div className="flex-1">
               <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                <IconComponent icon={mission.icon as keyof typeof LucideIcons} className={`w-6 h-6 ${mission.color}`} />
+                <IconComponent executionType={mission.missionExecutionType} className={`w-6 h-6 ${
+                  mission.missionExecutionType === "TEXT" ? "text-blue-500" :
+                  mission.missionExecutionType === "IMAGE" ? "text-green-500" :
+                  mission.missionExecutionType === "MUSIC" ? "text-purple-500" :
+                  "text-yellow-500"
+                }`} />
                  {mission.missionTitle}
               </h3>
               <p className="text-sm text-gray-600 mb-4">

@@ -1,22 +1,26 @@
 // app/(mission)/walking/page.tsx
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Play, Square, Save, AlertTriangle, RefreshCw } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { WalkingMapBox } from "@/components/feature/mission/walking-mapbox";
 import { WalkingSummary } from "@/components/feature/mission/walking-summary";
 import type { MapRef } from "react-map-gl/maplibre";
 import maplibregl from "maplibre-gl";
 import { useMissionStore } from "@/stores/mission-store";
+import type { MissionCompletionRequest } from "@/types/mission";
 
 export default function WalkingMissionPage() {
   const router = useRouter();
   const mapRef = useRef<MapRef>(null);
+  const { userMissionId } = useParams();
+  const userMissionIdNum = Number(userMissionId);
+  const { all, preview, fetchAll } = useMissionStore();
 
   const [isTracking, setIsTracking] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -33,8 +37,20 @@ export default function WalkingMissionPage() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [capturedMapUrl, setCapturedMapUrl] = useState<string | null>(null);
-  const { stopRecording, walkLoading, walkError } = useMissionStore();
+  const { stopRecording, walkLoading, walkError, setStatus } = useMissionStore();
 
+  // 미션 정보 찾기 (all, preview 등에서)
+  const mission = useMemo(
+    () =>
+      all.find(m => m.id === userMissionIdNum) ||
+      preview.find(m => m.id === userMissionIdNum),
+    [all, preview, userMissionIdNum]
+  );
+
+  // 없으면 fetchAll 등으로 불러오기
+  useEffect(() => {
+    if (!mission) fetchAll();
+  }, [mission, fetchAll]);
 
   // 초기 위치 설정
   useEffect(() => {
@@ -140,8 +156,23 @@ export default function WalkingMissionPage() {
       return alert("지도 캡처 중입니다. 잠시만 기다려주세요.");
     }
     try {
-      // userMissionId=11 하드코딩
-      await stopRecording(11, path, capturedMapBlob, endTime ?? new Date());
+      const pathJson = JSON.stringify(path); // 경로 정보
+      const snapshotFile = capturedMapBlob; // File 또는 Blob
+
+      const missionId = mission?.missionId;
+      const missionTitle = mission?.missionTitle;
+      const missionContent = mission?.content;
+
+      const request: MissionCompletionRequest = {
+        missionId: missionId!,
+        missionExecutionType: "WALK",
+        pathJson,
+        startTime: startTime ? startTime.toISOString() : undefined,
+        endTime: endTime ? endTime.toISOString() : undefined,
+        distance,
+      };
+
+      await setStatus(userMissionIdNum, request);
       alert("서버에 저장되었습니다!");
     } catch {
       alert("저장에 실패했습니다. 다시 시도해주세요.");

@@ -267,7 +267,9 @@ public class MissionServiceImpl implements MissionService {
                         um.getMission().getMissionTitle(),
                         um.getMission().getContent(),
                         um.getIsCompleted(),
-                        um.getMission().getMissionType().getType()
+                        um.getMission().getMissionType().getType(),
+                        um.getMission().getMissionExecutionType(),
+                        um.getMission().getRequiredObjectLabel()
                 ))
                 .toList();
     }
