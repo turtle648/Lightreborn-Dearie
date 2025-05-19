@@ -199,7 +199,7 @@ pipeline {
                         def tempDir = "/tmp/flyway_sql_${project}_${buildNumber}"
                         
                         // 쉘 스크립트에서 $ 기호 이스케이프 처리
-                        sh """#!/bin/bash
+                        sh """
                             echo "🔍 환경 변수 확인:"
                             echo "- 프로젝트: ${project}"
                             echo "- 워크스페이스: ${env.WORKSPACE}"
@@ -236,43 +236,29 @@ pipeline {
                             rm -rf "${tempDir}"
                             mkdir -p "${tempDir}"
                             
-                            # Flyway 스키마 히스토리 확인
-                            echo "Flyway 스키마 히스토리 확인:"
-                            HAS_HISTORY=\$(docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'flyway_schema_history');" -t | tr -d '[:space:]')
-                            
-                            # 스키마 히스토리 테이블이 있는지 확인하고 최대 버전 가져오기
-                            MAX_VERSION=0
-                            if [ "\$HAS_HISTORY" = "t" ]; then
-                                MAX_VERSION=\$(docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "SELECT COALESCE(MAX(CAST(version AS INTEGER)), 0) FROM flyway_schema_history WHERE success = true;" -t | tr -d '[:space:]')
-                                echo "📊 현재 DB 최대 버전: \$MAX_VERSION"
-                            else
-                                echo "📊 Flyway 히스토리 테이블이 없습니다. 첫 마이그레이션으로 처리합니다."
-                            fi
-                            
-                            # 파일 복사 및 이름 조정 (버전 순서 맞추기)
-                            NEXT_VERSION=\$((\$MAX_VERSION + 1))
-                            echo "📊 다음 마이그레이션 시작 버전: \$NEXT_VERSION"
-                            
                             # 각 파일을 개별적으로 복사 (절대 경로 사용)
-                            COUNTER=\$NEXT_VERSION
                             echo "\$SQL_FILES" | while read file; do
                                 if [ -f "\$file" ]; then
                                     # 기존 파일명 추출
                                     filename=\$(basename "\$file")
                                     
-                                    # 버전 패턴 확인 (V숫자__)
-                                    if [[ "\$filename" =~ ^V[0-9]+__ ]]; then
-                                        # 버전 번호 추출
-                                        original_version=\$(echo "\$filename" | sed -E 's/V([0-9]+)__.*/\\1/')
+                                    # 첫 번째 파일의 경우 V1으로 시작하는지 확인
+                                    if [[ "\$filename" == V* ]] && ! [[ "\$filename" == V1__* ]]; then
+                                        # 첫 번째 마이그레이션 파일이 V1으로 시작하는지 확인
+                                        FIRST_FILE=\$(echo "\$SQL_FILES" | head -n 1)
+                                        FIRST_FILENAME=\$(basename "\$FIRST_FILE")
                                         
-                                        # 파일 내용 패턴 유지하며 버전만 변경
-                                        new_filename=\$(echo "\$filename" | sed -E "s/V[0-9]+__/V\${COUNTER}__/")
-                                        echo "🔄 버전 조정: \$filename -> \$new_filename (원본 버전: \$original_version, 새 버전: \$COUNTER)"
-                                        cp "\$file" "${tempDir}/\$new_filename"
-                                        COUNTER=\$((\$COUNTER + 1))
+                                        if [[ "\$filename" == "\$FIRST_FILENAME" ]] && ! [[ "\$filename" == V1__* ]]; then
+                                            # 첫 번째 파일이 V1으로 시작하지 않으면 경고
+                                            echo "⚠️ 주의: 첫 번째 마이그레이션 파일은 V1으로 시작해야 합니다: \$filename"
+                                            # 이름 수정: V{x}__name.sql -> V1__name.sql
+                                            new_filename=\$(echo "\$filename" | sed -E 's/V[0-9]+__/V1__/')
+                                            echo "🔄 파일 이름 변경: \$filename -> \$new_filename"
+                                            cp "\$file" "${tempDir}/\$new_filename"
+                                        else
+                                            cp "\$file" "${tempDir}/\$filename"
+                                        fi
                                     else
-                                        # 버전 형식이 아닌 경우 그대로 복사
-                                        echo "📄 일반 파일 복사: \$filename"
                                         cp "\$file" "${tempDir}/\$filename"
                                     fi
                                     
@@ -291,6 +277,12 @@ pipeline {
                                 head -n 5 "\$f"
                                 echo "..."
                             done
+                            
+                            # 직접 SQL 파일 생성 (테스트용)
+                            if [ \$FILE_COUNT -eq 0 ]; then
+                                echo "📝 테스트 파일 생성"
+                                echo "CREATE TABLE IF NOT EXISTS test_flyway (id SERIAL PRIMARY KEY);" > "${tempDir}/V1__test.sql"
+                            fi
                             
                             # 볼륨 마운트 테스트
                             echo "🔍 볼륨 마운트 테스트:"
@@ -341,65 +333,16 @@ pipeline {
                                 echo "🔍 마이그레이션 후 DB 상태 확인:"
                                 docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "\\\\dt" 2>/dev/null || echo "테이블 목록 조회 실패"
                                 
-                                echo "🔄 재시도: 마이그레이션 문제 해결을 위한 추가 조치"
-                                
-                                # 마이그레이션 문제 판단
-                                if [[ "\$MIGRATE_RESULT" == *"No migrations found"* ]] || [[ "\$MIGRATE_RESULT" == *"no migration could be resolved"* ]]; then
-                                    echo "🔄 리셋 후 재시도: 버전 충돌 문제로 판단됩니다."
-                                    
-                                    # 안전한 방법으로 강제 리셋 시도
-                                    echo "🔄 Flyway 리페어 시도..."
-                                    docker run --rm \\
-                                        --network "${networkName}" \\
-                                        -v "${tempDir}:/flyway/sql" \\
-                                        flyway/flyway \\
-                                        -locations=filesystem:/flyway/sql \\
-                                        -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
-                                        -user=${dbUser} \\
-                                        -password=${dbPassword} \\
-                                        repair -cleanDisabled=false
-                                    
-                                    # 모든 SQL 파일 강제 실행
-                                    echo "🔄 SQL 직접 실행 시도..."
+                                # 대안: SQL 직접 실행 시도
+                                if [[ "\$MIGRATE_RESULT" == *"No migrations found"* ]]; then
+                                    echo "🔄 대안: SQL 직접 실행"
                                     for f in \$(find "${tempDir}" -name "*.sql" | sort); do
                                         echo "실행: \$f"
                                         cat "\$f" | docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} || echo "SQL 실행 실패: \$f"
                                     done
-                                    
-                                    # 실행 후 마이그레이션 상태 기록 (수동으로)
-                                    echo "🔄 마이그레이션 히스토리 수동 업데이트 시도..."
-                                    for f in \$(find "${tempDir}" -name "*.sql" | sort); do
-                                        filename=\$(basename "\$f")
-                                        version=\$(echo "\$filename" | sed -E 's/V([0-9]+)__.*/\\1/')
-                                        description=\$(echo "\$filename" | sed -E 's/V[0-9]+__(.*)\.sql/\\1/')
-                                        
-                                        # 중복 체크 후 히스토리 추가
-                                        docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "
-                                            INSERT INTO flyway_schema_history (installed_rank, version, description, type, script, checksum, installed_by, installed_on, execution_time, success)
-                                            SELECT 
-                                                COALESCE(MAX(installed_rank), 0) + 1,
-                                                '\$version',
-                                                '\$description',
-                                                'SQL',
-                                                '\$filename',
-                                                0,
-                                                '${dbUser}',
-                                                NOW(),
-                                                0,
-                                                true
-                                            FROM flyway_schema_history
-                                            WHERE NOT EXISTS (
-                                                SELECT 1 FROM flyway_schema_history WHERE version = '\$version'
-                                            )
-                                        " || echo "히스토리 업데이트 실패: \$filename"
-                                    done
                                 fi
                             else
                                 echo "✅ 마이그레이션 성공!"
-                                
-                                # 마이그레이션 후 DB 상태 확인
-                                echo "🔍 마이그레이션 후 최종 상태:"
-                                docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "SELECT * FROM flyway_schema_history ORDER BY installed_rank;" 2>/dev/null || echo "히스토리 조회 실패"
                             fi
                             
                             # 개발 환경일 경우 임시 디렉토리 보존
