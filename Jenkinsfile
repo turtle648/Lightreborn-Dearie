@@ -190,7 +190,7 @@ pipeline {
                         def dbUser = envProps["${projUpper}_DB_USER"] ?: "ssafy"
                         def dbPassword = envProps["${projUpper}_DB_PASSWORD"] ?: "ssafy"
                         def dbName = project
-                        
+
                         // Flyway 스테이지에서
                         // 1. Jenkins 컨테이너 내의 SQL 파일 실제 경로
                         def sqlPathInJenkinsContainer = "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration" // (또는 _master)
@@ -205,17 +205,15 @@ pipeline {
                             echo "Jenkins 컨테이너 내 SQL 경로: ${sqlPathInJenkinsContainer}"
                             echo "호스트 머신에서 접근 가능한 SQL 추정 경로: ${hostSqlPath}"
 
-                            # Jenkins 컨테이너 내에서 파일 존재 확인
                             if [ ! -d "${sqlPathInJenkinsContainer}" ]; then
                                 echo "⚠️ SQL 파일 경로가 Jenkins 컨테이너 내에 존재하지 않습니다: ${sqlPathInJenkinsContainer}"
                                 exit 1
                             fi
                             ls -la "${sqlPathInJenkinsContainer}"
 
-                            # Flyway 실행 (호스트 경로를 Flyway 컨테이너에 마운트)
                             docker run --rm \\
                                 --network "${networkName}" \\
-                                -v "${hostSqlPath}:/flyway/sql" \\ // 호스트 경로를 Flyway 컨테이너로 직접 마운트
+                                -v "${hostSqlPath}:/flyway/sql" \\
                                 flyway/flyway \\
                                 -locations=filesystem:/flyway/sql \\
                                 -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
