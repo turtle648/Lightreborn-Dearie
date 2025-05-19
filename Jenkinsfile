@@ -257,6 +257,7 @@ pipeline {
                             -url=jdbc:postgresql://${dbHost}:5432/${dbName} \
                             -user=${dbUser} \
                             -password=${dbPassword} \
+                            -baselineOnMigrate=true \
                             -outOfOrder=true \
                             -validateMigrationNaming=true \
                             -X migrate
