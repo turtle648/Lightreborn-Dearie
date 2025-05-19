@@ -181,39 +181,41 @@ pipeline {
                 script{
 
                     def projects = ['dearie', 'lightreborn']
+                    
+                    projects.each { project ->
+                        // Flyway 스테이지에서
+                        // 1. Jenkins 컨테이너 내의 SQL 파일 실제 경로
+                        def sqlPathInJenkinsContainer = "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration" // (또는 _master)
 
-                    // Flyway 스테이지에서
-                    // 1. Jenkins 컨테이너 내의 SQL 파일 실제 경로
-                    def sqlPathInJenkinsContainer = "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration" // (또는 _master)
+                        // 2. Jenkins 컨테이너의 env.WORKSPACE가 호스트와 매핑된 경로 (추정)
+                        // 이 부분은 Jenkins 컨테이너 시작 시 설정된 볼륨 매핑에 따라 결정됩니다.
+                        // 예: env.WORKSPACE가 /var/jenkins_home/workspace/soboro 이고, 이것이 호스트의 /home/ubuntu/jenkins-data/workspace/soboro 와 매핑되었다고 가정
+                        def hostPathToWorkspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data") // 이 변환이 실제 호스트 경로와 일치해야 함
+                        def hostSqlPath = "${hostPathToWorkspace}/${project}/backend/src/main/resources/db/migration" // (또는 _master)
 
-                    // 2. Jenkins 컨테이너의 env.WORKSPACE가 호스트와 매핑된 경로 (추정)
-                    // 이 부분은 Jenkins 컨테이너 시작 시 설정된 볼륨 매핑에 따라 결정됩니다.
-                    // 예: env.WORKSPACE가 /var/jenkins_home/workspace/soboro 이고, 이것이 호스트의 /home/ubuntu/jenkins-data/workspace/soboro 와 매핑되었다고 가정
-                    def hostPathToWorkspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data") // 이 변환이 실제 호스트 경로와 일치해야 함
-                    def hostSqlPath = "${hostPathToWorkspace}/${project}/backend/src/main/resources/db/migration" // (또는 _master)
+                        sh """
+                            echo "Jenkins 컨테이너 내 SQL 경로: ${sqlPathInJenkinsContainer}"
+                            echo "호스트 머신에서 접근 가능한 SQL 추정 경로: ${hostSqlPath}"
 
-                    sh """
-                        echo "Jenkins 컨테이너 내 SQL 경로: ${sqlPathInJenkinsContainer}"
-                        echo "호스트 머신에서 접근 가능한 SQL 추정 경로: ${hostSqlPath}"
+                            # Jenkins 컨테이너 내에서 파일 존재 확인
+                            if [ ! -d "${sqlPathInJenkinsContainer}" ]; then
+                                echo "⚠️ SQL 파일 경로가 Jenkins 컨테이너 내에 존재하지 않습니다: ${sqlPathInJenkinsContainer}"
+                                exit 1
+                            fi
+                            ls -la "${sqlPathInJenkinsContainer}"
 
-                        # Jenkins 컨테이너 내에서 파일 존재 확인
-                        if [ ! -d "${sqlPathInJenkinsContainer}" ]; then
-                            echo "⚠️ SQL 파일 경로가 Jenkins 컨테이너 내에 존재하지 않습니다: ${sqlPathInJenkinsContainer}"
-                            exit 1
-                        fi
-                        ls -la "${sqlPathInJenkinsContainer}"
-
-                        # Flyway 실행 (호스트 경로를 Flyway 컨테이너에 마운트)
-                        docker run --rm \\
-                            --network "${networkName}" \\
-                            -v "${hostSqlPath}:/flyway/sql" \\ // 호스트 경로를 Flyway 컨테이너로 직접 마운트
-                            flyway/flyway \\
-                            -locations=filesystem:/flyway/sql \\
-                            -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
-                            -user=${dbUser} \\
-                            -password=${dbPassword} \\
-                            migrate
-                        """
+                            # Flyway 실행 (호스트 경로를 Flyway 컨테이너에 마운트)
+                            docker run --rm \\
+                                --network "${networkName}" \\
+                                -v "${hostSqlPath}:/flyway/sql" \\ // 호스트 경로를 Flyway 컨테이너로 직접 마운트
+                                flyway/flyway \\
+                                -locations=filesystem:/flyway/sql \\
+                                -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
+                                -user=${dbUser} \\
+                                -password=${dbPassword} \\
+                                migrate
+                            """
+                    }
                 }
             }
         }
