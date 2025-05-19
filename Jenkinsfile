@@ -197,6 +197,7 @@ pipeline {
                         def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"
                         def dbName = project
                         def tempDir = "/tmp/flyway_sql_${project}_${env.BUILD_NUMBER}"
+                        
                         sh """
                             echo "🔍 환경 변수 확인:"
                             echo "- Workspace: ${env.WORKSPACE}"
@@ -223,23 +224,38 @@ pipeline {
                             mkdir -p ${tempDir}
                             cp ${migrationPath}/*.sql ${tempDir}/
                             
-                            # 복사된 파일 리스트 확인
+                            # 복사된 파일 확인
                             echo "📋 복사된 마이그레이션 파일 목록:"
                             ls -la ${tempDir}
                             
-                            # 디버깅: SQL 파일 내용 확인 (첫 10줄만)
+                            # 파일 내용 확인 (첫 10줄)
                             echo "📄 SQL 파일 내용 (첫 10줄):"
                             for f in ${tempDir}/*.sql; do
                                 echo "===== \$f ====="
                                 head -n 10 \$f || echo "파일 읽기 실패"
                             done
                             
-                            # 볼륨 마운트 테스트 (alpine 이미지는 대부분 기본적으로 가능)
+                            # 볼륨 마운트 테스트
                             echo "🔍 볼륨 마운트 테스트:"
                             docker run --rm -v ${tempDir}:/test alpine ls -la /test
                             
-                            # Flyway 정보 확인
-                            echo "🔍 Flyway 정보 확인:"
+                            # Step 1: Flyway 정보를 JSON 형식으로 가져오기
+                            echo "🔍 Flyway 정보 확인 (JSON):"
+                            info_result=\$(docker run --rm \\
+                                --network ${networkName} \\
+                                -v ${tempDir}:/flyway/sql \\
+                                flyway/flyway \\
+                                -locations=filesystem:/flyway/sql \\
+                                -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
+                                -user=${dbUser} \\
+                                -password=${dbPassword} \\
+                                info -outputType=json || echo '{"schemaVersion":"EMPTY"}')
+                            
+                            echo "\$info_result" | grep -q "EMPTY"
+                            is_empty=\$?
+                            
+                            # Flyway repair 실행 (문제 해결 시도)
+                            echo "🔧 Flyway repair 실행:"
                             docker run --rm \\
                                 --network ${networkName} \\
                                 -v ${tempDir}:/flyway/sql \\
@@ -248,9 +264,9 @@ pipeline {
                                 -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
                                 -user=${dbUser} \\
                                 -password=${dbPassword} \\
-                                info
+                                repair || echo "Repair failed but continuing..."
                             
-                            # Flyway 마이그레이션 실행
+                            # 간소화된 마이그레이션 명령 실행
                             echo "📦 Flyway 마이그레이션 실행 중..."
                             docker run --rm \\
                                 --network ${networkName} \\
@@ -261,11 +277,48 @@ pipeline {
                                 -user=${dbUser} \\
                                 -password=${dbPassword} \\
                                 -baselineOnMigrate=true \\
-                                -baselineVersion=0 \\
-                                -outOfOrder=true \\
-                                -X migrate
+                                migrate
                             
-                            # 디버깅 완료 후 임시 디렉토리 정리 (나중에 제거해도 됨)
+                            migration_status=\$?
+                            
+                            # 마이그레이션 실패 시 데이터베이스 상태 확인
+                            if [ \$migration_status -ne 0 ]; then
+                                echo "⚠️ 마이그레이션 실패! (종료 코드: \$migration_status)"
+                                echo "🔍 데이터베이스 테이블 확인:"
+                                docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "\\dt" || echo "테이블 목록 조회 실패"
+                                
+                                echo "🔍 flyway_schema_history 테이블 확인:"
+                                docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "SELECT * FROM flyway_schema_history ORDER BY installed_rank;" 2>/dev/null || echo "flyway_schema_history 테이블이 없습니다."
+                                
+                                # clean 명령 시도 (옵션)
+                                if [ "\$is_empty" = "0" ]; then
+                                    echo "🧹 Flyway clean 시도 (빈 스키마이므로 안전):"
+                                    docker run --rm \\
+                                        --network ${networkName} \\
+                                        -v ${tempDir}:/flyway/sql \\
+                                        flyway/flyway \\
+                                        -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
+                                        -user=${dbUser} \\
+                                        -password=${dbPassword} \\
+                                        clean
+                                        
+                                    echo "🔄 Clean 후 마이그레이션 다시 시도:"
+                                    docker run --rm \\
+                                        --network ${networkName} \\
+                                        -v ${tempDir}:/flyway/sql \\
+                                        flyway/flyway \\
+                                        -locations=filesystem:/flyway/sql \\
+                                        -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
+                                        -user=${dbUser} \\
+                                        -password=${dbPassword} \\
+                                        migrate
+                                else
+                                    echo "⚠️ 스키마가 비어 있지 않아 clean을 시도하지 않습니다."
+                                fi
+                            else
+                                echo "✅ 마이그레이션 성공!"
+                            fi
+                            
                             echo "🧹 임시 디렉토리 정리: ${tempDir}"
                             rm -rf ${tempDir}
                         """
@@ -273,7 +326,7 @@ pipeline {
                 }
             }
         }
-        
+
         // 7. 빌드 성공 여부 상태 반영
         stage('Mark Image Build Success') {
             steps {
