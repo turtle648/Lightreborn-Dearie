@@ -219,9 +219,9 @@ pipeline {
                             echo "📋 경로 내용 확인 (ls -la):"
                             ls -la ${migrationPath}
                             
-                            # SQL 파일 목록 확인
-                            sql_files=\$(find ${migrationPath} -name "*.sql" | sort)
-                            file_count=\$(echo "\$sql_files" | grep -v '^$' | wc -l)
+                            # SQL 파일 목록 확인 - 달러 기호 이스케이프 처리
+                            sql_files=\$( find ${migrationPath} -name "*.sql" | sort )
+                            file_count=\$( echo "\$sql_files" | grep -v '^\\$' | wc -l )
                             
                             if [ \$file_count -eq 0 ]; then
                                 echo "⚠️ SQL 파일을 찾을 수 없습니다: ${migrationPath}"
@@ -234,14 +234,13 @@ pipeline {
                             rm -rf ${tempDir}
                             mkdir -p ${tempDir}
                             
-                            # 각 파일을 개별적으로 복사
+                            # 각 파일을 개별적으로 복사 - 달러 기호 이스케이프 처리
                             echo "\$sql_files" | while read file; do
                                 if [ -f "\$file" ]; then
                                     # 파일명 형식 검증
-                                    filename=\$(basename "\$file")
-                                    if [[ ! "\$filename" =~ ^V[0-9]+__.*\.sql$ ]]; then
+                                    filename=\$( basename "\$file" )
+                                    if [[ ! "\$filename" =~ ^V[0-9]+__.*\\.sql\\$ ]]; then
                                         echo "⚠️ 경고: 파일 '\$filename'이 Flyway 명명 규칙(V숫자__설명.sql)에 맞지 않습니다."
-                                        # 파일 이름을 수정하지 않고 계속 진행 - 나중에 수정하세요
                                     fi
                                     echo "📄 복사 중: \$file → ${tempDir}/\$filename"
                                     cp "\$file" "${tempDir}/\$filename"
@@ -254,7 +253,7 @@ pipeline {
                             
                             # 디버깅: SQL 파일 내용 확인 (첫 10줄만)
                             echo "📄 SQL 파일 내용 (10줄):"
-                            for f in \$(find ${tempDir} -name "*.sql" | sort); do
+                            for f in \$( find ${tempDir} -name "*.sql" | sort ); do
                                 echo "===== \$f ====="
                                 head -n 10 \$f
                             done
@@ -314,7 +313,6 @@ pipeline {
                 }
             }
         }
-
         // 7. 빌드 성공 여부 상태 반영
         stage('Mark Image Build Success') {
             steps {
