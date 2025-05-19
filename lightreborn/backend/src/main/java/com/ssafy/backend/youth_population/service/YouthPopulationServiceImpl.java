@@ -251,10 +251,41 @@ public class YouthPopulationServiceImpl implements YouthPopulationService {
                                 .value(round(youthRatio))
                                 .build())
                         .youthSingleHouseholdRatio(convertedHouseholdRatio)
-                        .build())
+                .build())
                 .build();
     }
 
+
+    @Override
+    public List<YouthPopulationLatestDataDTO> getYouthPopulationLatestData() throws IOException {
+        List<YouthPopulation> latestData = youthPopulationRepository.findLatestYouthPopulations();
+        int totalYouth = latestData.stream()
+                .mapToInt(yp -> yp.getYouthPopulation() != null ? yp.getYouthPopulation() : 0)
+                .sum();
+
+        return latestData.stream().map(yp -> {
+
+            int youth = yp.getYouthPopulation() != null ? yp.getYouthPopulation() : 0;
+            int male = yp.getYouthMalePopulation() != null ? yp.getYouthMalePopulation() : 0;
+            int female = yp.getYouthFemalePopulation() != null ? yp.getYouthFemalePopulation() : 0;
+
+            int onePerson = yp.getYouthHouseholdCount() != null ? yp.getYouthHouseholdCount() : 0;
+            int maleOne = yp.getYouthMaleHouseholdCount() != null ? yp.getYouthMaleHouseholdCount() : 0;
+            int femaleOne = yp.getYouthFemaleHouseholdCount() != null ? yp.getYouthFemaleHouseholdCount() : 0;
+
+            return YouthPopulationLatestDataDTO.builder()
+                    .baseDate(yp.getBaseDate())
+                    .dongName(yp.getHangjungs().getHangjungName())
+                    .dongCode(yp.getHangjungs().getHangjungCode())
+                    .youthPopulation(youth)
+                    .maleYouth(male)
+                    .femaleYouth(female)
+                    .youthOnePersonHousehold(onePerson)
+                    .maleOnePersonHousehold(maleOne)
+                    .femaleOnePersonHousehold(femaleOne)
+                    .build();
+        }).toList();
+    }
 
     // 비율 계산 : 소수점 아래 한 자리 나타나게 반올림
     private float round(float value) {

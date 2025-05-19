@@ -1,6 +1,5 @@
 package com.ssafy.backend.promotion_network.controller;
 
-import com.opencsv.CSVWriter;
 import com.ssafy.backend.common.dto.BaseResponse;
 import com.ssafy.backend.promotion_network.model.response.*;
 import com.ssafy.backend.promotion_network.service.PromotionNetworkService;
@@ -19,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.List;
 import java.util.Map;
 
@@ -71,7 +69,7 @@ public class PromotionNetworkController {
     public ResponseEntity<BaseResponse<List<PromotionPerYouthDto>>> getPromotionPerPopulation() throws IOException {
 
         List<PromotionPerYouthDto> result = promotionNetworkService.calculatePromotionPerYouth();
-        return ResponseEntity.ok(BaseResponse.success(201, "홍보물 비율 조회 성공", result));
+        return ResponseEntity.ok(BaseResponse.success(201, "데이터를 성공적으로 불러왔습니다.", result));
     }
 
 
@@ -81,7 +79,7 @@ public class PromotionNetworkController {
             @PathVariable("dong-code") Long dongCode) throws IOException {
 
         Map<String, Double> result = promotionNetworkService.calculatePromotionTypeRatio(dongCode);
-        return ResponseEntity.ok(BaseResponse.success(201, "행정동의 홍보물 유형 비율 조회 성공", result));
+        return ResponseEntity.ok(BaseResponse.success(201, "데이터를 성공적으로 불러왔습니다.", result));
     }
 
     @Operation(summary = "행정동의 홍보물 비치장소 비율", description = "행정동의 홍보물이 어느 장소에 위치 했는지에 대한 비율을 조회합니다.")
@@ -90,7 +88,14 @@ public class PromotionNetworkController {
             @PathVariable("dong-code") Long dongCode) throws IOException {
 
         Map<String, Double> result = promotionNetworkService.calculatePromotionPlaceTypeRatio(dongCode);
-        return ResponseEntity.ok(BaseResponse.success(201, "행정동의 홍보물 유형 비율 조회 성공", result));
+        return ResponseEntity.ok(BaseResponse.success(201, "데이터를 성공적으로 불러왔습니다.", result));
+    }
+
+    @Operation(summary = "각 행정동의 홍보물 최신 정보 조회", description = "각 행정동의 홍보물에 대한 최신 정보를 조회합니다.")
+    @GetMapping("/promotion-latest-data")
+    public ResponseEntity<BaseResponse<List<PromotionLatestDataDTO>>> getPromotionLatestData() throws IOException {
+        List<PromotionLatestDataDTO> result = promotionNetworkService.getPromotionLatestData();
+        return ResponseEntity.ok(BaseResponse.success(201, "데이터를 성공적으로 불러왔습니다.", result));
     }
 
     @Operation(summary = "행정동의 홍보물 상세정보 리스트 다운로드", description = "행정동의 홍보물에 대한 상세정보 리스트를 다운로드 합니다.")
@@ -160,4 +165,5 @@ public class PromotionNetworkController {
         workbook.write(response.getOutputStream());
         workbook.close();
     }
+
 }
