@@ -2,7 +2,9 @@ package com.ssafy.backend.promotion_network.repository;
 
 import com.ssafy.backend.promotion_network.entity.PromotionStatus;
 import com.ssafy.backend.promotion_network.model.response.PromotionResponseDTO;
+import com.ssafy.backend.youth_population.entity.YouthPopulation;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;

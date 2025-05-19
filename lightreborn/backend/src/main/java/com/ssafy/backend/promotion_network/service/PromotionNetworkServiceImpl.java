@@ -12,7 +12,6 @@ import com.ssafy.backend.promotion_network.model.response.*;
 import com.ssafy.backend.promotion_network.repository.PromotionStatusRepository;
 import com.ssafy.backend.promotion_network.repository.PromotionTypeRepository;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
-import com.ssafy.backend.youth_population.entity.YouthPopulation;
 import com.ssafy.backend.youth_population.model.dto.response.YouthStatsByRegionDTO;
 import com.ssafy.backend.youth_population.repository.HangjungsRepository;
 import com.ssafy.backend.youth_population.repository.YouthPopulationRepository;
@@ -165,13 +164,6 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
         dto.setPromotionPlaceType(status.getPromotionPlaceType() != null ? status.getPromotionPlaceType().getPlace_type() : null);
         dto.setPromotionInformationId(status.getPromotionInformation() != null ? status.getPromotionInformation().getId() : null);
         dto.setPromotionType(status.getPromotionType().getType());
-//
-//        // 문자열로 매핑
-//        if (status.getPromotionType() != null) {
-//            dto.setPromotionType(status.getPromotionType().getType()); // 예: 현수막
-//        } else {
-//            dto.setPromotionType(null); // 혹시모를 예외 처리
-//        }
 
         return dto; // 연관 관계 주의
     }
@@ -290,6 +282,25 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
             dto.setPromotionInformationContent(p.getPromotionInformation().getContent());
             return dto;
         }).toList();
+    }
+
+    @Override
+    public List<PromotionLatestDataDTO> getPromotionLatestData() {
+        List<PromotionStatus> all = promotionStatusRepository.findAll();
+
+        return all.stream().map(promotionStatus ->  PromotionLatestDataDTO.builder()
+                .address(promotionStatus.getAddress())
+                .latitude(promotionStatus.getLatitude())
+                .longitude(promotionStatus.getLongitude())
+                .isPosted(promotionStatus.getIsPublished())
+                .locationType(promotionStatus.getPromotionPlaceType().getPlace_type())
+                .placeName(promotionStatus.getPlace_name())
+                .promotionType(promotionStatus.getPromotionType().getType())
+                .promotionContent(promotionStatus.getPromotionInformation().getContent())
+                .dongName(promotionStatus.getHangjungs().getHangjungName())
+                .dongCode(promotionStatus.getHangjungs().getHangjungCode())
+                .statusChangedAt(promotionStatus.getCreatedAt().toString())
+                        .build()).toList();
     }
 
 }

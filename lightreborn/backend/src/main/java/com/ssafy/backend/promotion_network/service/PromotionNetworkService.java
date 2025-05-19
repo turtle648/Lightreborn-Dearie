@@ -30,6 +30,8 @@ public interface PromotionNetworkService {
     List<PromotionPerYouthDto> calculatePromotionPerYouth();
 
     List<PromotionExportDTO> selectPromotionExportData(Long donCode);
+
+    List<PromotionLatestDataDTO> getPromotionLatestData();
 }
 
 

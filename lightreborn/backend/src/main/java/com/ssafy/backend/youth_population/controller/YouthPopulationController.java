@@ -49,11 +49,11 @@ public class YouthPopulationController {
         return ResponseEntity.ok(BaseResponse.success(200, "청년 1인 가구 비율 조회를 성공했습니다.", result));
     }
 
-    @Operation(summary = "행정동의 청년 인구 비율 조회", description = "행정동의 청년 인구 수 / 양산 시 전체 청년 인구 수")
-    @GetMapping("/distribution/{dong-code}")
-    public ResponseEntity<BaseResponse<YouthStatsByRegionDTO>> getYouthDistributionByRegion(@PathVariable("dong-code") Long dongCode) throws IOException {
-        YouthStatsByRegionDTO result = youthPopulationService.getYouthDistributionByDongCode(dongCode);
-        return ResponseEntity.ok(BaseResponse.success(200, "청년 통계 조회를 성공했습니다.", result));
+    @Operation(summary = "청년 인구 데이터 통합 조회")
+    @GetMapping
+    public ResponseEntity<BaseResponse<YouthDashboardSummaryDTO>> getDashboardSummary() throws IOException {
+        YouthDashboardSummaryDTO result = youthPopulationService.getInitialDashboardData();
+        return ResponseEntity.ok(BaseResponse.success(200, "청년 통합 통계 조회에 성공했습니다.", result));
     }
 
     @Operation(summary = "행정구역별 청년 인구 비율을 조회")
@@ -63,11 +63,17 @@ public class YouthPopulationController {
         return ResponseEntity.ok(BaseResponse.success(200, "지역별 청년 비율 조회를 성공했습니다.", Map.of("regionData", result)));
     }
 
-    @Operation(summary = "청년 인구 데이터 통합 조회")
-    @GetMapping
-    public ResponseEntity<BaseResponse<YouthDashboardSummaryDTO>> getDashboardSummary() throws IOException {
-        YouthDashboardSummaryDTO result = youthPopulationService.getInitialDashboardData();
-        return ResponseEntity.ok(BaseResponse.success(200, "청년 통합 통계 조회에 성공했습니다.", result));
+    @Operation(summary = "행정동의 청년 인구 비율 조회", description = "행정동의 청년 인구 수 / 양산 시 전체 청년 인구 수")
+    @GetMapping("/distribution/{dong-code}")
+    public ResponseEntity<BaseResponse<YouthStatsByRegionDTO>> getYouthDistributionByRegion(@PathVariable("dong-code") Long dongCode) throws IOException {
+        YouthStatsByRegionDTO result = youthPopulationService.getYouthDistributionByDongCode(dongCode);
+        return ResponseEntity.ok(BaseResponse.success(200, "청년 통계 조회를 성공했습니다.", result));
     }
 
+    @Operation(summary = "전체 행정동 청년 인구 통계 확인", description = "청년 인구 통계에 대한 최신 데이터 확인")
+    @GetMapping("/youthPopulationLatestData")
+    public ResponseEntity<BaseResponse<List<YouthPopulationLatestDataDTO>>> getYouthPopulationLatestData() throws IOException {
+        List<YouthPopulationLatestDataDTO> result = youthPopulationService.getYouthPopulationLatestData();
+        return ResponseEntity.ok(BaseResponse.success(200, "데이터를 성공적으로 불러왔습니다..", result));
+    }
 }
