@@ -23,6 +23,23 @@ public class SurveyAnswerVO {
         this.survey = survey;
     }
 
+    public static SurveyAnswerVO of (String answerText, SurveyOption answerChoice, SurveyQuestion surveyQuestion) {
+        if(surveyQuestion == null) {
+            throw new SurveyException(SurveyErrorCode.SURVEY_QUESTION_REQUIRED);
+        }
+
+        if (surveyQuestion.getSurveyType().equals(SurveyType.SUBJECTIVE) && answerText.isBlank()) {
+            throw new SurveyException(SurveyErrorCode.ANSWER_TEXT_REQUIRED);
+        }
+
+        if (surveyQuestion.getSurveyType().equals(SurveyType.OBJECTIVE) && answerChoice == null) {
+            throw new SurveyException(SurveyErrorCode.ANSWER_CHOICE_REQUIRED);
+        }
+
+        return new SurveyAnswerVO(answerText, answerChoice, surveyQuestion, null);
+    }
+
+
     public static SurveyAnswerVO of (String answerText, SurveyOption answerChoice, SurveyQuestion surveyQuestion, Survey survey) {
         if(surveyQuestion == null) {
             throw new SurveyException(SurveyErrorCode.SURVEY_QUESTION_REQUIRED);

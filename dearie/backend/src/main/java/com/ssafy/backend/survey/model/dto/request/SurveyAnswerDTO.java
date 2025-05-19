@@ -17,6 +17,7 @@ public class SurveyAnswerDTO {
     private String answerChoice;
     private String question;
 
+
     public static SurveyAnswerDTO from (SurveyAnswer answer) {
         SurveyQuestion surveyQuestion = answer.getSurveyQuestion();
         return SurveyAnswerDTO.builder()
