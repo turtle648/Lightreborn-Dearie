@@ -9,7 +9,7 @@ export default function ConsultationCompletePage() {
   const router = useRouter();
 
   const handleComplete = () => {
-    router.push("/mypage");
+    router.push("/survey-no-auth");
   };
 
   return (

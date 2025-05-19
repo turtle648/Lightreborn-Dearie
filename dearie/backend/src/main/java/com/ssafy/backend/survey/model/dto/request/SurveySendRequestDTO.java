@@ -19,6 +19,15 @@ public class SurveySendRequestDTO {
     private UserInfoDTO user;
     private List<SurveyAnswerDTO> answers;
 
+    public static SurveySendRequestDTO from (UserInfoDTO userInfoDTO, List<SurveyAnswerDTO> answers, Integer score) {
+        return SurveySendRequestDTO.builder()
+                .createdAt(LocalDateTime.now().toString())
+                .surveyResult(score)
+                .user(userInfoDTO)
+                .answers(answers)
+                .build();
+    }
+
     public static SurveySendRequestDTO from (Survey survey, UserInfoDTO userInfoDTO, List<SurveyAnswerDTO> answers) {
         return SurveySendRequestDTO.builder()
                 .createdAt(survey.getCreatedAt().toString())
