@@ -357,6 +357,18 @@ pipeline {
                 }
             }
         }
+        
+        // 7. 빌드 성공 여부 상태 반영
+        stage('Mark Image Build Success') {
+            steps {
+                script {
+                    buildSuccess = true
+                    echo "🫠 현재 빌드 상태: ${currentBuild.result}"
+                    echo "✅ 이미지 빌드 성공 상태로 설정: ${buildSuccess}"
+                }
+            }
+        }
+    } // 여기에 stages 섹션을 닫는 중괄호 추가
 
     post {
         always {
