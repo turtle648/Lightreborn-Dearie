@@ -43,11 +43,11 @@ export function RecentActivity() {
                 transition={{ delay: 0.1 * index + 0.5, duration: 0.3 }}
                 whileHover={{ x: 5 }}
               >
-                <Link href={`/missions/recent-success/${mission.userMissionId}`}>
+                <Link href={`/mission/recent-success/${mission.userMissionId}?type=${mission.missionExecutionType}`}>
                   <div className="flex gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
                     <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
                       <Image
-                        src={mission.imageUrl || "/placeholder.svg"}
+                        src={mission.imageUrl || "https://previews.123rf.com/images/sudakasi/sudakasi1405/sudakasi140500174/28673467-%EC%95%84%EB%A6%84%EB%8B%A4%EC%9A%B4-%EC%9E%90%EC%97%B0-%EB%B0%B0%EA%B2%BD.jpg"}
                         alt={mission.title}
                         fill
                         className="object-cover"

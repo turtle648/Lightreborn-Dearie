@@ -1,5 +1,6 @@
 package com.ssafy.backend.mission.model.dto.response;
 
+import com.ssafy.backend.mission.model.enums.MissionExecutionType;
 import com.ssafy.backend.mission.model.enums.MissionTypeMapping;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,4 +16,6 @@ public class DailyMissionResponseDTO {
     private Boolean isCompleted;
 
     private MissionTypeMapping missionType;
+    private MissionExecutionType missionExecutionType;
+    private String requiredObjectLabel;
 }
