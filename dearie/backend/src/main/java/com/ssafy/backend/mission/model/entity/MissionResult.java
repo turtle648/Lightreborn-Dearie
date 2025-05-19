@@ -32,13 +32,20 @@ public class MissionResult {
             columnDefinition = "TIMESTAMP DEFAULT NOW()")
     private LocalDateTime createdAt;
 
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+    }
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_mission_id", nullable = false)
     private UserMission userMission;
 
     @OneToOne(mappedBy = "missionResult", fetch = FetchType.LAZY,
         optional = true)
-    private WalkRecord walkRecord;
+    private WalkResult walkResult;
 
     /**
      * 새 MissionResult 생성 시에는 verified=false 고정
@@ -65,4 +72,6 @@ public class MissionResult {
     public boolean isVerified() {
         return this.verified;
     }
+
+    public void updateValue(String value) { this.value = value; }
 }
