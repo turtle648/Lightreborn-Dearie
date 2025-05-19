@@ -248,16 +248,18 @@ pipeline {
                                 info
 
                             echo "📦 Flyway 마이그레이션 실행 중..."
-                            docker run --rm \\
-                                --network ${networkName} \\
-                                -v ${tempDir}:/flyway/sql \\
-                                flyway/flyway \\
-                                -locations=filesystem:/flyway/sql \\
-                                -url=jdbc:postgresql://${dbHost}:${dbPort}/${dbName} \\
-                                -user=${dbUser} \\
-                                -password=${dbPassword} \\
-                                -outOfOrder=true \\
-                                -X migrate
+                            # Flyway 마이그레이션 실행
+                            docker run --rm \
+                            --network ${networkName} \
+                            -v ${tempDir}:/flyway/sql \
+                            flyway/flyway \
+                            -locations=filesystem:/flyway/sql \
+                            -url=jdbc:postgresql://${dbHost}:5432/${dbName} \
+                            -user=${dbUser} \
+                            -password=${dbPassword} \
+                            -outOfOrder=true \
+                            -validateMigrationNaming=true \
+                            -X migrate
 
                             if [ "${env.ENV}" = "master" ]; then
                                 echo "🧹 master 환경 → tempDir 정리"
