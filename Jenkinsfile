@@ -1,5 +1,6 @@
 def envProps
 def buildSuccess = false
+def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
 
 
 def generateEnvString = { keys ->
@@ -243,24 +244,13 @@ pipeline {
                                     filename=\$(basename "\$file")
                                     
                                     # 첫 번째 파일의 경우 V1으로 시작하는지 확인
-                                    if [[ "\$filename" == V* ]] && ! [[ "\$filename" == V1__* ]]; then
-                                        # 첫 번째 마이그레이션 파일이 V1으로 시작하는지 확인
-                                        FIRST_FILE=\$(echo "\$SQL_FILES" | head -n 1)
-                                        FIRST_FILENAME=\$(basename "\$FIRST_FILE")
-                                        
-                                        if [[ "\$filename" == "\$FIRST_FILENAME" ]] && ! [[ "\$filename" == V1__* ]]; then
-                                            # 첫 번째 파일이 V1으로 시작하지 않으면 경고
-                                            echo "⚠️ 주의: 첫 번째 마이그레이션 파일은 V1으로 시작해야 합니다: \$filename"
-                                            # 이름 수정: V{x}__name.sql -> V1__name.sql
-                                            new_filename=\$(echo "\$filename" | sed -E 's/V[0-9]+__/V1__/')
-                                            echo "🔄 파일 이름 변경: \$filename -> \$new_filename"
-                                            cp "\$file" "${tempDir}/\$new_filename"
-                                        else
-                                            cp "\$file" "${tempDir}/\$filename"
-                                        fi
-                                    else
+                                    echo "\$SQL_FILES" | while read file; do
+                                    if [ -f "\$file" ]; then
+                                        filename=\$(basename "\$file")
                                         cp "\$file" "${tempDir}/\$filename"
+                                        echo "📄 복사됨: \$file -> ${tempDir}/\$filename"
                                     fi
+                                    done
                                     
                                     echo "📄 복사됨: \$file -> ${tempDir}/\$(basename "\$file")"
                                 fi
@@ -319,7 +309,6 @@ pipeline {
                                 -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
                                 -user=${dbUser} \\
                                 -password=${dbPassword} \\
-                                -baselineOnMigrate=true \\
                                 migrate 2>&1)
                             
                             MIGRATE_STATUS=\$?
