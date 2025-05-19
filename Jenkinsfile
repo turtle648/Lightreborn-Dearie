@@ -198,7 +198,7 @@ pipeline {
                         def buildNumber = env.BUILD_NUMBER
                         def tempDir = "/tmp/flyway_sql_${project}_${buildNumber}"
                         
-                        // 마이그레이션 스크립트를 전달하는 대신 절대 경로와 명확한 변수를 사용
+                        // 쉘 스크립트에서 $ 기호 이스케이프 처리
                         sh """
                             echo "🔍 환경 변수 확인:"
                             echo "- 프로젝트: ${project}"
@@ -221,7 +221,7 @@ pipeline {
                             
                             # SQL 파일 검색 및 카운트
                             SQL_FILES=\$(find "${migrationPath}" -name "*.sql" 2>/dev/null | sort)
-                            FILE_COUNT=\$(echo "\$SQL_FILES" | grep -v "^$" | wc -l)
+                            FILE_COUNT=\$(echo "\$SQL_FILES" | grep -v "^\$" | wc -l)
                             
                             if [ \$FILE_COUNT -eq 0 ]; then
                                 echo "⚠️ SQL 파일을 찾을 수 없습니다: ${migrationPath}"
@@ -291,7 +291,7 @@ pipeline {
                             # 현재 DB 상태 확인
                             echo "🔍 현재 DB 상태 확인:"
                             echo "테이블 목록:"
-                            docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "\\dt" 2>/dev/null || echo "테이블 목록 조회 실패"
+                            docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "\\\\dt" 2>/dev/null || echo "테이블 목록 조회 실패"
                             
                             # Flyway 스키마 히스토리 확인
                             echo "Flyway 스키마 히스토리:"
@@ -331,7 +331,7 @@ pipeline {
                                 
                                 # 마이그레이션 후 DB 상태 확인
                                 echo "🔍 마이그레이션 후 DB 상태 확인:"
-                                docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "\\dt" 2>/dev/null || echo "테이블 목록 조회 실패"
+                                docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "\\\\dt" 2>/dev/null || echo "테이블 목록 조회 실패"
                                 
                                 # 대안: SQL 직접 실행 시도
                                 if [[ "\$MIGRATE_RESULT" == *"No migrations found"* ]]; then
@@ -357,7 +357,6 @@ pipeline {
                 }
             }
         }
-
 
         // 7. 빌드 성공 여부 상태 반영
         stage('Mark Image Build Success') {
