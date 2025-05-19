@@ -3,6 +3,7 @@
  */
 
 export type MissionCategory = 'STATIC' | 'DYNAMIC';
+export type MissionResultType = 'TEXT' | 'IMAGE' | 'MUSIC' | 'WALK';
 
 export interface Mission {
   id: number
@@ -34,4 +35,22 @@ export interface DailyMissionResponseDTO {
   color: string;
   /** 라우트 경로 (예: '/mission/walking') */
   route: string;
+}
+
+export interface RecentMissionResponseDTO {
+  userMissionId: number
+  title: string
+  date: string // ISO string
+  content: string
+  missionType: MissionCategory
+  resultType: MissionResultType
+  imageUrl: string | null
+}
+
+export interface MissionDetailResponseDTO<T> {
+  missionTitle: string
+  missionContent: string
+  date: string // ISO string
+  resultType: MissionResultType
+  detail: T
 }

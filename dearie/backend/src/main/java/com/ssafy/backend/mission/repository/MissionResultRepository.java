@@ -16,4 +16,9 @@ public interface MissionResultRepository extends JpaRepository<MissionResult, Lo
             Long userMissionId,
             MissionResultType resultType
     );
+
+    /*
+    * 특정 유저의 완료한 미션 최신 순 조회
+    * */
+    Optional<MissionResult> findTopByUserMissionIdOrderByCreatedAtDesc(Long userMissionId);
 }

@@ -1,8 +1,17 @@
 package com.ssafy.backend.mission.model.dto.vo;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class WalkResultDetail {
     private Long id;
     private LocalDateTime startTime;

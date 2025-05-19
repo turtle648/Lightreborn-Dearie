@@ -1,18 +1,17 @@
 package com.ssafy.backend.mission.model.entity;
 
-import com.ssafy.backend.mission.model.entity.UserMission;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "walk_records")
+@Table(name = "walk_results")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(toBuilder = true)
-public class WalkRecord {
+public class WalkResult {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -44,6 +43,9 @@ public class WalkRecord {
             unique = true)
     private MissionResult missionResult;
 
+    @Column(name = "distance", nullable = false)
+    private double distance;
+
     @PrePersist
     private void prePersist() {
         if (this.createdAt == null) this.createdAt = LocalDateTime.now();
@@ -63,8 +65,8 @@ public class WalkRecord {
     /**
      * Builder 팩토리 (verified 자동 false)
      */
-    public static WalkRecord of(MissionResult mr, LocalDateTime startTime) {
-        return WalkRecord.builder()
+    public static WalkResult of(MissionResult mr, LocalDateTime startTime) {
+        return WalkResult.builder()
                 .missionResult(mr)
                 .startTime(startTime)
                 .verified(false)

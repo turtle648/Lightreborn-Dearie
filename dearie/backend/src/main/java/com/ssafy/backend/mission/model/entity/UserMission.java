@@ -29,4 +29,8 @@ public class UserMission {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mission_id")
     private Mission mission;
+
+    public void markCompleted() {
+        this.isCompleted = true;
+    }
 }

@@ -9,21 +9,28 @@ import com.ssafy.backend.common.config.S3Uploader;
 import com.ssafy.backend.mission.model.dto.request.MissionCompletionRequestDTO;
 import com.ssafy.backend.mission.model.dto.response.DailyMissionResponseDTO;
 import com.ssafy.backend.mission.model.dto.response.MissionCompletionResponseDTO;
+import com.ssafy.backend.mission.model.dto.response.MissionDetailResponseDTO;
+import com.ssafy.backend.mission.model.dto.response.RecentMissionResponseDTO;
 import com.ssafy.backend.mission.model.dto.vo.ImageResultDetail;
+import com.ssafy.backend.mission.model.dto.vo.MusicResultDetail;
+import com.ssafy.backend.mission.model.dto.vo.WalkResultDetail;
+import com.ssafy.backend.mission.model.entity.*;
 import com.ssafy.backend.mission.model.enums.MissionResultType;
-import com.ssafy.backend.mission.repository.MissionRepository;
+import com.ssafy.backend.mission.repository.*;
 import com.ssafy.backend.mission.service.verification.ImageVerificationService;
-import com.ssafy.backend.mission.model.entity.Mission;
-import com.ssafy.backend.mission.model.entity.UserMission;
-import com.ssafy.backend.mission.repository.UserMissionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -41,22 +48,59 @@ public class MissionServiceImpl implements MissionService {
     private final ImageVerificationService imageVerificationService;
     private final UserRepository userRepository;
     private final UserMissionRepository userMissionRepository;
+    private final MissionResultRepository missionResultRepository;
+    private final TextResultRepository textResultRepository;
+    private final MusicResultRepository musicResultRepository;
+    private final WalkResultRepository walkResultRepository;
+    private final YoloResultRepository yoloResultRepository;
 
 
     @Override
-    public MissionCompletionResponseDTO<?> verifyMissionCompletion(MissionCompletionRequestDTO request) throws IOException, TranslateException {
+    public MissionCompletionResponseDTO<?> verifyMissionCompletion(Long userMissionId, Long uuid, MissionCompletionRequestDTO request,
+               MultipartFile snapshotFile) throws IOException, TranslateException {
         MissionResultType resultType = request.getMissionResultType();
         log.info("verifyMissionCompletion resultType:{}", resultType);
         MissionCompletionResponseDTO<?> response;
 
+        UserMission userMission = userMissionRepository.findById(userMissionId)
+                .filter(um -> um.getUser().getId().equals(uuid))
+                .orElseThrow(() -> new BadRequestException("해당 유저의 미션이 아닙니다."));
+
+        // 1. MissionResult 생성
+        MissionResult missionResult = MissionResult.of(userMission, resultType, "");
+        missionResult = missionResultRepository.save(missionResult);
+
         switch(resultType){
             case TEXT :
             {
-                log.info("TEXT 미션 검증 시작");
+                TextResult textResult = TextResult.of(missionResult, request.getTextContent());
+                textResultRepository.save(textResult);
+                missionResult.updateValue("text:" + request.getTextContent());
+                missionResult.verify();
+                missionResultRepository.save(missionResult);
+
+                userMission.markCompleted();
+                userMissionRepository.save(userMission);
+
+                return buildBasicResponse(userMissionId, resultType, request.getTextContent());
             }
-            case WALK :
+            case MUSIC :
             {
-                log.info("WALK 미션 검증 시작");
+                MusicResult musicResult = MusicResult.of(
+                        missionResult,
+                        request.getArtist(),
+                        request.getTitle(),
+                        request.getMusicImageUrl()
+                );
+                musicResultRepository.save(musicResult);
+                missionResult.updateValue("music:" + request.getMusicImageUrl());
+                missionResult.verify();
+                missionResultRepository.save(missionResult);
+
+                userMission.markCompleted();
+                userMissionRepository.save(userMission);
+
+                return buildBasicResponse(userMissionId, resultType, request.getTitle() + " by " + request.getArtist());
             }
             case IMAGE :
             {
@@ -67,14 +111,44 @@ public class MissionServiceImpl implements MissionService {
 
                 return response;
             }
-            case MUSIC :
+            case WALK :
             {
-                log.info("MUSIC 미션 검증 시작");
+                String pathJson = request.getPathJson();
 
+                if (snapshotFile == null || snapshotFile.isEmpty() || pathJson == null) {
+                    throw new BadRequestException("산책 경로 데이터 또는 스냅샷이 누락되었습니다.");
+                }
+
+                String pathKey = String.format("walk/%d/path-%d.json", missionResult.getId(), System.currentTimeMillis());
+                String pathUrl = s3Uploader.uploadBytes(pathKey, pathJson.getBytes(StandardCharsets.UTF_8), "application/json");
+
+                String snapshotKey = String.format("walk/%d/snapshot-%d.png", missionResult.getId(), System.currentTimeMillis());
+                String snapshotUrl = s3Uploader.upload(snapshotKey, snapshotFile);
+
+                WalkResult walkResult = WalkResult.builder()
+                        .missionResult(missionResult)
+                        .startTime(request.getStartTime())
+                        .endTime(request.getEndTime())
+                        .duration(Duration.between(request.getStartTime(), request.getEndTime()))
+                        .pathFileUrl(pathUrl)
+                        .snapshotUrl(snapshotUrl)
+                        .verified(true)
+                        .distance(request.getDistance())
+                        .build();
+                walkResultRepository.save(walkResult);
+
+                missionResult.updateValue("walk:" + pathUrl);
+                missionResult.verify();
+                missionResultRepository.save(missionResult);
+
+                userMission.markCompleted();
+                userMissionRepository.save(userMission);
+
+                return buildBasicResponse(userMissionId, resultType, "산책 기록 완료");
             }
             default :
             {
-                throw new BadRequestException("올바르지 않은 미션 키워드입니다.");
+                throw new BadRequestException("잘못된 미션 타입입니다.");
             }
         }
     }
@@ -118,7 +192,6 @@ public class MissionServiceImpl implements MissionService {
 
         return imageResult;
     }
-
 
     @Override
     public List<DailyMissionResponseDTO> getDailyMissionList(Long userId) {
@@ -178,5 +251,140 @@ public class MissionServiceImpl implements MissionService {
         // 오늘 기준 5일 전, isCompleted=false인 미션 삭제
         LocalDate threshold = LocalDate.now().minusDays(5);
         userMissionRepository.deleteByDateBeforeAndIsCompletedFalse(threshold);
+    }
+
+    @Override
+    @Transactional
+    public List<RecentMissionResponseDTO> getRecentCompleteMissions(Long userId, int page) {
+        Pageable pageable = PageRequest.of(page, 5, Sort.by(Sort.Direction.DESC, "date"));
+
+        List<UserMission> completedMissions = userMissionRepository.findByUser_IdAndIsCompletedTrue(
+                userId, pageable
+        );
+
+
+        return completedMissions.stream().map(um -> {
+            Mission mission = um.getMission();
+            MissionResult result = missionResultRepository.findTopByUserMissionIdOrderByCreatedAtDesc(um.getId())
+                    .orElse(null);
+
+            String imageUrl = null;
+            if (result != null) {
+                switch (result.getResultType()) {
+                    case WALK -> imageUrl = result.getWalkResult() != null ? result.getWalkResult().getSnapshotUrl() : null;
+                    case IMAGE -> imageUrl = yoloResultRepository.findByMissionResult(result).map(YoloResult::getImageUrl).orElse(null);
+                    case MUSIC -> imageUrl = musicResultRepository.findByMissionResult(result).map(MusicResult::getThumbnail).orElse(null);
+                    case TEXT -> imageUrl = null;
+                }
+            }
+
+            return new RecentMissionResponseDTO(
+                    um.getId(),
+                    mission.getMissionTitle(),
+                    um.getDate(),
+                    mission.getContent(),
+                    mission.getMissionType().getType().name(),
+                    result != null ? result.getResultType() : null,
+                    imageUrl
+            );
+        }).toList();
+    }
+
+    @Override
+    @Transactional
+    public MissionDetailResponseDTO<?> getCompletedMissionDetail(Long userMissionId, Long userId) {
+        UserMission userMission = userMissionRepository.findById(userMissionId)
+                .filter(um -> um.getUser().getId().equals(userId))
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저의 미션이 아닙니다."));
+
+        Mission mission = userMission.getMission();
+        MissionResult result = missionResultRepository.findTopByUserMissionIdOrderByCreatedAtDesc(userMissionId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 미션의 결과가 존재하지 않습니다."));
+
+        return switch (result.getResultType()) {
+            case WALK -> {
+                WalkResult walk = walkResultRepository.findByMissionResult(result)
+                        .orElseThrow(() -> new IllegalArgumentException("산책 결과가 없습니다."));
+
+                WalkResultDetail detail = new WalkResultDetail(
+                        walk.getId(),
+                        walk.getStartTime(),
+                        walk.getEndTime(),
+                        walk.getDuration(),
+                        walk.getPathFileUrl(),
+                        walk.getSnapshotUrl(),
+                        walk.getCreatedAt(),
+                        userMission.getId(),
+                        result.getId(),
+                        userMission.getUser().getId()
+                );
+
+                yield new MissionDetailResponseDTO<>(
+                        mission.getMissionTitle(),
+                        mission.getContent(),
+                        userMission.getDate(),
+                        result.getResultType(),
+                        detail
+                );
+            }
+            case IMAGE -> {
+                YoloResult yolo = yoloResultRepository.findByMissionResult(result)
+                        .orElseThrow(() -> new IllegalArgumentException("이미지 결과가 없습니다."));
+
+                ImageResultDetail detail = new ImageResultDetail(
+                        List.of(), // 실제 YOLO 감지 리스트가 있다면 여기에
+                        yolo.getImageKeyword(),
+                        true // 검증 여부
+                );
+
+                yield new MissionDetailResponseDTO<>(
+                        mission.getMissionTitle(),
+                        mission.getContent(),
+                        userMission.getDate(),
+                        result.getResultType(),
+                        detail
+                );
+            }
+            case MUSIC -> {
+                MusicResult music = musicResultRepository.findByMissionResult(result)
+                        .orElseThrow(() -> new IllegalArgumentException("음악 결과가 없습니다."));
+
+                MusicResultDetail detail = new MusicResultDetail(
+                        music.getTitle(),
+                        music.getSinger(),
+                        music.getThumbnail()
+                );
+
+                yield new MissionDetailResponseDTO<>(
+                        mission.getMissionTitle(),
+                        mission.getContent(),
+                        userMission.getDate(),
+                        result.getResultType(),
+                        detail
+                );
+            }
+            case TEXT -> {
+                TextResult text = textResultRepository.findByMissionResult(result)
+                        .orElseThrow(() -> new IllegalArgumentException("텍스트 결과가 없습니다."));
+
+                yield new MissionDetailResponseDTO<>(
+                        mission.getMissionTitle(),
+                        mission.getContent(),
+                        userMission.getDate(),
+                        result.getResultType(),
+                        text.getContent() // 단순 String
+                );
+            }
+        };
+    }
+
+    private MissionCompletionResponseDTO<String> buildBasicResponse(Long userMissionId, MissionResultType type, String detail) {
+        MissionCompletionResponseDTO<String> response = new MissionCompletionResponseDTO<>();
+        response.setUserMissionId(userMissionId);
+        response.setResultType(type);
+        response.setVerified(true);
+        response.setCompletedAt(LocalDateTime.now());
+        response.setDetail(detail);
+        return response;
     }
 }

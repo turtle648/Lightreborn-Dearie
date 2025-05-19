@@ -2,7 +2,7 @@
  * 미션 관련 API 호출 함수
  */
 import axios from "axios"
-import type { Mission, MissionCategory, DailyMissionResponseDTO } from "@/types/mission"
+import type { Mission, MissionCategory, DailyMissionResponseDTO, RecentMissionResponseDTO, MissionDetailResponseDTO } from "@/types/mission"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api"
 
@@ -102,4 +102,16 @@ export async function endWalk(
     }
   );
   return data.data;
+}
+
+// ✅ 최근 완료한 미션 목록 조회 (페이지네이션)
+export async function getCompletedMission(limit: number = 5): Promise<RecentMissionResponseDTO[]> {
+  const response = await api.get<BaseResponse<RecentMissionResponseDTO[]>>(`/missions/recent-success?page=${limit}`)
+  return response.data.result
+}
+
+// ✅ 완료한 미션 상세 조회
+export async function getCompletedMissionDetail(userMissionId: number): Promise<MissionDetailResponseDTO<any>> {
+  const response = await api.get<BaseResponse<MissionDetailResponseDTO<any>>>(`/missions/recent-success/${userMissionId}`)
+  return response.data.result
 }
