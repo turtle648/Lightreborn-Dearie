@@ -262,8 +262,8 @@ pipeline {
                                     
                                     # 버전 패턴 확인 (V숫자__)
                                     if [[ "\$filename" =~ ^V[0-9]+__ ]]; then
-                                        # 버전 번호 추출
-                                        original_version=\$(echo "\$filename" | sed -E 's/V([0-9]+)__.*/\\1/')
+                                        # 버전 번호 추출 (sed 패턴 수정)
+                                        original_version=\$(echo "\$filename" | sed -E 's/V([0-9]+)__.*$/\\1/')
                                         
                                         # 파일 내용 패턴 유지하며 버전만 변경
                                         new_filename=\$(echo "\$filename" | sed -E "s/V[0-9]+__/V\${COUNTER}__/")
@@ -370,8 +370,12 @@ pipeline {
                                     echo "🔄 마이그레이션 히스토리 수동 업데이트 시도..."
                                     for f in \$(find "${tempDir}" -name "*.sql" | sort); do
                                         filename=\$(basename "\$f")
-                                        version=\$(echo "\$filename" | sed -E 's/V([0-9]+)__.*/\\1/')
-                                        description=\$(echo "\$filename" | sed -E 's/V[0-9]+__(.*)\.sql/\\1/')
+                                        
+                                        # 버전 추출 (단순화된 방식)
+                                        version=\$(echo "\$filename" | grep -oE 'V[0-9]+' | sed 's/V//')
+                                        
+                                        # 설명 추출 (단순화된 방식)
+                                        description=\$(echo "\$filename" | sed 's/V[0-9]*__//g' | sed 's/\.sql$//g')
                                         
                                         # 중복 체크 후 히스토리 추가
                                         docker exec -i ${dbHost} psql -U ${dbUser} -d ${dbName} -c "
