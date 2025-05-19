@@ -183,6 +183,8 @@ pipeline {
                     
                     def projects = ['dearie', 'lightreborn']
                     
+                    projects.each { project ->
+                        def projUpper = project.toUpperCase()
                         def workspace = env.CUSTOM_WORKSPACE
                         
                         def migrationPath = (params.ENV == 'develop') ?
@@ -238,21 +240,12 @@ pipeline {
                             mkdir -p "${tempDir}"
                             
                             # 각 파일을 개별적으로 복사 (절대 경로 사용)
-                            echo "\$SQL_FILES" | while read file; do
+                            for file in \$(echo "\$SQL_FILES"); do
                                 if [ -f "\$file" ]; then
                                     # 기존 파일명 추출
                                     filename=\$(basename "\$file")
-                                    
-                                    # 첫 번째 파일의 경우 V1으로 시작하는지 확인
-                                    echo "\$SQL_FILES" | while read file; do
-                                    if [ -f "\$file" ]; then
-                                        filename=\$(basename "\$file")
-                                        cp "\$file" "${tempDir}/\$filename"
-                                        echo "📄 복사됨: \$file -> ${tempDir}/\$filename"
-                                    fi
-                                    done
-                                    
-                                    echo "📄 복사됨: \$file -> ${tempDir}/\$(basename "\$file")"
+                                    cp "\$file" "${tempDir}/\$filename"
+                                    echo "📄 복사됨: \$file -> ${tempDir}/\$filename"
                                 fi
                             done
                             
@@ -342,7 +335,7 @@ pipeline {
                                 rm -rf "${tempDir}"
                             fi
                         """
-                    }
+                    } // 여기에 projects.each 닫는 중괄호 추가
                 }
             }
         }
