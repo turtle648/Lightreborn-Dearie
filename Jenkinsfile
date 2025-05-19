@@ -1,6 +1,5 @@
 def envProps
 def buildSuccess = false
-def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
 
 def generateEnvString = { keys ->
     keys.collect { key -> "${key}=${envProps[key]}" }.join('\n')
@@ -28,6 +27,7 @@ pipeline {
                 script {
                     def branch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                     def selectedEnv = params.ENV?.trim()?.toLowerCase()
+                    def workspace = env.WORKSPACE.replaceFirst("^/var/jenkins_home", "/home/ubuntu/jenkins-data")
 
                     if (!selectedEnv || !(selectedEnv in ['develop', 'master'])) {
                         selectedEnv = (branch == 'develop') ? 'develop' : 'master'
@@ -36,6 +36,8 @@ pipeline {
                         echo "✅ ENV manually selected: ${selectedEnv}"
                     }
                     env.ENV = selectedEnv
+
+                    env.CUSTOM_WORKSPACE = workspace
                 }
             }
         }
@@ -181,8 +183,7 @@ pipeline {
                     
                     def projects = ['dearie', 'lightreborn']
                     
-                    projects.each { project ->
-                        def projUpper = project.toUpperCase()
+                        def workspace = env.CUSTOM_WORKSPACE
                         
                         def migrationPath = (params.ENV == 'develop') ?
                             "${workspace}/${project}/backend/src/main/resources/db/migration" :
