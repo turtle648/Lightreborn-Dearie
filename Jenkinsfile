@@ -183,90 +183,131 @@ pipeline {
                     
                     projects.each { project ->
                         def projUpper = project.toUpperCase()
+                        
                         def migrationPath = (params.ENV == 'master') ?
                             "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration_master" :
                             "${env.WORKSPACE}/${project}/backend/src/main/resources/db/migration"
-
+                        
                         echo "🔍 Full Migration Path: ${migrationPath}"
-
+                        
                         def networkName = "${project}-net"
                         def dbHost = "${project}-db"
-                        def dbPort = 5432
                         def dbUser = envProps.get("${projUpper}_DB_USER") ?: "ssafy"
                         def dbPassword = envProps.get("${projUpper}_DB_PASSWORD") ?: "ssafy"
                         def dbName = project
                         def tempDir = "/tmp/flyway_sql_${project}_${env.BUILD_NUMBER}"
-
+                        
                         sh """
                             echo "🔍 환경 변수 확인:"
                             echo "- Workspace: ${env.WORKSPACE}"
                             echo "- Migration Path: ${migrationPath}"
                             echo "- Network Name: ${networkName}"
                             echo "- DB Host: ${dbHost}"
-                            echo "- DB Port: ${dbPort}"
                             echo "- DB User: ${dbUser}"
                             echo "- DB Name: ${dbName}"
                             echo "- Temp Dir: ${tempDir}"
-
-                            echo "📋 경로 내용 확인 (ls -la):"
-                            ls -la ${migrationPath} || echo "경로를 찾을 수 없습니다!"
-
-                            file_count=\$(find ${migrationPath} -name "*.sql" 2>/dev/null | wc -l)
-                            if [ \$file_count -eq 0 ]; then
-                                echo "⚠️ No SQL files found in ${migrationPath}, skipping migration for ${project}"
+                            
+                            # 경로 존재 확인
+                            if [ ! -d "${migrationPath}" ]; then
+                                echo "⚠️ 마이그레이션 경로가 존재하지 않습니다: ${migrationPath}"
+                                echo "⚠️ 전체 디렉토리 구조 확인"
+                                find ${env.WORKSPACE}/${project} -path "*/db/migration*" -type d
                                 exit 0
                             fi
-
+                            
+                            # 경로의 실제 내용 확인
+                            echo "📋 경로 내용 확인 (ls -la):"
+                            ls -la ${migrationPath}
+                            
+                            # SQL 파일 목록 확인
+                            sql_files=\$(find ${migrationPath} -name "*.sql" | sort)
+                            file_count=\$(echo "\$sql_files" | grep -v '^$' | wc -l)
+                            
+                            if [ \$file_count -eq 0 ]; then
+                                echo "⚠️ SQL 파일을 찾을 수 없습니다: ${migrationPath}"
+                                exit 0
+                            fi
+                            
                             echo "🚀 Flyway 마이그레이션 시작 (프로젝트: ${project}, SQL 파일 수: \$file_count)"
-                            find ${migrationPath} -name "*.sql"
-
+                            
+                            # 임시 디렉토리 생성 및 파일 복사
                             rm -rf ${tempDir}
                             mkdir -p ${tempDir}
-                            cp -v ${migrationPath}/*.sql ${tempDir}/
-
+                            
+                            # 각 파일을 개별적으로 복사
+                            echo "\$sql_files" | while read file; do
+                                if [ -f "\$file" ]; then
+                                    # 파일명 형식 검증
+                                    filename=\$(basename "\$file")
+                                    if [[ ! "\$filename" =~ ^V[0-9]+__.*\.sql$ ]]; then
+                                        echo "⚠️ 경고: 파일 '\$filename'이 Flyway 명명 규칙(V숫자__설명.sql)에 맞지 않습니다."
+                                        # 파일 이름을 수정하지 않고 계속 진행 - 나중에 수정하세요
+                                    fi
+                                    echo "📄 복사 중: \$file → ${tempDir}/\$filename"
+                                    cp "\$file" "${tempDir}/\$filename"
+                                fi
+                            done
+                            
+                            # 복사된 파일 확인
                             echo "📋 복사된 파일 목록:"
                             ls -la ${tempDir}
-
+                            
+                            # 디버깅: SQL 파일 내용 확인 (첫 10줄만)
                             echo "📄 SQL 파일 내용 (10줄):"
-                            for f in ${tempDir}/*.sql; do
+                            for f in \$(find ${tempDir} -name "*.sql" | sort); do
                                 echo "===== \$f ====="
-                                head -n 10 \$f || echo "파일 읽기 실패"
+                                head -n 10 \$f
                             done
-
+                            
+                            # 볼륨 마운트 테스트
                             echo "🔍 볼륨 마운트 테스트:"
-                            docker run --rm -v ${tempDir}:/test alpine ls -la /test
-
+                            docker run --rm -v ${tempDir}:/flyway/sql alpine ls -la /flyway/sql
+                            
+                            # 네트워크 존재 확인
+                            if ! docker network ls | grep -q "${networkName}"; then
+                                echo "⚠️ 네트워크가 존재하지 않습니다: ${networkName}. 생성합니다."
+                                docker network create ${networkName} || true
+                            fi
+                            
+                            # DB 컨테이너 실행 확인
+                            if ! docker ps | grep -q "${dbHost}"; then
+                                echo "⚠️ DB 컨테이너가 실행 중이지 않습니다: ${dbHost}"
+                                exit 0
+                            fi
+                            
+                            # Flyway 정보 확인
                             echo "🔍 Flyway info:"
                             docker run --rm \\
                                 --network ${networkName} \\
                                 -v ${tempDir}:/flyway/sql \\
                                 flyway/flyway \\
                                 -locations=filesystem:/flyway/sql \\
-                                -url=jdbc:postgresql://${dbHost}:${dbPort}/${dbName} \\
+                                -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
                                 -user=${dbUser} \\
                                 -password=${dbPassword} \\
                                 info
-
-                            echo "📦 Flyway 마이그레이션 실행 중..."
+                            
                             # Flyway 마이그레이션 실행
-                            docker run --rm \
-                            --network ${networkName} \
-                            -v ${tempDir}:/flyway/sql \
-                            flyway/flyway \
-                            -locations=filesystem:/flyway/sql \
-                            -url=jdbc:postgresql://${dbHost}:5432/${dbName} \
-                            -user=${dbUser} \
-                            -password=${dbPassword} \
-                            -baselineOnMigrate=true \
-                            -outOfOrder=true \
-                            -validateMigrationNaming=true \
-                            -X migrate
-
-                            if [ "${env.ENV}" = "master" ]; then
-                                echo "🧹 master 환경 → tempDir 정리"
-                                rm -rf ${tempDir}
-                            else
+                            echo "📦 Flyway 마이그레이션 실행 중..."
+                            docker run --rm \\
+                                --network ${networkName} \\
+                                -v ${tempDir}:/flyway/sql \\
+                                flyway/flyway \\
+                                -locations=filesystem:/flyway/sql \\
+                                -url=jdbc:postgresql://${dbHost}:5432/${dbName} \\
+                                -user=${dbUser} \\
+                                -password=${dbPassword} \\
+                                -baselineOnMigrate=true \\
+                                -outOfOrder=true \\
+                                -validateMigrationNaming=true \\
+                                -X migrate
+                            
+                            # 개발 환경일 경우 temp 디렉토리 보존 (디버깅용)
+                            if [ "${params.ENV}" = "develop" ]; then
                                 echo "🛠 develop 환경 → tempDir 정리 생략 (디버깅용)"
+                            else
+                                echo "🧹 임시 디렉토리 정리: ${tempDir}"
+                                rm -rf ${tempDir}
                             fi
                         """
                     }
