@@ -74,6 +74,6 @@ public class YouthPopulationController {
     @GetMapping("/youthPopulationLatestData")
     public ResponseEntity<BaseResponse<List<YouthPopulationLatestDataDTO>>> getYouthPopulationLatestData() throws IOException {
         List<YouthPopulationLatestDataDTO> result = youthPopulationService.getYouthPopulationLatestData();
-        return ResponseEntity.ok(BaseResponse.success(200, "청년 통계 조회를 성공했습니다.", result));
+        return ResponseEntity.ok(BaseResponse.success(200, "데이터를 성공적으로 불러왔습니다..", result));
     }
 }

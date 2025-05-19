@@ -112,7 +112,7 @@ public class WelfareCenterController {
     @GetMapping("/welfareCenterLatestData")
     public ResponseEntity<BaseResponse<List<WelfareCenterLatestDataDTO>>> getWelfareCenterLatestData() {
         return ResponseEntity.ok(BaseResponse.success(
-                200, "협력기관 최신 정보 조회 성공",
+                200, "데이터를 성공적으로 불러왔습니다.",
                 welfareCenterService.getWelfareCenterLatestData()
         ));
     }
