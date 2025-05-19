@@ -7,6 +7,7 @@ import api from "./axiosClient";
 import {
   PostAgreementRequestDTO,
   PostSurveyRequestDTO,
+  PostSurveyWithOutSignUp,
 } from "@/types/request.survey";
 
 export const getSurveyQuestions = (): Promise<YouthSurveyQuestionDTO> => {
@@ -32,6 +33,21 @@ export const postSurveyAnswer = (
       "고립 은둔 청년 설문 조사 질문 결과 전송에 문제가 발생하였습니다."
     );
   });
+};
+
+export const postSurveyAnswerByGuest = async (
+  answer: PostSurveyWithOutSignUp
+): Promise<boolean> => {
+  try {
+    const res = await api.post("/survey/isolated-youth/guest", answer);
+    return res.status === 200;
+  } catch (error) {
+    console.error(
+      "고립 은둔 청년 설문 조사 질문 결과 전송에 문제가 발생하였습니다.",
+      error
+    );
+    return false;
+  }
 };
 
 export const getSurveyAnswerDetailInfo = (
