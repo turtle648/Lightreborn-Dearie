@@ -11,7 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 public class SurveySendRequestDTO {
     private String createdAt;
-    private String surveyResult;
+    private Integer surveyResult;
 
     private UserInfoDTO user;
     private List<SurveyAnswerDTO> answers;
