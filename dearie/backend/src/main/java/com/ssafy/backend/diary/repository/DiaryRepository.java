@@ -33,13 +33,6 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             Pageable pageable);
 
     List<Diary> findByUser(User user);
-<<<<<<< Updated upstream
-
-}
-=======
-<<<<<<< Updated upstream
-}
-=======
 
     @Query(value = """
     SELECT COUNT(*) AS streak
@@ -54,7 +47,5 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
     """, nativeQuery = true)
     Integer countConsecutiveDiaryDays(@Param("userId") Long userId);
 
-    Integer countByUserId(Long userId);
+    Integer countByUser_id(Long userId);
 }
->>>>>>> Stashed changes
->>>>>>> Stashed changes

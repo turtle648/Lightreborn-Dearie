@@ -12,7 +12,7 @@ public class DiaryReaderImpl implements DiaryReader {
 
     @Override
     public Integer getCountByUserId(Long userId) {
-        return diaryRepository.countByUserId(userId);
+        return diaryRepository.countByUser_id(userId);
     }
 
     @Override
