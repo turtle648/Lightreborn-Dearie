@@ -1,14 +1,12 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useEffect, useState } from "react"
 import { Card } from "@/components/common/Card"
-import Button from "@/components/common/Button"
 import { colors } from "@/constants/colors"
-import Image from "next/image"
-import addfile from "@/assets/addfile.svg"
 import Sheet from "@/components/common/Sheet"
 import { useRouter } from "next/navigation"
-// import { useYouthConsultationStore } from "@/stores/useYouthConsultaionStore"
+import Input from "@/components/common/Input"
+import { useYouthConsultationStore } from "@/stores/useYouthConsultaionStore"
 
 // 진행 상태 유형 정의
 type ProgressStatus = "온라인 자가척도 작성" | "상담 진행" | "내부 회의 진행";
@@ -17,13 +15,6 @@ export default function YouthManagement() {
 
   const router = useRouter();
 
-  // 파일 드래그 드롭 상태
-  const [isDragging, setIsDragging] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  
-  // 파일 입력 ref
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
   // 상태 필터링을 위한 선택된 진행 상태
   const [selectedStatus, setSelectedStatus] = useState<ProgressStatus | null>(null);
   
@@ -45,60 +36,29 @@ export default function YouthManagement() {
   ];
   
   // 은둔고립청년 데이터
-  const youthData = [
-    {id: 1, name: "이OO", age: 27, status: "고립 위험군", recentDate: "2025.06.17", specialNote: "고립위험군 변경"},
-    {id: 2, name: "김OO", age: 25, status: "고립 청년", recentDate: "2025.06.15", specialNote: "상담 예약 필요"},
-    {id: 3, name: "박OO", age: 22, status: "비위험군", recentDate: "2025.06.10", specialNote: "온든/고립지표 개선"},
-    {id: 4, name: "최OO", age: 29, status: "고립 위험군", recentDate: "2025.05.22", specialNote: "가족 상담 필요"},
-    {id: 5, name: "정OO", age: 26, status: "은둔 청년", recentDate: "2025.05.15", specialNote: "전화 상담 진행"},
-  ];
+  const { isolatedYouthList, getIsolatedYouthList } = useYouthConsultationStore();
+  const [youthData, setYouthData] = useState<Array<{id: number, name: string, age: number, status: string, recentDate: string, specialNote: string}>>([]);
 
-  // 드래그 이벤트 핸들러
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
+  useEffect(() => {
+    getIsolatedYouthList(); // 마운트 시점 업로드 
+    console.log("isolatedYouthList : ", isolatedYouthList);
   }, []);
 
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
+  useEffect(() => {
+    if (isolatedYouthList && Array.isArray(isolatedYouthList) && isolatedYouthList.length > 0) {
+      const newYouthData = isolatedYouthList.map((item) => ({
+        id: item.id,
+        name: item.name,
+        age: item.age,
+        status: item.status,
+        recentDate: item.recentDate,
+        specialNote: item.specialNote,
+      }));
+      setYouthData(newYouthData);
+    } 
+  }, [isolatedYouthList]);
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      // 파일 유형 검사 (예: .docx 파일만 허용)
-      if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
-        setUploadedFile(file);
-        // 여기서 파일 업로드 로직 구현
-        console.log("파일 업로드됨:", file.name);
-      } else {
-        alert("워드(.doc, .docx) 파일만 업로드 가능합니다.");
-      }
-    }
-  }, []);
 
-  // 파일 선택 클릭 핸들러
-  const handleFileSelectClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  // 파일 선택 변경 핸들러
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
-        setUploadedFile(file);
-        // 여기서 파일 업로드 로직 구현
-        console.log("파일 업로드됨:", file.name);
-      } else {
-        alert("워드(.doc, .docx) 파일만 업로드 가능합니다.");
-      }
-    }
-  };
 
   // 필터링된 신규 설문 데이터
   const filteredNewSurveyData = selectedStatus 
@@ -205,6 +165,18 @@ export default function YouthManagement() {
     },
   ];
 
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+
+  const handleFileSelect = (file: File) => {
+    setUploadedFile(file);
+    console.log("uploadedFile : ", uploadedFile);
+  };
+
+  const handleFileRemove = () => {
+    setUploadedFile(null);
+    console.log("uploadedFile : ", uploadedFile);
+  };
+
   return (
     <div className="space-y-6 p-6">
       <h1 className="text-2xl font-bold" style={{ color: colors.text.primary }}>
@@ -212,58 +184,15 @@ export default function YouthManagement() {
       </h1>
 
       <div className="grid grid-cols-1">
-        <Card 
+        <Input 
+          activeTab="youth-management"
+          fileType="word" 
+          onFileSelect={handleFileSelect}
+          onFileRemove={handleFileRemove}
           title="원클릭 은둔고립청년 척도설문 추가하기"
-        >
-          <div
-            className={`flex flex-col items-center justify-center ${
-              isDragging ? "bg-blue-100 border-blue-400" : "bg-blue-50"
-            } rounded-md p-10 m-5 gap-5 transition-colors cursor-pointer border-2 border-dashed ${
-              isDragging ? "border-blue-400" : "border-gray-300"
-            }`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={handleFileSelectClick}
-          >
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept=".doc,.docx" 
-              onChange={handleFileChange}
-            />
-            <Image 
-              src={addfile} 
-              alt="원클릭 은둔고립청년 척도설문 추가하기"
-              width={48}
-              height={48}
-            />
-            {uploadedFile ? (
-              <div className="flex flex-col items-center">
-                <p className="text-md font-medium">파일이 선택되었습니다: {uploadedFile.name}</p>
-                <Button 
-                  variant="primary" 
-                  size="sm" 
-                  className="mt-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // 여기에 업로드 처리 로직 추가
-                    alert("파일 업로드를 시작합니다.");
-                  }}
-                >
-                  파일 업로드
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-1">
-                <p className="text-sm text-gray-500">새로운 척도설문 데이터 워드 파일을 이 곳에 드래그해주세요.</p>
-                <p className="text-sm text-gray-500">신규 유저일 경우 청년 리스트에 추가하고 척도설문 점수를 추가합니다.</p>
-                <p className="text-sm text-gray-500">데이터가 있는 청년의 파일일 경우 기존 청년의 정보를 업데이트합니다.</p>
-              </div>
-            )}
-          </div>
-        </Card>
+          description="새로운 척도설문 데이터 워드 파일을 이 곳에 드래그해주세요."
+          maxFileSize={10}
+        /> 
       </div>
 
       <div className="grid grid-cols-1">
