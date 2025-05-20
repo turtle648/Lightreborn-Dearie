@@ -102,7 +102,7 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
                     PromotionStatus updated = existing.toBuilder()
                             .isPublished(isPublished)
                             .createdAt(newTime)
-                            .promotionSpotName(promotionSpotName)
+                            .placeName(promotionSpotName)
                             .build();
 
                     // FK 연관 객체 처리 (공통 함수 재사용)
@@ -192,7 +192,7 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
     // entity -> DTO로 형변환
     private PromotionResponseDTO convertToDTO(PromotionStatus status) {
         PromotionResponseDTO dto = new PromotionResponseDTO();
-        dto.setPlaceName(status.getPromotionSpotName());
+        dto.setPlaceName(status.getPlaceName());
         dto.setAddress(status.getAddress());
         dto.setIsPublished(status.getIsPublished());
         dto.setCreatedAt(status.getCreatedAt());
@@ -309,7 +309,7 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
 
         return entities.stream().map(p -> {
             PromotionExportDTO dto = new PromotionExportDTO();
-            dto.setPlaceName(p.getPromotionSpotName());
+            dto.setPlaceName(p.getPlaceName());
             dto.setAddress(p.getAddress());
             dto.setCreatedAt(p.getCreatedAt());
             dto.setPromotionType(p.getPromotionType().getType());
@@ -329,7 +329,7 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
                 .longitude(promotionStatus.getLongitude())
                 .isPosted(promotionStatus.getIsPublished())
                 .locationType(promotionStatus.getPromotionPlaceType().getPlaceType())
-                .placeName(promotionStatus.getPromotionSpotName())
+                .placeName(promotionStatus.getPlaceName())
                 .promotionType(promotionStatus.getPromotionType().getType())
                 .promotionContent(promotionStatus.getPromotionInformation().getContent())
                 .dongName(promotionStatus.getHangjungs().getHangjungName())

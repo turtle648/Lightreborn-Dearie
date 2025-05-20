@@ -34,7 +34,7 @@ public class PromotionStatus {
 
     private LocalDate createdAt;
 
-    private String promotionSpotName;
+    private String placeName;
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "hangjung_id")

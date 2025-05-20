@@ -31,6 +31,7 @@ public class S3Uploader {
      * MultipartFile 업로드 → 내부적으로 byte[] 로
      */
     public String upload(String key, MultipartFile file) {
+        System.out.println("⭐버킷 이름 : " + bucketName);
         try {
             byte[] data = file.getBytes();
             String contentType = file.getContentType();
