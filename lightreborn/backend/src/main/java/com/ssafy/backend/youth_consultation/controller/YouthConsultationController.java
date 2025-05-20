@@ -63,15 +63,10 @@ public class YouthConsultationController {
 
     @PostMapping("/statistics")
     @Operation(
-            summary = "월별/일별 상담 일지 리스트 가져오기",
+            summary = "연도별 상담 일지 리스트 가져오기",
             description = """
-                    📋 **월별/일별 상담 일지 리스트 가져옵니다.**
-                    
-                    🔹 **쿼리 조건**
-                    - 연도(`year`)와 월(`month`)을 함께 전달하면 **월별 조회**
-                    - 날짜(`date`, 예: `"2025-05-24"`)를 전달하면 **일별 조회**
-                    - 두 방식은 **서로 배타적**입니다 (둘 다 보내면 예외 발생)
-            
+                    📋 **연도별 상담 일지 리스트 가져옵니다.**
+                                
                     🔹 **페이징**
                     - 기본 페이지 크기: **5**
                     - `page` (기본값 0), `size` 파라미터로 제어
@@ -408,5 +403,18 @@ public class YouthConsultationController {
         Page<PreSupportIsolatedYouthResponseDTO> response = youthConsultationService.getPresupportList(pageable);
 
         return ResponseEntity.ok(BaseResponse.success(200, "은둔 고립 청년 발굴 및 선정 절차 정보를 얻었습니다.", response));
+    }
+
+    @PatchMapping("/{youthId}/process-step")
+    @Operation(
+            summary = "고립 청년의 진행 상태를 변경",
+            description = "현재 고립 청년의 진행 상태를 변경하는 함수"
+    )
+    public ResponseEntity<BaseResponse<String>> patchIsolationYouthProcessStep (
+            @PathVariable("youthId") Long youthId,
+            @RequestBody PatchProcessStep processStep
+    ) {
+        youthConsultationService.patchIsolationYouthStep(youthId, processStep);
+        return ResponseEntity.ok(BaseResponse.success("진행 상태 변경을 완료하였습니다."));
     }
 }

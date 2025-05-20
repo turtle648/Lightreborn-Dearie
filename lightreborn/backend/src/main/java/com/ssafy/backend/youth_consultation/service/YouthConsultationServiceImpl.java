@@ -19,6 +19,7 @@ import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.model.entity.*;
 import com.ssafy.backend.youth_consultation.model.state.CounselingConstants;
 import com.ssafy.backend.youth_consultation.model.state.SurveyStepConstants;
+import com.ssafy.backend.youth_consultation.model.vo.IsolationYouthVO;
 import com.ssafy.backend.youth_consultation.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -47,10 +48,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.Period;
-import java.time.Year;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -107,15 +105,9 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         LocalDateTime start = now.withDayOfMonth(1).atStartOfDay();
         LocalDateTime end = start.plusMonths(1).minusNanos(1);
 
-        if (StringUtils.hasText(request.getDate())) {
-            LocalDate parsedDate = LocalDate.parse(request.getDate());
-            start = parsedDate.atStartOfDay();
-            end = start.plusDays(1).minusNanos(1);
-        }
-
         if (request.getYear() != null) {
             start = LocalDate.of(request.getYear(), 1, 1).atStartOfDay();
-            end = start.plusMonths(1).minusNanos(1);
+            end = LocalDate.of(request.getYear(), 12, 31).atTime(LocalTime.MAX);
         }
 
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
@@ -289,6 +281,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                         .clientKeyword(client)
                         .summarize(summarize)
                         .voiceFileUrl(transcriptionContext.getUploadUrl())
+                        .counselingProcess(CounselingProcess.COMPLETED)
                         .build()
         );
 
@@ -314,11 +307,6 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
 
             PersonalInfoCollector personalInfoCollector = surveyContext.getPersonalInfoCollector();
             SurveyAnswerCollector surveyAnswerCollector = surveyContext.getAnswers();
-
-            Optional<PersonalInfo> existPersonalInfo = personalInfoRepository.findByNameAndPhoneNumber(
-                    personalInfoCollector.getName(),
-                    personalInfoCollector.getPhoneNumber()
-            );
 
             PersonalInfo savedPersonalInfo = personalInfoRepository.save(
                     PersonalInfo.builder()
@@ -556,6 +544,18 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                 .counselor(newLog.getCounselorKeyword())
                 .memos(newLog.getMemoKeyword())
                 .build();
+    }
+
+    @Override
+    public void patchIsolationYouthStep(Long youthId, PatchProcessStep processStep) {
+        IsolatedYouth youth = isolatedYouthRepository.findById(youthId)
+                .orElseThrow(() -> new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_PERSON));
+
+        IsolationYouthVO isolationYouthVO = IsolationYouthVO.of(youth, processStep.getProcessStep());
+
+        isolatedYouthRepository.save(
+                IsolationYouthVO.toEntity(isolationYouthVO)
+        );
     }
 
     @Override
