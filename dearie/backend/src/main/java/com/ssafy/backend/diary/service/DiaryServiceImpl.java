@@ -1,10 +1,14 @@
 package com.ssafy.backend.diary.service;
 
+import com.ssafy.backend.auth.exception.AuthErrorCode;
+import com.ssafy.backend.auth.exception.AuthException;
 import com.ssafy.backend.diary.model.dto.response.EmotionTagDTO;
 import com.ssafy.backend.diary.model.dto.response.GetDiaryReportDTO;
 import com.ssafy.backend.diary.model.entity.Diary;
 import com.ssafy.backend.diary.model.entity.EmotionTag;
+import com.ssafy.backend.diary.model.response.*;
 import com.ssafy.backend.diary.model.state.EmotionType;
+import com.ssafy.backend.diary.model.state.EmotionWindow;
 import com.ssafy.backend.diary.repository.DiaryRepository;
 import com.ssafy.backend.diary.repository.EmotionTagRepository;
 import com.ssafy.backend.diary.util.EmotionMapper;
@@ -18,10 +22,6 @@ import com.ssafy.backend.diary.model.entity.DiaryImage;
 import com.ssafy.backend.diary.model.request.DiarySearchRequest;
 import com.ssafy.backend.diary.model.request.OpenAiMessage;
 import com.ssafy.backend.diary.model.request.OpenAiRequest;
-import com.ssafy.backend.diary.model.response.DiaryListItemDto;
-import com.ssafy.backend.diary.model.response.DiaryListResponse;
-import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
-import com.ssafy.backend.diary.model.response.OpenAiResponse;
 import com.ssafy.backend.diary.repository.BookmarkRepository;
 import com.ssafy.backend.diary.repository.DiaryImageRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -204,6 +204,19 @@ public class DiaryServiceImpl implements DiaryService {
                 .toList();
 
         return new DiaryListResponse(result, diaryPage);
+    }
+
+    @Override
+    public EmotionWindowResponseDTO getEmotionWindow(String userId) {
+        User user = userRepository.findByLoginId(userId)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
+
+        String path = diaryRepository.findTopByUser_IdOrderByCreatedAtDesc(user.getId())
+                .map(EmotionWindow::from)
+                .orElse(EmotionWindow.MORNING)
+                .getPath();
+
+        return EmotionWindowResponseDTO.from(path);
     }
 
 

@@ -2,6 +2,7 @@ package com.ssafy.backend.diary.controller;
 
 import com.ssafy.backend.diary.model.dto.response.EmotionTagDTO;
 import com.ssafy.backend.diary.model.dto.response.GetDiaryReportDTO;
+import com.ssafy.backend.diary.model.response.EmotionWindowResponseDTO;
 import com.ssafy.backend.diary.service.DiaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -135,5 +136,13 @@ public class DiaryController {
     ) {
         diaryService.deleteBookmark(userId, diaryId);
         return ResponseEntity.ok(BaseResponse.success(200, "북마크 취소 성공", 1));
+    }
+
+    @GetMapping("/emotion-window")
+    public ResponseEntity<BaseResponse<EmotionWindowResponseDTO>> getEmotionWindow (
+        @AuthenticationPrincipal String userId
+    ) {
+        EmotionWindowResponseDTO response = diaryService.getEmotionWindow(userId);
+        return ResponseEntity.ok(BaseResponse.success(200, "감정 창문 경로 가져오기 성공", response));
     }
 }
