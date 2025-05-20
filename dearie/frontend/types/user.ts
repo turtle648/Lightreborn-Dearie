@@ -3,28 +3,44 @@
  */
 
 export interface UserProfile {
-  name: string
-  avatar?: string
-  streakDays: number
-  totalDiaries: number
-  completedMissions: number
+  name: string;
+  avatar?: string;
+  streakDays: number;
+  totalDiaries: number;
+  completedMissions: number;
 }
 
 export interface UserStats {
   emotions: {
-    name: string
-    count: number
-    percentage: number
-  }[]
-  period: "weekly" | "monthly" | "yearly"
-  totalEntries: number
+    name: string;
+    count: number;
+    percentage: number;
+  }[];
+  period: "weekly" | "monthly" | "yearly";
+  totalEntries: number;
 }
 
 export interface UserActivity {
-  id: number
-  type: "diary" | "mission"
-  title: string
-  description: string
-  image?: string
-  date: string
+  id: number;
+  type: "diary" | "mission";
+  title: string;
+  description: string;
+  image?: string;
+  date: string;
+}
+
+export interface SignupRequest {
+  id: string;
+  password: string;
+  name: string;
+  nickName: string;
+  gender: string;
+  birthDate: string;
+  phoneNumber: string;
+  emergencyContact?: string;
+}
+
+export interface LoginRequest {
+  id: string;
+  password: string;
 }

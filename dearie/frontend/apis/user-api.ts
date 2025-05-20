@@ -2,9 +2,15 @@
  * 사용자 관련 API 호출 함수
  */
 
-import type { UserProfile, UserStats } from "@/types/user"
+import type {
+  LoginRequest,
+  SignupRequest,
+  UserProfile,
+  UserStats,
+} from "@/types/user";
+import api from "./axiosClient";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 /**
  * 사용자 프로필을 가져오는 함수
@@ -23,17 +29,19 @@ export async function getUserProfile(): Promise<UserProfile> {
       streakDays: 8,
       totalDiaries: 42,
       completedMissions: 15,
-    }
+    };
   } catch (error) {
-    console.error("사용자 프로필을 가져오는 중 오류 발생:", error)
-    throw error
+    console.error("사용자 프로필을 가져오는 중 오류 발생:", error);
+    throw error;
   }
 }
 
 /**
  * 사용자 통계를 가져오는 함수
  */
-export async function getUserStats(period: "weekly" | "monthly" | "yearly" = "weekly"): Promise<UserStats> {
+export async function getUserStats(
+  period: "weekly" | "monthly" | "yearly" = "weekly"
+): Promise<UserStats> {
   try {
     // 실제 구현에서는 fetch 사용
     // const response = await fetch(`${API_BASE_URL}/user/stats?period=${period}`)
@@ -52,17 +60,17 @@ export async function getUserStats(period: "weekly" | "monthly" | "yearly" = "we
         ],
         period: "weekly",
         totalEntries: 10,
-      }
+      };
     }
 
     return {
       emotions: [],
       period,
       totalEntries: 0,
-    }
+    };
   } catch (error) {
-    console.error(`${period} 사용자 통계를 가져오는 중 오류 발생:`, error)
-    throw error
+    console.error(`${period} 사용자 통계를 가져오는 중 오류 발생:`, error);
+    throw error;
   }
 }
 
@@ -82,7 +90,8 @@ export async function getUserActivities(limit = 5): Promise<any[]> {
         id: 1,
         type: "diary",
         title: "카페 501",
-        description: "따뜻한 차 한 잔, 창밖의 풍경, 조용한 음악 같은 일상의 작은 행복에 마음을 전달한 감정입니다.",
+        description:
+          "따뜻한 차 한 잔, 창밖의 풍경, 조용한 음악 같은 일상의 작은 행복에 마음을 전달한 감정입니다.",
         image: "/warm-cafe-corner.png",
         date: "2025.04.23",
       },
@@ -94,9 +103,29 @@ export async function getUserActivities(limit = 5): Promise<any[]> {
         image: "/peaceful-meditation.png",
         date: "2025.04.22",
       },
-    ]
+    ];
   } catch (error) {
-    console.error("사용자 활동 내역을 가져오는 중 오류 발생:", error)
-    throw error
+    console.error("사용자 활동 내역을 가져오는 중 오류 발생:", error);
+    throw error;
   }
 }
+
+export const login = async (request: LoginRequest): Promise<boolean> => {
+  try {
+    const response = await api.post("/auth/login", request);
+    return response.status === 200;
+  } catch (error) {
+    console.error("사용자 로그인 중 에러 발생:", error);
+    return false;
+  }
+};
+
+export const signup = async (request: SignupRequest): Promise<boolean> => {
+  try {
+    const response = await api.post("/auth/signup", request);
+    return response.status === 201;
+  } catch (error) {
+    console.error("사용자 회원가입 중 에러 발생:", error);
+    return false;
+  }
+};
