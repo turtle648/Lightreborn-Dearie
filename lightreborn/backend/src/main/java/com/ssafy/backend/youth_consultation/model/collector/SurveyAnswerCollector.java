@@ -3,8 +3,10 @@ package com.ssafy.backend.youth_consultation.model.collector;
 import com.ssafy.backend.youth_consultation.model.entity.SurveyAnswer;
 import com.ssafy.backend.youth_consultation.model.entity.SurveyQuestion;
 import com.ssafy.backend.youth_consultation.model.entity.SurveyVersion;
+import com.ssafy.backend.youth_consultation.model.state.Answer;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,5 +53,13 @@ public class SurveyAnswerCollector {
 
     public List<SurveyAnswer> getAnswers() {
         return List.copyOf(answers);
+    }
+
+    public Integer getScore () {
+        return answers.stream().mapToInt(answer -> {
+            String a = StringUtils.hasText(answer.getAnswerChoice()) ? answer.getAnswerChoice() : answer.getAnswerText();
+            log.info("getScore: {}",a);
+            return Answer.findScoreByAnswer(a);
+        }).sum();
     }
 }

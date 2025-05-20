@@ -113,8 +113,8 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
             end = start.plusDays(1).minusNanos(1);
         }
 
-        if (request.getYear() != null && request.getMonth() != null) {
-            start = LocalDate.of(request.getYear(), request.getMonth(), 1).atStartOfDay();
+        if (request.getYear() != null) {
+            start = LocalDate.of(request.getYear(), 1, 1).atStartOfDay();
             end = start.plusMonths(1).minusNanos(1);
         }
 
@@ -279,18 +279,6 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         String notes = extractNotesAndMemos(transcript);
         String summarize = summarizeText(transcript);
 
-        isolatedYouthRepository.save(
-                IsolatedYouth.builder()
-                        .id(isolatedYouth.getId())
-                        .isolatedScore(isolatedYouth.getIsolatedScore())
-                        .economicLevel(isolatedYouth.getEconomicLevel())
-                        .personalInfo(isolatedYouth.getPersonalInfo())
-                        .economicActivityRecent(isolatedYouth.getEconomicActivityRecent())
-                        .isolationLevel(isolatedYouth.getIsolationLevel())
-                        .surveyProcessStep(SurveyProcessStep.COUNSELING)
-                        .build()
-        );
-
         counselingLogRepository.save(
                 CounselingLog.builder()
                         .user(user)
@@ -332,52 +320,31 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                     personalInfoCollector.getPhoneNumber()
             );
 
-            if(existPersonalInfo.isPresent()) {
-                Optional<SurveyVersion> surveyVersion = surveyVersionRepository.findTopByPersonalInfoOrderByVersionDesc(existPersonalInfo.get());
+            PersonalInfo savedPersonalInfo = personalInfoRepository.save(
+                    PersonalInfo.builder()
+                            .name(personalInfoCollector.getName())
+                            .phoneNumber(personalInfoCollector.getPhoneNumber())
+                            .emergencyContact(personalInfoCollector.getEmergencyContent())
+                            .birthDate(personalInfoCollector.getBirthDate())
+                            .build()
+            );
 
-                if(surveyVersion.isEmpty()) {
-                    SurveyVersion newSurveyVersion = surveyVersionRepository.save(
-                            SurveyVersion.builder()
-                                    .personalInfo(existPersonalInfo.get())
-                                    .build()
-                    );
+            SurveyVersion newSurveyVersion = surveyVersionRepository.save(
+                    SurveyVersion.builder()
+                            .personalInfo(savedPersonalInfo)
+                            .build()
+            );
 
-                    surveyAnswerCollector.addVersion(newSurveyVersion);
-                }
-
-                surveyVersion.ifPresent(version -> {
-                    SurveyVersion newVersion = surveyVersionRepository.save(
-                            SurveyVersion.builder()
-                                    .version(version.getVersion() + 1L)
-                                    .personalInfo(version.getPersonalInfo())
-                                    .build()
-                    );
-
-                    surveyAnswerCollector.addVersion(newVersion);
-                });
-
-
-            } else {
-                PersonalInfo savedPersonalInfo = personalInfoRepository.save(
-                        PersonalInfo.builder()
-                                .name(personalInfoCollector.getName())
-                                .phoneNumber(personalInfoCollector.getPhoneNumber())
-                                .emergencyContact(personalInfoCollector.getEmergencyContent())
-                                .birthDate(personalInfoCollector.getBirthDate())
-                                .build()
-                );
-
-
-                SurveyVersion newSurveyVersion = surveyVersionRepository.save(
-                        SurveyVersion.builder()
-                                .personalInfo(savedPersonalInfo)
-                                .build()
-                );
-
-                surveyAnswerCollector.addVersion(newSurveyVersion);
-            }
-
+            surveyAnswerCollector.addVersion(newSurveyVersion);
             surveyAnswerRepository.saveAll(surveyAnswerCollector.getAnswers());
+
+            isolatedYouthRepository.save(
+                    IsolatedYouth.builder()
+                            .isolatedScore(surveyAnswerCollector.getScore())
+                            .personalInfo(savedPersonalInfo)
+                            .surveyProcessStep(SurveyProcessStep.SELF_DIAGNOSIS)
+                            .build()
+            );
 
             return SurveyUploadDTO.builder()
                     .personalInfo(personalInfoCollector)
@@ -592,7 +559,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     }
 
     @Override
-    @KafkaListener(topics = "survey-send")
+    @KafkaListener(topics = "${spring.kafka.topic.name}")
     @Transactional
     public void getKafkaSurveySendDate(SurveySendRequestDTO requestDTO) {
         log.info("📥 [Kafka 수신] survey-send 토픽 수신: {}", requestDTO);
@@ -667,6 +634,14 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                             .build()
             );
             log.info("💾 [신규 사용자 저장] ID: {}", savedPersonalInfo.getId());
+
+            isolatedYouthRepository.save(
+                    IsolatedYouth.builder()
+                            .isolatedScore(requestDTO.getSurveyResult())
+                            .personalInfo(savedPersonalInfo)
+                            .surveyProcessStep(SurveyProcessStep.SELF_DIAGNOSIS)
+                            .build()
+            );
 
             SurveyVersion newSurveyVersion = surveyVersionRepository.save(
                     SurveyVersion.builder()
