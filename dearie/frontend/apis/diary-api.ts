@@ -3,6 +3,8 @@
  */
 
 import type { DiaryEntry, DiaryAnalysis } from "@/types/diary"
+import { analyzeReport } from "@/apis/report-api"
+import { startOfWeek, format } from "date-fns"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api"
 
@@ -67,38 +69,20 @@ export async function getDiary(id: string | number): Promise<DiaryEntry | null> 
  */
 export async function saveDiary(diary: Omit<DiaryEntry, "id" | "date">): Promise<DiaryEntry> {
   try {
-    // 실제 구현에서는 fetch 사용
-    // const response = await fetch(`${API_BASE_URL}/diaries`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(diary)
-    // })
-    // if (!response.ok) throw new Error('Failed to save diary')
-    // return await response.json()
+    console.log('일기 저장 시작:', diary);
 
-    // 오프라인 지원을 위한 로컬 스토리지 저장
-    if (typeof window !== "undefined") {
-      const storedDiaries = localStorage.getItem("diaries")
-      const allDiaries = storedDiaries ? (JSON.parse(storedDiaries) as DiaryEntry[]) : []
+    // 실제 백엔드 API 호출
+    const response = await fetch(`${API_BASE_URL}/diaries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(diary)
+    })
+    if (!response.ok) throw new Error('Failed to save diary')
+    const savedDiary = await response.json()
+    console.log('일기 저장 완료:', savedDiary);
 
-      const newDiary: DiaryEntry = {
-        id: Date.now(),
-        date: new Date().toISOString(),
-        ...diary,
-      }
-
-      allDiaries.unshift(newDiary)
-      localStorage.setItem("diaries", JSON.stringify(allDiaries))
-
-      return newDiary
-    }
-
-    // 폴백 (실제로는 실행되지 않음)
-    return {
-      id: Date.now(),
-      date: new Date().toISOString(),
-      ...diary,
-    }
+    // 리포트 생성/업데이트 코드는 완전히 제거
+    return savedDiary
   } catch (error) {
     console.error("일기를 저장하는 중 오류 발생:", error)
     throw error
@@ -134,6 +118,27 @@ export async function analyzeDiary(content: string): Promise<DiaryAnalysis> {
   } catch (error) {
     console.error("일기 분석 중 오류 발생:", error)
     throw error
+  }
+}
+
+export const handleSaveDiary = async (diaryData: Omit<DiaryEntry, 'id' | 'date'>) => {
+  try {
+    const savedDiary = await saveDiary(diaryData);
+
+    const storedUserId = localStorage.getItem('userId');
+    if (!storedUserId || isNaN(Number(storedUserId))) {
+      alert('유효하지 않은 사용자 ID');
+      return;
+    }
+    const userId = Number(storedUserId);
+    const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const weekStartDate = format(monday, "yyyy-MM-dd");
+
+    await analyzeReport(userId, weekStartDate);
+
+    alert("일기와 주간 리포트가 저장되었습니다!");
+  } catch (error) {
+    alert("일기 저장 또는 리포트 생성에 실패했습니다.");
   }
 }
 

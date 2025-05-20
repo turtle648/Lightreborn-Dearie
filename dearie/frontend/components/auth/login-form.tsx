@@ -8,7 +8,7 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import api from "@/apis/axiosClient";
-import { login } from "@/apis/user-api";
+import { login, type LoginResponse } from "@/apis/user-api";
 import { LoginRequest } from "@/types/user";
 import { AxiosError } from "axios";
 
@@ -33,10 +33,8 @@ export function LoginForm() {
 
     try {
       const response = await login({ id, password } as LoginRequest);
-
-      if (response === 200) {
-        router.push(ROUTES.HOME);
-      }
+      console.log('로그인 성공:', response);
+      router.push(ROUTES.HOME);
     } catch (err) {
       console.error("로그인 오류:", err);
 

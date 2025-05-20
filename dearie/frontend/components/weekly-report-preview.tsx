@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, ClipboardList } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
-import { fetchReportSummary, type ReportSummaryResponse } from "@/apis/report-api"
+import { fetchReportSummary, type ReportSummaryResponse, analyzeReport } from "@/apis/report-api"
 import { format } from "date-fns"
 
 // 감정별 이모지 매핑
@@ -25,28 +25,39 @@ export function WeeklyReportPreview() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true)
-        const userId = 1
-        const currentDate = format(new Date(), "yyyy-MM-dd")
-        const result = await fetchReportSummary(userId, currentDate)
-        setData(result)
-        setError(null)
-      } catch (err: any) {
-        if (err?.response?.status === 404) {
-          setError("아직 리포트가 없습니다.")
-        } else {
-          setError("데이터를 불러오는데 실패했습니다.")
-        }
-        console.error("Failed to fetch report summary:", err)
-      } finally {
-        setLoading(false)
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const storedUserId = localStorage.getItem('userId')
+      
+      // userId가 없는 경우만 체크
+      if (!storedUserId) {
+        console.error('사용자 ID가 없습니다')
+        setError("로그인이 필요합니다.")
+        return
       }
+      
+      const userId = Number(storedUserId)  // 문자열을 숫자로 변환
+      const currentDate = format(new Date(), "yyyy-MM-dd")
+      console.log('리포트 생성:', { userId, currentDate, storedUserId })
+      
+      // 항상 analyzeReport로 생성된 최신 리포트만 보여줌
+      const result = await analyzeReport(userId, currentDate)
+      console.log('리포트 생성 결과:', result)
+      setData(result)
+      setError(null)
+    } catch (err: any) {
+      setError("데이터를 불러오는데 실패했습니다.")
+      console.error("Failed to analyze report summary:", err)
+    } finally {
+      setLoading(false)
     }
-    loadData()
   }, [])
+
+  // 컴포넌트 마운트 시에만 데이터 로드
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   // 감정 높이 계산 함수 수정
   function getEmotionHeight(emotion: string, score: number) {
@@ -69,15 +80,33 @@ export function WeeklyReportPreview() {
 
   if (error || !data) {
     return (
-      <Card className="border-none shadow-md overflow-hidden">
-        <CardContent className="p-4">
-          <div className="text-center text-gray-500">
-            아직 작성된 일기가 없습니다.
-            <br />
-            오늘의 감정을 일기로 남겨보세요!
-          </div>
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        <Card className="border-none shadow-md overflow-hidden">
+          <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent flex items-start">
+            <CardTitle className="text-lg flex items-center">
+              <ClipboardList className="h-5 w-5 mr-2 text-primary" />
+              주간 리포트
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {/* 그래프 컨테이너 자리 */}
+              <div className="flex justify-center mt-7">
+                <div className="relative w-full h-24 flex items-center justify-center">
+                  <div className="text-center text-gray-400 text-base">
+                    아직 작성된 일기가 없습니다.<br />
+                    오늘의 감정을 일기로 남겨보세요!
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     )
   }
 
@@ -162,8 +191,7 @@ export function WeeklyReportPreview() {
                 </span>
                 이(가) 주요하게 나타났습니다.
               </p>
-              <p className="mt-2 text-gray-600 text-base">감정의 변화를 더 자세히 살펴보고 맞춤형 활동을</p>
-              <p className="mt-1 text-gray-600 text-base">추천 받아보세요.</p>
+              <p className="mt-2 text-gray-600 text-base">감정의 변화를 더 자세히 살펴보고 맞춤형 활동을 추천 받아보세요.</p>
             </motion.div>
 
             <div className="flex justify-end">
@@ -204,3 +232,4 @@ function getEmotionGradient(emotion: string): string {
   }
   return gradientMap[emotion] || "linear-gradient(to top, #e5e7eb, #9ca3af)" // 기본값은 회색 그라데이션
 }
+

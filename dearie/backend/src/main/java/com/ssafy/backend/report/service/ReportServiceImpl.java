@@ -14,6 +14,7 @@ import com.ssafy.backend.report.model.entity.AnalysisReport;
 import com.ssafy.backend.report.repository.AnalysisReportRepository;
 import com.ssafy.backend.diary.repository.EmotionScoreRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -24,7 +25,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReportServiceImpl implements ReportService {
 
-    private final DiaryService diaryService;
+    private final @Lazy DiaryService diaryService;
     private final GptClient gptClient;
     private final AnalysisReportRepository analysisReportRepository;
     private final UserRepository userRepository;

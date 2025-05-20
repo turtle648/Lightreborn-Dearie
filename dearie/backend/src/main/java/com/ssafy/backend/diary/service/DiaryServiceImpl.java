@@ -12,6 +12,7 @@ import com.ssafy.backend.diary.model.state.EmotionWindow;
 import com.ssafy.backend.diary.repository.DiaryRepository;
 import com.ssafy.backend.diary.repository.EmotionTagRepository;
 import com.ssafy.backend.diary.util.EmotionMapper;
+import com.ssafy.backend.report.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import com.ssafy.backend.auth.model.entity.User;
 import com.ssafy.backend.auth.repository.UserRepository;
@@ -26,6 +27,7 @@ import com.ssafy.backend.diary.repository.BookmarkRepository;
 import com.ssafy.backend.diary.repository.DiaryImageRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -58,7 +60,12 @@ public class DiaryServiceImpl implements DiaryService {
     private final DiaryImageRepository diaryImageRepository;
     private final WebClient openAiWebClient;
     private final BookmarkRepository bookmarkRepository;
+    private ReportService reportService;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setReportService(@org.springframework.context.annotation.Lazy ReportService reportService) {
+        this.reportService = reportService;
+    }
 
     @Override
     public List<GetDiaryReportDTO> getDiariesOfWeek(Long userId, LocalDate date) {
@@ -240,8 +247,8 @@ public class DiaryServiceImpl implements DiaryService {
         return result;
     }
 
-    @Override
     @Transactional
+    @Override
     public Long createDiaryWithImages(String content, Diary.EmotionTag emotionTag, List<MultipartFile> images, String userId) {
         // 1. 사용자 조회
         User user = userRepository.findByLoginId(userId)
@@ -299,6 +306,15 @@ public class DiaryServiceImpl implements DiaryService {
         }
 
         createAiComment(diary.getId(), userId);
+
+        // 5. === 주간 리포트 자동 생성/갱신 ===
+        try {
+            LocalDate today = LocalDate.now();
+            LocalDate monday = today.with(DayOfWeek.MONDAY);
+            reportService.analyzeAndSaveReport(user.getId(), monday);
+        } catch (Exception e) {
+            log.warn("주간 리포트 생성 중 오류 발생: {}", e.getMessage());
+        }
 
         return diary.getId();
     }
