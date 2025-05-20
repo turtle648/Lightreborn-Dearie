@@ -21,6 +21,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 import { signup } from "@/apis/user-api";
+import { AxiosError } from "axios";
 
 interface RegisterFormData {
   id: string;
@@ -132,22 +133,46 @@ export function RegisterForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
 
     try {
       const response = await signup(formData);
-      if (response) {
-        console.log("resposne");
-
+      if (response === 201) {
         router.push(ROUTES.HOME);
       }
     } catch (err) {
-      console.error("회원가입 오류:", err);
-      setErrors({ id: "회원가입에 실패했습니다. 다시 시도해주세요." });
+      const axiosError = err as AxiosError;
+
+      const errorData = axiosError.response?.data as {
+        fieldErrors?: { field: string; message: string }[];
+      };
+
+      if (
+        axiosError.response?.status === 400 &&
+        Array.isArray(errorData?.fieldErrors)
+      ) {
+        const newErrors: Partial<Record<keyof RegisterFormData, string>> = {};
+
+        errorData.fieldErrors.forEach(({ field, message }) => {
+          if (field in formData) {
+            newErrors[field as keyof RegisterFormData] = message;
+          }
+        });
+
+        setErrors((prev) => ({ ...prev, ...newErrors }));
+      } else if (axiosError.response?.status === 409) {
+        setErrors((prev) => ({
+          ...prev,
+          id: "이미 사용 중인 아이디입니다.",
+        }));
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          id: "회원가입에 실패했습니다. 다시 시도해주세요.",
+        }));
+      }
     } finally {
       setIsLoading(false);
     }

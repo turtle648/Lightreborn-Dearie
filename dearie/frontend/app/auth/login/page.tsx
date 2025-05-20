@@ -13,7 +13,6 @@ export default function LoginPage() {
 
   const handleGuestLogin = () => {
     setIsLoading(true);
-    // 게스트 로그인 처리 (실제로는 API 호출 등이 필요)
     setTimeout(() => {
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("userType", "guest");
