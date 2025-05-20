@@ -1,8 +1,11 @@
 package com.ssafy.backend.diary.reader;
 
+import com.ssafy.backend.diary.model.entity.Diary;
 import com.ssafy.backend.diary.repository.DiaryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor

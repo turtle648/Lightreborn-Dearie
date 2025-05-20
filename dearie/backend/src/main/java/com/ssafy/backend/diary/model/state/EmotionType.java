@@ -1,5 +1,7 @@
 package com.ssafy.backend.diary.model.state;
 
+import com.ssafy.backend.diary.model.entity.Diary;
+
 public enum EmotionType {
     JOY("기쁨"),        
     SADNESS("슬픔"),    
@@ -33,5 +35,20 @@ public enum EmotionType {
         }
     }
     throw new IllegalArgumentException("Unknown emotion: " + korean);
+    }
+
+    public static boolean getEmotionPolarity(Diary.EmotionTag emotionTag) {
+        EmotionType type;
+        try {
+            type = EmotionType.valueOf(emotionTag.name());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("존재하지 않는 감정 태그입니다: " + emotionTag);
+        }
+
+        return switch (type) {
+            case JOY, CALM, EXCITEMENT, GRATITUDE, HOPE -> true;
+            case SADNESS, ANGER, ANXIETY, FATIGUE, CONFUSION, BOREDOM -> false;
+            default -> throw new IllegalArgumentException("감정 극성을 판단할 수 없습니다: " + emotionTag);
+        };
     }
 }

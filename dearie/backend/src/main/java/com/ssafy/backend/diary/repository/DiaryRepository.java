@@ -4,6 +4,7 @@ import com.ssafy.backend.auth.model.entity.User;
 import com.ssafy.backend.diary.model.entity.Diary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DiaryRepository extends JpaRepository<Diary, Long> {
@@ -48,4 +50,6 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
     Integer countConsecutiveDiaryDays(@Param("userId") Long userId);
 
     Integer countByUser_id(Long userId);
+
+    Optional<Diary> findTopByUser_IdOrderByCreatedAtDesc(Long userId);
 }
