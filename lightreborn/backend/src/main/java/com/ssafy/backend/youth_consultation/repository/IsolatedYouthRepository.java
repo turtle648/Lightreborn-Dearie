@@ -1,6 +1,7 @@
 package com.ssafy.backend.youth_consultation.repository;
 
 import com.ssafy.backend.youth_consultation.model.entity.IsolatedYouth;
+import com.ssafy.backend.youth_consultation.model.entity.IsolationLevel;
 import com.ssafy.backend.youth_consultation.model.entity.SurveyProcessStep;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

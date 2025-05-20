@@ -417,4 +417,14 @@ public class YouthConsultationController {
         youthConsultationService.patchIsolationYouthStep(youthId, processStep);
         return ResponseEntity.ok(BaseResponse.success("진행 상태 변경을 완료하였습니다."));
     }
+
+    @GetMapping("isolation-level")
+    @Operation(
+            summary = "누적 상담 인원 현황",
+            description = "현재 대상 인원들의 위험군 비율을 그래프로 내타냄"
+    )
+    public ResponseEntity<BaseResponse<IsolationLevelDTO>> getIsolationLevel () {
+        IsolationLevelDTO result = youthConsultationService.getIsolationLevel();
+        return ResponseEntity.ok(BaseResponse.success("누적 상담 인원의 위험군별 인원 수를 조회하였습니다.", result));
+    }
 }

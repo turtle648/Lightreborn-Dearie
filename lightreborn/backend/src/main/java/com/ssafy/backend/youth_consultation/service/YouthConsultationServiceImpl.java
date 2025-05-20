@@ -657,6 +657,35 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         log.info("📤 [저장 완료] 설문 응답 총 {}건 저장됨", collector.getAnswers().size());
     }
 
+    @Override
+    public IsolationLevelDTO getIsolationLevel() {
+        List<IsolatedYouthRepository.CategoryCount> counts = isolatedYouthRepository.countByIsolationLevel();
+
+        int nonRisk = 0;
+        int atRisk = 0;
+        int isolated = 0;
+        int reclusive = 0;
+
+        for (IsolatedYouthRepository.CategoryCount c : counts) {
+            String category = c.getCategory();
+            long count = c.getCount();
+            if (category.equals(IsolationLevel.NON_RISK.name())) nonRisk = (int) count;
+            else if (category.equals(IsolationLevel.AT_RISK.name())) atRisk = (int) count;
+            else if (category.equals(IsolationLevel.ISOLATED_YOUTH.name())) isolated = (int) count;
+            else if (category.equals(IsolationLevel.RECLUSIVE_YOUTH.name())) reclusive = (int) count;
+        }
+
+        int total = nonRisk + atRisk + isolated + reclusive;
+
+        return IsolationLevelDTO.builder()
+                .totalCount(total)
+                .nonRiskCount(nonRisk)
+                .atRiskCount(atRisk)
+                .isolatedYouthCount(isolated)
+                .reclusiveYouthCount(reclusive)
+                .build();
+    }
+
     private Map<String, SurveyQuestion> getQuestions() {
         return surveyQuestionRepository.findAll()
                 .stream()
