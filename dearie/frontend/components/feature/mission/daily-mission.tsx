@@ -8,7 +8,7 @@ import { cn } from "@/utils/cn"
 import { Badge } from "@/components/ui/badge"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
-import { updateMissionStatus } from "@/apis/mission-api"
+// import { updateMissionStatus } from "@/apis/mission-api"
 
 interface MissionProps {
   id: number
@@ -37,7 +37,7 @@ export default function DailyMission({ mission }: DailyMissionProps) {
     if (completed) {
       setIsUpdating(true)
       try {
-        await updateMissionStatus(mission.id, false)
+        // await updateMissionStatus(mission.id, false)
         setCompleted(false)
       } catch (error) {
         console.error("미션 상태 업데이트 중 오류 발생:", error)
@@ -58,7 +58,7 @@ export default function DailyMission({ mission }: DailyMissionProps) {
         // 라우트가 없는 경우 기본 동작 (완료 처리)
         setIsUpdating(true)
         try {
-          await updateMissionStatus(mission.id, true)
+          // await updateMissionStatus(mission.id, true)
           setCompleted(true)
         } catch (error) {
           console.error("미션 상태 업데이트 중 오류 발생:", error)
