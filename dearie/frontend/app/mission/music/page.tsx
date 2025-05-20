@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Save, Music2, Search, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { submitMissionCompletion } from "@/apis/mission-api";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function MusicMissionPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,11 +17,20 @@ export default function MusicMissionPage() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [error, setError] = useState("");
+  const [userMissionId, setUserMissionId] = useState<number | null>(null);
+  const [missionId, setMissionId] = useState<number | null>(null);
 
-  const searchParams = useSearchParams();
-  const userMissionId = Number(searchParams.get("userMissionId"));
-  const missionId = Number(searchParams.get("missionId"));
   const router = useRouter();
+
+  useEffect(() => {
+    // URL 직접 파싱
+    const url = new URL(window.location.href);
+    const userMissionIdParam = url.searchParams.get("userMissionId");
+    const missionIdParam = url.searchParams.get("missionId");
+    
+    setUserMissionId(userMissionIdParam ? Number(userMissionIdParam) : null);
+    setMissionId(missionIdParam ? Number(missionIdParam) : null);
+  }, []);
 
   // 검색
   const searchMusic = async () => {

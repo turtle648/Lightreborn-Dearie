@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Save, Edit3 } from "lucide-react";
@@ -12,12 +12,23 @@ import { useMissionStore } from "@/stores/mission-store";
 
 export default function Page() {
   const [text, setText] = useState("");
+  const [userMissionId, setUserMissionId] = useState<number | null>(null);
+  const [missionId, setMissionId] = useState<number | null>(null);
 
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const userMissionId = Number(searchParams.get("userMissionId"));
-  const missionId = Number(searchParams.get("missionId"));
   const missionContent = useMissionStore(state => state.missionContent ?? "오늘의 기록을 남겨볼까요?");
+
+  // URL 매개변수 가져오기
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      const userMissionIdParam = url.searchParams.get("userMissionId");
+      const missionIdParam = url.searchParams.get("missionId");
+      
+      setUserMissionId(userMissionIdParam ? Number(userMissionIdParam) : null);
+      setMissionId(missionIdParam ? Number(missionIdParam) : null);
+    }
+  }, []);
 
   // 작성 완료 처리
   const completeTextMission = async () => {
