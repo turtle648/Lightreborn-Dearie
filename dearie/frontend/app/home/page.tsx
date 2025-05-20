@@ -28,7 +28,7 @@ const DailyMission = dynamic(
 );
 
 const DiaryCard = dynamic(
-  () => import("@/components/feature/diary/diary-card").then(mod => mod.DiaryCard),
+  () => import("@/components/feature/diary/diary-card").then(mod => mod.default),
   {
     loading: () => (
       <div className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>
