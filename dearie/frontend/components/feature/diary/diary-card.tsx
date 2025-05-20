@@ -95,5 +95,3 @@ export default function DiaryCard({ diary }: DiaryCardProps) {
     </motion.div>
   );
 }
-
-export default DiaryCard;
