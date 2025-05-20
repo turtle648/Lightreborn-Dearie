@@ -57,8 +57,8 @@ export function MissionItem({ mission }: MissionItemProps) {
       userMissionId: mission.id.toString(),
       missionId: mission.missionId.toString(),
     });
-    if (mission.requiredObjectLabel) {
-      query.set("label", mission.requiredObjectLabel);
+    if (mission.requiredObjectLabel === "cup") {
+      query.set("label", "카페");
     }
     router.push(`/mission/${mission.missionExecutionType.toLowerCase()}?${query.toString()}`);
     
