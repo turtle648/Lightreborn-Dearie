@@ -44,22 +44,13 @@ export function WeeklyReportDetail() {
         setLoading(true)
         const userId = 1 // 일단 1로 유지
         const currentDate = format(new Date(), 'yyyy-MM-dd')
-        let result: ReportSummaryResponse;
-        try {
-          result = await fetchReportSummary(userId, currentDate)
-        } catch (err: any) {
-          // 404(리포트 없음)일 때 analyzeReport(POST) 호출
-          if (err?.response?.status === 404) {
-            result = await analyzeReport(userId, currentDate)
-          } else {
-            throw err
-          }
-        }
+        // 항상 analyzeReport로 생성된 최신 리포트만 보여줌
+        const result = await analyzeReport(userId, currentDate)
         setData(result)
         setError(null)
       } catch (err: any) {
         setError('데이터를 불러오는데 실패했습니다.')
-        console.error('Failed to fetch or analyze report summary:', err)
+        console.error('Failed to analyze report summary:', err)
       } finally {
         setLoading(false)
       }

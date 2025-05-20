@@ -13,14 +13,21 @@ import api from "./axiosClient";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
-export const getUserProfile = async (): Promise<UserInfoResponse> => {
+export const getUserProfile = async (): Promise<Omit<UserInfoResponse, 'id'>> => {
   try {
+    console.log('getUserProfile 호출, 현재 localStorage:', localStorage.getItem('userId'));
+    console.log('현재 쿠키:', document.cookie);
+    
     const response = await api.get("/auth/me");
+    console.log('getUserProfile 응답:', response.data);
+    
     if (response.status !== 200) {
       throw new Error("사용자 활동 내역을 가져오는 중 오류 발생");
     }
-
-    return response.data.result as UserInfoResponse;
+    const { result } = response.data;
+    // id 필드를 제외한 나머지 정보만 반환
+    const { id, ...userInfo } = result;
+    return userInfo;
   } catch (error) {
     console.error("사용자 활동 내역을 가져오는 중 오류 발생:", error);
     throw error;
@@ -101,9 +108,61 @@ export async function getUserActivities(limit = 5): Promise<any[]> {
   }
 }
 
-export const login = async (request: LoginRequest): Promise<number> => {
+export interface LoginResponse {
+  id: string;
+  name: string;
+  nickName: string;
+  profileImage: string;
+  userActivity?: {
+    diaryCount: number;
+    completeMissionCount: number;
+    consecutiveCount: number;
+  };
+}
+
+export const login = async (request: LoginRequest): Promise<LoginResponse> => {
+  console.log('로그인 시도:', request.id);
+  
   const response = await api.post("/auth/login", request);
-  return response.status;
+  const { result } = response.data;
+  console.log('로그인 응답 전체:', response.data);
+  
+  // 로그인 응답에서 직접 userId 저장
+  if (result && result.id) {
+    console.log('로그인 성공, 토큰 설정 대기 중...');
+    
+    // 토큰이 설정될 때까지 잠시 대기
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    try {
+      // 로그인 성공 후 바로 /auth/me API를 호출하여 실제 PK를 가져옵니다
+      const userInfo = await api.get("/auth/me");
+      const userData = userInfo.data.result;
+      
+      if (userData && userData.id) {
+        // 백엔드에서 반환하는 id가 문자열이면 숫자로 변환
+        const userId = typeof userData.id === 'string' ? 
+          (isNaN(Number(userData.id)) ? 1 : Number(userData.id)) : // 숫자로 변환할 수 없으면 임시로 1 사용
+          userData.id;
+        
+        console.log('userId 저장:', userId);
+        localStorage.setItem('userId', String(userId));
+      } else {
+        // userData.id가 없으면 임시로 1 사용
+        console.log('userData.id 없음, 임시 ID 사용: 1');
+        localStorage.setItem('userId', '1');
+      }
+    } catch (error) {
+      console.error('사용자 정보를 가져오는 중 오류 발생:', error);
+      // 오류 발생시 임시로 1 사용
+      console.log('오류 발생으로 임시 ID 사용: 1');
+      localStorage.setItem('userId', '1');
+    }
+  } else {
+    console.error('로그인 응답에 id가 없습니다:', result);
+  }
+  
+  return result;
 };
 
 export const signup = async (request: SignupRequest): Promise<number> => {

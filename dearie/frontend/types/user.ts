@@ -46,7 +46,7 @@ export interface LoginRequest {
 }
 
 export interface UserInfoResponse {
-  id: string;
+  id: number;
   name: string;
   nickname: string;
   profileImage: string;

@@ -12,6 +12,8 @@ import { EmotionSelector } from "./emotion-selector";
 import { motion } from "framer-motion";
 import { EMOTION_MAP } from "@/constants/emotions";
 import Image from "next/image";
+import { analyzeReport } from "@/apis/report-api";
+import { startOfWeek, format } from "date-fns";
 
 export function DiaryForm() {
   const router = useRouter();
@@ -126,6 +128,15 @@ export function DiaryForm() {
 
       if (!response.ok) {
         throw new Error(result.message || "일기 작성 실패");
+      }
+
+      // === 일기 저장 성공 후 주간 리포트 생성 ===
+      const storedUserId = localStorage.getItem('userId');
+      if (storedUserId && !isNaN(Number(storedUserId))) {
+        const userId = Number(storedUserId);
+        const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
+        const weekStartDate = format(monday, "yyyy-MM-dd");
+        await analyzeReport(userId, weekStartDate);
       }
 
       router.push("/diary");
