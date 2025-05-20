@@ -40,16 +40,20 @@ public class HeaderMapping {
         ));
 
         // 홍보물 파일
-        HEADER_ALIAS.put(FileType.PROMOTION, Map.of(
-                "주소",                           "address",
-                "위도",                           "latitude",
-                "경도",                           "longitude",
-                "게시 상태",                        "isPublished",
-                "상태 변경 시각",                 "createdAt",
-                "홍보물 유형",                   "promotionType",
-                "행정동 코드",                   "hangjungCode",
-                "행정동 이름",                   "hangjungName"
+        HEADER_ALIAS.put(FileType.PROMOTION, Map.ofEntries(
+                Map.entry("주소", "address"),
+                Map.entry("위도", "latitude"),
+                Map.entry("경도", "longitude"),
+                Map.entry("게시 상태", "isPublished"),
+                Map.entry("상태 변경 시각", "createdAt"),
+                Map.entry("홍보물 위치", "promotionPlaceType"),
+                Map.entry("행정동 코드", "hangjungCode"),
+                Map.entry("행정동 이름", "hangjungName"),
+                Map.entry("장소명", "promotionSpotName"),
+                Map.entry("홍보물 유형", "promotionType"),
+                Map.entry("홍보물 내용", "promotionInformation")
         ));
+
 
         // 복지기관 파일
         HEADER_ALIAS.put(FileType.WELFARE_CENTER, Map.of(
