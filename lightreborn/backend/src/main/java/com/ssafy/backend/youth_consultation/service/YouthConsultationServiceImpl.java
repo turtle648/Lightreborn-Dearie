@@ -19,6 +19,7 @@ import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.model.entity.*;
 import com.ssafy.backend.youth_consultation.model.state.CounselingConstants;
 import com.ssafy.backend.youth_consultation.model.state.SurveyStepConstants;
+import com.ssafy.backend.youth_consultation.model.vo.IsolationYouthVO;
 import com.ssafy.backend.youth_consultation.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -280,6 +281,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                         .clientKeyword(client)
                         .summarize(summarize)
                         .voiceFileUrl(transcriptionContext.getUploadUrl())
+                        .counselingProcess(CounselingProcess.COMPLETED)
                         .build()
         );
 
@@ -542,6 +544,18 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                 .counselor(newLog.getCounselorKeyword())
                 .memos(newLog.getMemoKeyword())
                 .build();
+    }
+
+    @Override
+    public void patchIsolationYouthStep(Long youthId, PatchProcessStep processStep) {
+        IsolatedYouth youth = isolatedYouthRepository.findById(youthId)
+                .orElseThrow(() -> new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_PERSON));
+
+        IsolationYouthVO isolationYouthVO = IsolationYouthVO.of(youth, processStep.getProcessStep());
+
+        isolatedYouthRepository.save(
+                IsolationYouthVO.toEntity(isolationYouthVO)
+        );
     }
 
     @Override

@@ -404,4 +404,17 @@ public class YouthConsultationController {
 
         return ResponseEntity.ok(BaseResponse.success(200, "은둔 고립 청년 발굴 및 선정 절차 정보를 얻었습니다.", response));
     }
+
+    @PatchMapping("/{youthId}/process-step")
+    @Operation(
+            summary = "고립 청년의 진행 상태를 변경",
+            description = "현재 고립 청년의 진행 상태를 변경하는 함수"
+    )
+    public ResponseEntity<BaseResponse<String>> patchIsolationYouthProcessStep (
+            @PathVariable("youthId") Long youthId,
+            @RequestBody PatchProcessStep processStep
+    ) {
+        youthConsultationService.patchIsolationYouthStep(youthId, processStep);
+        return ResponseEntity.ok(BaseResponse.success("진행 상태 변경을 완료하였습니다."));
+    }
 }
