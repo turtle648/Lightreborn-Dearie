@@ -6,9 +6,13 @@ import com.ssafy.backend.common.utils.FileParserUtils;
 import com.ssafy.backend.common.utils.HeaderMapping;
 import com.ssafy.backend.common.utils.enums.FileType;
 import com.ssafy.backend.common.utils.parser.RawFileParser;
+import com.ssafy.backend.promotion_network.entity.PromotionInformation;
+import com.ssafy.backend.promotion_network.entity.PromotionPlaceType;
 import com.ssafy.backend.promotion_network.entity.PromotionStatus;
 import com.ssafy.backend.promotion_network.entity.PromotionType;
 import com.ssafy.backend.promotion_network.model.response.*;
+import com.ssafy.backend.promotion_network.repository.PromotionInformationRepository;
+import com.ssafy.backend.promotion_network.repository.PromotionPlaceTypeRepository;
 import com.ssafy.backend.promotion_network.repository.PromotionStatusRepository;
 import com.ssafy.backend.promotion_network.repository.PromotionTypeRepository;
 import com.ssafy.backend.youth_population.entity.Hangjungs;
@@ -33,7 +37,8 @@ import java.util.stream.Collectors;
 public class PromotionNetworkServiceImpl implements PromotionNetworkService {
 
     private final List<RawFileParser> rawFileParsers;
-    private final YouthPopulationRepository youthPopulationRepository;
+    private final PromotionInformationRepository promotionInformationRepository;
+    private final PromotionPlaceTypeRepository promotionPlaceTypeRepository;
     private final YouthPopulationService youthPopulationService;
     private RawFileParser fileParser;
     private final ObjectMapper objectMapper;
@@ -89,44 +94,50 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
                 {
                     //5-2. 업데이트가 필요한 정보면 업데이트
                     Boolean isPublished = Boolean.valueOf(row.get("isPublished"));
-                    String updatedPromotionType = row.get("promotionType");
-
-                    PromotionType newPromotionType = promotionTypeRepository
-                            .findByType(updatedPromotionType)
-                            .orElseThrow(() -> new EntityNotFoundException(
-                                    "유효하지 않은 홍보 유형: " + updatedPromotionType
-                            ));
+                    String promotionTypeStr = row.get("promotionType");
+                    String promotionInformationStr = row.get("promotionInformation");
+                    String promotionPlaceTypeStr = row.get("promotionPlaceType");
+                    String promotionSpotName = row.get("promotionSpotName");
 
                     PromotionStatus updated = existing.toBuilder()
-                            // 새 PromotionType 엔티티를 그대로 주입
-                            .promotionType(newPromotionType)
-                            // 게시 상태 변경
                             .isPublished(isPublished)
                             .createdAt(newTime)
+                            .promotionSpotName(promotionSpotName)
                             .build();
 
+                    // FK 연관 객체 처리 (공통 함수 재사용)
+                    getOrCreatePromotionEntity(promotionTypeStr, promotionInformationStr, promotionPlaceTypeStr, updated);
+
                     toSave.add(updated);
+
                 }
             }
             else {
-                //5-3. 업데이트가 필요하지않고 새로 생성되어야 하는 entity면 추가
-                
-                PromotionStatus created = objectMapper.convertValue(row, PromotionStatus.class);
+                    //5-3. 업데이트가 필요하지않고 새로 생성되어야 하는 entity면 추가
 
-                //6-1. 행정(@ManyToOne) 찾아주기
-                String hangjungCode = row.get("hangjungCode");
-                Hangjungs h = hangjungsRepository.findByHangjungCode(hangjungCode)
-                        .orElseThrow(() -> new EntityNotFoundException("행정동을 찾을 수 없음" + hangjungCode));
+                    // 6-1. 행정
+                    String hangjungCode = row.get("hangjungCode");
+                    Hangjungs h = hangjungsRepository.findByHangjungCode(hangjungCode)
+                            .orElseThrow(() -> new EntityNotFoundException("행정동을 찾을 수 없음: " + hangjungCode));
 
-                //6-2. 프로모션타입(@ManyToOne) 찾아주기
-                String promotionType = row.get("promotionType");
-                PromotionType pt = promotionTypeRepository.findByType(promotionType)
-                        .orElseThrow(() -> new EntityNotFoundException("홍보 유형을 찾을 수 없음" + promotionType));
+                    // 6-2. 홍보 유형
+                    String promotionTypeStr = row.get("promotionType");
 
-                created.assignHangjungs(h);
-                created.assignPromotionType(pt);
+                    // 6-3. 홍보 내용
+                    String promotionInformationStr = row.get("promotionInformation");
 
-                toSave.add(created);
+                    // 6-4. 홍보 위치
+                    String promotionPlaceTypeStr = row.get("promotionPlaceType");
+
+
+                    // 7. 홍보 현황 생성 및 참조 주입
+                    PromotionStatus created = objectMapper.convertValue(row, PromotionStatus.class);
+
+                    getOrCreatePromotionEntity(promotionTypeStr, promotionInformationStr, promotionPlaceTypeStr, created);
+                    created.assignHangjungs(h);
+
+                    // 8. 저장 목록에 추가
+                    toSave.add(created);
             }
         }
 
@@ -143,6 +154,30 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
                 }).toList();
     }
 
+    private void getOrCreatePromotionEntity(String promotionType, String promotionInformation, String promotionPlaceType, PromotionStatus created) {
+
+        PromotionType pt = promotionTypeRepository.findByType(promotionType)
+                .orElseGet(() -> promotionTypeRepository.save(
+                        PromotionType.builder().type(promotionType).build()
+                ));
+
+        // 6-3. 홍보 내용
+        PromotionInformation pi = promotionInformationRepository.findByContent(promotionInformation)
+                .orElseGet(() -> promotionInformationRepository.save(
+                        PromotionInformation.builder().content(promotionInformation).build()
+                ));
+
+        // 6-4. 홍보 위치
+        PromotionPlaceType ppt = promotionPlaceTypeRepository.findByPlaceType(promotionPlaceType)
+                .orElseGet(() -> promotionPlaceTypeRepository.save(
+                        PromotionPlaceType.builder().placeType(promotionPlaceType).build()
+                ));
+
+        created.assignPromotionType(pt);
+        created.assignPromotionInformation(pi);
+        created.assignPromotionPlaceType(ppt);
+    }
+
     @Override
     public List<PromotionResponseDTO> selectPromotions(Long dongCode) {
         Long hangjungId = hangjungsRepository.findHangjungsIdByHangjungCode(dongCode.toString());
@@ -157,11 +192,11 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
     // entity -> DTO로 형변환
     private PromotionResponseDTO convertToDTO(PromotionStatus status) {
         PromotionResponseDTO dto = new PromotionResponseDTO();
-        dto.setPlaceName(status.getPlace_name());
+        dto.setPlaceName(status.getPromotionSpotName());
         dto.setAddress(status.getAddress());
         dto.setIsPublished(status.getIsPublished());
         dto.setCreatedAt(status.getCreatedAt());
-        dto.setPromotionPlaceType(status.getPromotionPlaceType() != null ? status.getPromotionPlaceType().getPlace_type() : null);
+        dto.setPromotionPlaceType(status.getPromotionPlaceType() != null ? status.getPromotionPlaceType().getPlaceType() : null);
         dto.setPromotionInformationId(status.getPromotionInformation() != null ? status.getPromotionInformation().getId() : null);
         dto.setPromotionType(status.getPromotionType().getType());
 
@@ -274,11 +309,11 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
 
         return entities.stream().map(p -> {
             PromotionExportDTO dto = new PromotionExportDTO();
-            dto.setPlaceName(p.getPlace_name());
+            dto.setPlaceName(p.getPromotionSpotName());
             dto.setAddress(p.getAddress());
             dto.setCreatedAt(p.getCreatedAt());
             dto.setPromotionType(p.getPromotionType().getType());
-            dto.setPromotionPlaceType(p.getPromotionPlaceType() != null ? p.getPromotionPlaceType().getPlace_type() : "미지정");
+            dto.setPromotionPlaceType(p.getPromotionPlaceType() != null ? p.getPromotionPlaceType().getPlaceType() : "미지정");
             dto.setPromotionInformationContent(p.getPromotionInformation().getContent());
             return dto;
         }).toList();
@@ -293,8 +328,8 @@ public class PromotionNetworkServiceImpl implements PromotionNetworkService {
                 .latitude(promotionStatus.getLatitude())
                 .longitude(promotionStatus.getLongitude())
                 .isPosted(promotionStatus.getIsPublished())
-                .locationType(promotionStatus.getPromotionPlaceType().getPlace_type())
-                .placeName(promotionStatus.getPlace_name())
+                .locationType(promotionStatus.getPromotionPlaceType().getPlaceType())
+                .placeName(promotionStatus.getPromotionSpotName())
                 .promotionType(promotionStatus.getPromotionType().getType())
                 .promotionContent(promotionStatus.getPromotionInformation().getContent())
                 .dongName(promotionStatus.getHangjungs().getHangjungName())
