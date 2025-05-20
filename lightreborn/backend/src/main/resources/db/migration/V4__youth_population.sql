@@ -1,4 +1,4 @@
-INSERT INTO youth_population (
+INSERT INTO youth_populations (
     youth_household_count, youth_male_household_count, youth_female_household_count,
     youth_population, youth_male_population, youth_female_population,
     base_date, hangjung_id
