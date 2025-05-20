@@ -17,14 +17,12 @@ import java.time.LocalDate;
 @Builder(toBuilder = true)
 @AllArgsConstructor(access = AccessLevel.PRIVATE) // builder 전용 생성자
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA용 기본 생성자
-@JsonIgnoreProperties({"hangjungs", "promotionType"})
+@JsonIgnoreProperties({"hangjungs", "promotionType", "promotionInformation", "promotionPlaceType"})
 public class PromotionStatus {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private String place_name;
 
     private String address;
 
@@ -35,6 +33,8 @@ public class PromotionStatus {
     private Boolean isPublished;
 
     private LocalDate createdAt;
+
+    private String promotionSpotName;
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "hangjung_id")
