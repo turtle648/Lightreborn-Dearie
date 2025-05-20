@@ -1,6 +1,6 @@
 import { AppLayout } from "@/components/app-layout";
 import { UserProfile } from "@/components/user-profile";
-import { EmotionStats } from "@/components/emotion-stats";
+import { WeeklyReportPreview } from "@/components/weekly-report-preview";
 import { RecentActivity } from "@/components/recent-activity";
 import { SurveySelection } from "@/components/survey-selection";
 
@@ -10,7 +10,7 @@ export default function MyPage() {
       <div className="p-6 space-y-6">
         <UserProfile />
         <SurveySelection />
-        <EmotionStats />
+        <WeeklyReportPreview />
         <RecentActivity />
       </div>
     </AppLayout>

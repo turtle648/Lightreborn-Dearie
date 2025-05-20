@@ -6,8 +6,7 @@ import lombok.*;
 @Entity
 @Table(name = "emotion_score")
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class EmotionScore {
@@ -16,14 +15,18 @@ public class EmotionScore {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private Double joy;
-    private Double sadness;
-    private Double anger;
-    private Double anxiety;
-    private Double disgust;
-    private Double neutral;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "diary_id")
-    private Diary diary;
+    @Column(nullable = false)
+    private Double sadness;
+
+    @Column(nullable = false)
+    private Double anger;
+
+    @Column(nullable = false)
+    private Double anxiety;
+
+    @Column(nullable = false)
+    private Double calm;
 }

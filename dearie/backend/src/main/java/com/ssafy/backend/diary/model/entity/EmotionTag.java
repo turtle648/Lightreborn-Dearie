@@ -1,5 +1,6 @@
 package com.ssafy.backend.diary.model.entity;
 
+import com.ssafy.backend.diary.model.state.EmotionType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,7 +17,8 @@ public class EmotionTag {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String tag;  // 예: "우울", "불안"
+    @Column(name = "tag")
+    private String tag;  // 12가지 감정 한글로 저장 ("분노", "기쁨" 등)
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "diary_id")

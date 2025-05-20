@@ -10,10 +10,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface DiaryRepository extends JpaRepository<Diary, Long> {
+    List<Diary> findByUserIdAndCreatedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
+
     @Modifying
     @Query("DELETE FROM Diary d WHERE d.id = :id AND d.user.loginId = :loginId")
     int deleteByIdAndUser_LoginId(@Param("id") Long id, @Param("loginId") String loginId);
@@ -30,4 +33,5 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             Pageable pageable);
 
     List<Diary> findByUser(User user);
+
 }
