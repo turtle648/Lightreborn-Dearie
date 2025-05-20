@@ -666,13 +666,18 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         int isolated = 0;
         int reclusive = 0;
 
-        for (IsolatedYouthRepository.CategoryCount c : counts) {
-            String category = c.getCategory();
-            long count = c.getCount();
-            if (category.equals(IsolationLevel.NON_RISK.name())) nonRisk = (int) count;
-            else if (category.equals(IsolationLevel.AT_RISK.name())) atRisk = (int) count;
-            else if (category.equals(IsolationLevel.ISOLATED_YOUTH.name())) isolated = (int) count;
-            else if (category.equals(IsolationLevel.RECLUSIVE_YOUTH.name())) reclusive = (int) count;
+        if (counts != null) {
+            for (IsolatedYouthRepository.CategoryCount c : counts) {
+                if (c == null || c.getCategory() == null) continue;
+
+                String category = c.getCategory();
+                long count = Optional.ofNullable(c.getCount()).orElse(0L);
+
+                if (category.equals(IsolationLevel.NON_RISK.name())) nonRisk = (int) count;
+                else if (category.equals(IsolationLevel.AT_RISK.name())) atRisk = (int) count;
+                else if (category.equals(IsolationLevel.ISOLATED_YOUTH.name())) isolated = (int) count;
+                else if (category.equals(IsolationLevel.RECLUSIVE_YOUTH.name())) reclusive = (int) count;
+            }
         }
 
         int total = nonRisk + atRisk + isolated + reclusive;
