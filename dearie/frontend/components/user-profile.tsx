@@ -5,15 +5,27 @@ import { useUserStore } from "@/stores/user-store";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Settings } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { logout } from "@/apis/user-api";
 
 export function UserProfile() {
   const { profile, isLoading, fetchProfile } = useUserStore();
+  const router = useRouter();
 
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push("/home");
+    } catch (e) {
+      alert("로그아웃에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
 
   if (isLoading || !profile) {
     return (
@@ -39,10 +51,20 @@ export function UserProfile() {
                 </AvatarFallback>
               </Avatar>
               <div className="mt-8">
-                <h2 className="text-2xl font-bold">{profile.name}님</h2>
-                <p className="text-sm text-gray-500">
-                  오늘까지 {profile.userActivity.consecutiveCount}일 연속으로
-                  일기를 작성했어요
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-bold">{profile.name}님</h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full px-2 py-0.5 text-xs font-semibold text-red-500 border-red-200 bg-white/80 hover:bg-red-50 hover:text-red-600 transition"
+                    onClick={handleLogout}
+                    aria-label="로그아웃"
+                  >
+                    로그아웃
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  오늘까지 {profile.userActivity.consecutiveCount}일 연속으로 일기를 작성했어요
                 </p>
               </div>
             </div>

@@ -110,3 +110,8 @@ export const signup = async (request: SignupRequest): Promise<number> => {
   const response = await api.post("/auth/signup", request);
   return response.status;
 };
+
+export const logout = async (): Promise<number> => {
+  const response = await api.post("/auth/logout");
+  return response.status;
+};
