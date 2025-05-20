@@ -110,22 +110,12 @@ export async function getUserActivities(limit = 5): Promise<any[]> {
   }
 }
 
-export const login = async (request: LoginRequest): Promise<boolean> => {
-  try {
-    const response = await api.post("/auth/login", request);
-    return response.status === 200;
-  } catch (error) {
-    console.error("사용자 로그인 중 에러 발생:", error);
-    return false;
-  }
+export const login = async (request: LoginRequest): Promise<number> => {
+  const response = await api.post("/auth/login", request);
+  return response.status;
 };
 
-export const signup = async (request: SignupRequest): Promise<boolean> => {
-  try {
-    const response = await api.post("/auth/signup", request);
-    return response.status === 201;
-  } catch (error) {
-    console.error("사용자 회원가입 중 에러 발생:", error);
-    return false;
-  }
+export const signup = async (request: SignupRequest): Promise<number> => {
+  const response = await api.post("/auth/signup", request);
+  return response.status;
 };

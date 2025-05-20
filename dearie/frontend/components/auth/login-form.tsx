@@ -10,6 +10,7 @@ import { ROUTES } from "@/constants/routes";
 import api from "@/apis/axiosClient";
 import { login } from "@/apis/user-api";
 import { LoginRequest } from "@/types/user";
+import { AxiosError } from "axios";
 
 export function LoginForm() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export function LoginForm() {
     setError("");
 
     if (!id || !password) {
-      setError("이메일과 비밀번호를 모두 입력해주세요.");
+      setError("아이디와 비밀번호를 모두 입력해주세요.");
       return;
     }
 
@@ -33,12 +34,20 @@ export function LoginForm() {
     try {
       const response = await login({ id, password } as LoginRequest);
 
-      if (response) {
+      if (response === 200) {
         router.push(ROUTES.HOME);
       }
     } catch (err) {
       console.error("로그인 오류:", err);
-      setError("로그인에 실패했습니다. 다시 시도해주세요.");
+
+      // AxiosError 타입으로 명확히 처리
+      const axiosError = err as AxiosError;
+
+      if (axiosError.response?.status === 401) {
+        setError("아이디 또는 비밀번호가 올바르지 않습니다.");
+      } else {
+        setError("로그인에 실패했습니다. 다시 시도해주세요.");
+      }
     } finally {
       setIsLoading(false);
     }
