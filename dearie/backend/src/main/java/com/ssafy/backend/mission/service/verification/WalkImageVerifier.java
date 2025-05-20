@@ -19,7 +19,7 @@ public class WalkImageVerifier implements ImageVerifier {
                 .anyMatch(obj -> obj.getLabel().equalsIgnoreCase("flower") ||
                         obj.getLabel().equalsIgnoreCase("leaves") ||
                         obj.getLabel().equalsIgnoreCase("bench") &&
-                        obj.getConfidence() > 0.5f);
+                        obj.getConfidence() > CONFIDENCE_THRESHOLD);
 
         log.info("산책 검증 결과: {}", isWalkDetected);
 

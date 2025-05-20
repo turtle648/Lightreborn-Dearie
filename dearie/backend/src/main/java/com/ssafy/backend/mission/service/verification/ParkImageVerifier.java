@@ -18,7 +18,7 @@ public class ParkImageVerifier implements ImageVerifier {
         // 공원 벤치 객체 검증
         boolean isBenchDetected = detections.stream()
                 .anyMatch(obj -> obj.getLabel().equalsIgnoreCase("bench") &&
-                        obj.getConfidence() > 0.5);
+                        obj.getConfidence() > CONFIDENCE_THRESHOLD);
 
         log.info("벤치 객체 검증 결과: {}", isBenchDetected);
 

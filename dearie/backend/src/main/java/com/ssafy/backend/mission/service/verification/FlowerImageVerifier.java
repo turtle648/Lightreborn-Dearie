@@ -18,7 +18,7 @@ public class FlowerImageVerifier implements ImageVerifier {
 
         boolean isFlowerDetected = detections.stream()
                 .anyMatch(obj -> obj.getLabel().equalsIgnoreCase("flower") &&
-                        obj.getConfidence() > 0.5f);
+                        obj.getConfidence() > CONFIDENCE_THRESHOLD);
 
         log.info("꽃 검증 결과: {}", isFlowerDetected);
 

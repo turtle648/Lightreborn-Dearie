@@ -7,6 +7,8 @@ import com.ssafy.backend.mission.model.dto.vo.ImageResultDetail;
 import java.util.List;
 
 public interface ImageVerifier {
+    double CONFIDENCE_THRESHOLD = 0.7f;
+
     ImageResultDetail verify(MissionCompletionRequestDTO request, String imageUrl, List<YoloDetectionResult> detections);
     boolean canHandle(String keyword);
 }

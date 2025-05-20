@@ -56,7 +56,7 @@ export default function ImageMissionPage() {
   const [position, setPosition] = useState<{ latitude: number; longitude: number } | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
-  const requiredObjectLabel = searchParams.get("requiredObjectLabe") || "";
+  const requiredObjectLabel = searchParams.get("requiredObjectLabel") || "";
   const imageKeyword = searchParams.get("label") || requiredObjectLabel; // fallback도 있음
 
 
@@ -138,7 +138,7 @@ export default function ImageMissionPage() {
       });
 
       // API 응답 구조에 맞게 검증 상태 확인
-      const isVerified = response.result?.verified || false;
+      const isVerified = response.result?.detail.verified || false;
 
       // 검증 결과 설정 (성공, 실패 둘 다 처리)
       setVerificationProgress(100);
@@ -238,7 +238,7 @@ export default function ImageMissionPage() {
               boxShadow: "0 2px 8px rgba(244, 114, 182, 0.5)",
             }}
           >
-            {det.label} ({Math.round(det.confidence * 100)}%)
+            {det.label}
           </span>
         </div>
       )

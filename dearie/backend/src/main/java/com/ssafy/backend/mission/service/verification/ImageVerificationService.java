@@ -44,7 +44,7 @@ public class ImageVerificationService {
             // YOLO 결과에서 키워드와 일치하는 객체가 있는지 확인
             boolean isDetected = detections.stream()
                     .anyMatch(obj -> obj.getLabel().equalsIgnoreCase(request.getImageKeyword()) &&
-                            obj.getConfidence() > 0.5);
+                            obj.getConfidence() > CONFIDENCE_THRESHOLD);
 
             return new ImageResultDetail(detections, request.getImageKeyword(), isDetected, imageUrl);
         }
