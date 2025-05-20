@@ -44,3 +44,17 @@ export interface LoginRequest {
   id: string;
   password: string;
 }
+
+export interface UserInfoResponse {
+  id: string;
+  name: string;
+  nickname: string;
+  profileImage: string;
+  userActivity: UserActivity;
+}
+
+export interface UserActivity {
+  diaryCount: number;
+  completeMissionCount: number;
+  consecutiveCount: number;
+}

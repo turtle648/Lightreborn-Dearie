@@ -25,4 +25,5 @@ public interface UserMissionRepository extends JpaRepository<UserMission, Long> 
     * */
     List<UserMission> findByUser_IdAndIsCompletedTrue(Long userId, Pageable pageable);
 
+    Integer countByUserIdAndIsCompletedTrue(Long userId);
 }

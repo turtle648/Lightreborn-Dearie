@@ -5,6 +5,7 @@
 import type {
   LoginRequest,
   SignupRequest,
+  UserInfoResponse,
   UserProfile,
   UserStats,
 } from "@/types/user";
@@ -12,29 +13,19 @@ import api from "./axiosClient";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
-/**
- * 사용자 프로필을 가져오는 함수
- */
-export async function getUserProfile(): Promise<UserProfile> {
+export const getUserProfile = async (): Promise<UserInfoResponse> => {
   try {
-    // 실제 구현에서는 fetch 사용
-    // const response = await fetch(`${API_BASE_URL}/user/profile`)
-    // if (!response.ok) throw new Error('Failed to fetch user profile')
-    // return await response.json()
+    const response = await api.get("/auth/me");
+    if (response.status !== 200) {
+      throw new Error("사용자 활동 내역을 가져오는 중 오류 발생");
+    }
 
-    // 목업 데이터 반환
-    return {
-      name: "윌리",
-      avatar: "/diverse-professional-profiles.png",
-      streakDays: 8,
-      totalDiaries: 42,
-      completedMissions: 15,
-    };
+    return response.data.result as UserInfoResponse;
   } catch (error) {
-    console.error("사용자 프로필을 가져오는 중 오류 발생:", error);
+    console.error("사용자 활동 내역을 가져오는 중 오류 발생:", error);
     throw error;
   }
-}
+};
 
 /**
  * 사용자 통계를 가져오는 함수
@@ -117,5 +108,10 @@ export const login = async (request: LoginRequest): Promise<number> => {
 
 export const signup = async (request: SignupRequest): Promise<number> => {
   const response = await api.post("/auth/signup", request);
+  return response.status;
+};
+
+export const logout = async (): Promise<number> => {
+  const response = await api.post("/auth/logout");
   return response.status;
 };

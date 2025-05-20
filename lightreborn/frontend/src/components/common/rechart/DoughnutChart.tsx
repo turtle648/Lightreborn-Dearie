@@ -91,7 +91,7 @@ export default function DoughnutChart({
           >
             <div className="text-center">
               <p className="font-bold">{titleText}</p>
-              <p className="text-2xl font-bold">{valueText}</p>
+              <p className="text-xl font-bold">{valueText}</p>
             </div>
           </div>
         )}

@@ -23,7 +23,7 @@ export default function TopBar({ onMenuClick, isMenuOpen }: TopBarProps) {
 
   // 컴포넌트 마운트 시 사용자 정보 확인
   useEffect(() => {
-    console.log("TopBar useEffect 실행:", { isHydrated, isLoggedIn, isAuthenticated, user });
+    // console.log("TopBar useEffect 실행:", { isHydrated, isLoggedIn, isAuthenticated, user });
     
     // 하이드레이션 완료 후 로그인된 상태이면 사용자 정보 확인
     if (isHydrated) {
@@ -46,7 +46,7 @@ export default function TopBar({ onMenuClick, isMenuOpen }: TopBarProps) {
               setIsLoading(false);
             });
         } else {
-          console.log("이미 사용자 정보가 있습니다:", user);
+          // console.log("이미 사용자 정보가 있습니다:", user);
           setIsLoading(false);
         }
       } else {
@@ -57,13 +57,13 @@ export default function TopBar({ onMenuClick, isMenuOpen }: TopBarProps) {
   }, [isHydrated, getUserInfo, isLoggedIn, isAuthenticated, user, router]);
 
   // 상태값 디버깅
-  console.log("TopBar 렌더링:", { 
-    user, 
-    isLoggedIn, 
-    isAuthenticated, 
-    isHydrated, 
-    isLoading 
-  });
+  // console.log("TopBar 렌더링:", { 
+  //   user, 
+  //   isLoggedIn, 
+  //   isAuthenticated, 
+  //   isHydrated, 
+  //   isLoading 
+  // });
 
   const handleLogo = () => {
     router.push("/dashboard/youth-population")

@@ -9,6 +9,7 @@ import java.util.Map;
 import com.ssafy.backend.diary.model.entity.Diary;
 import com.ssafy.backend.diary.model.request.DiarySearchRequest;
 import com.ssafy.backend.diary.model.response.DiaryListResponse;
+import com.ssafy.backend.diary.model.response.EmotionWindowResponseDTO;
 import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,4 +33,6 @@ public interface DiaryService {
     Boolean deleteBookmark(String userId, Long diaryId);
 
     DiaryListResponse getMyDiaries(String loginId, DiarySearchRequest request);
+
+    EmotionWindowResponseDTO getEmotionWindow(String userId);
 }

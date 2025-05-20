@@ -77,7 +77,7 @@ const useAuthStore = create<AuthStore>()(
       getUserInfo: async () => {
         try {
           const response = await getUserInfo();
-          console.log("사용자 정보 요청 응답:", response);
+          // console.log("사용자 정보 요청 응답:", response);
           
           // 응답 구조 확인 및 사용자 정보 설정
           const userData = response.result || response.user || response;
@@ -96,7 +96,7 @@ const useAuthStore = create<AuthStore>()(
               isAuthenticated: true 
             });
             
-            console.log("사용자 정보 설정 완료:", userInfo);
+            // console.log("사용자 정보 설정 완료:", userInfo);
             return userInfo;
           } else {
             console.error("유효한 사용자 정보가 없습니다:", response);

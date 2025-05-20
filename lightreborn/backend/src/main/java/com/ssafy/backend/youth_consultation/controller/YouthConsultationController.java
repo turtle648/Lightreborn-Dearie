@@ -230,14 +230,14 @@ public class YouthConsultationController {
                     - 상담일정 추가 화면에서, 상담 대상자에게 상담 일정을 등록할 때 사용하는 API입니다.
                     """
     )
-    public ResponseEntity<BaseResponse<AddScheduleResponseDTO>> addSchedule(
+    public ResponseEntity<BaseResponse<String>> addSchedule(
             @AuthenticationPrincipal String userId,
             @PathVariable Long youthId,
             @RequestBody AddScheduleRequestDTO addScheduleRequestDTO
             ) {
-        AddScheduleResponseDTO addScheduleResponseDTO = youthConsultationService.addSchedule(userId, youthId, addScheduleRequestDTO);
+        youthConsultationService.addSchedule(userId, youthId, addScheduleRequestDTO);
 
-        return ResponseEntity.ok().body(BaseResponse.success("상담 일정을 성공적으로 추가하였습니다.", addScheduleResponseDTO));
+        return ResponseEntity.ok().body(BaseResponse.success(201, "상담 일정을 성공적으로 추가하였습니다."));
     }
 
     @PostMapping(

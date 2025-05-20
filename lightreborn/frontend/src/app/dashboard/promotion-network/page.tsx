@@ -7,6 +7,8 @@ import { useDongInfo } from "@/hooks/useDongInfo"
 import { useState, useEffect } from "react"
 import BarChart from "@/components/common/rechart/BarChart"
 import Sheet from "@/components/common/Sheet"
+import { usePromotionNetworkStore } from "@/stores/usePromotionNetworkStore"
+import { getPromotionNetworkDashboardDataByType } from "@/apis/promotionNetworkApi"
 
 // 홍보 유형 코드 -> 이름 매핑
 const promotionTypeNames: Record<number, string> = {
@@ -64,6 +66,24 @@ export default function PromotionNetworkPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [data, setData] = useState<PromotionNetworkData | null>(null)
   const [selectedMarker, setSelectedMarker] = useState<MarkerPoint | null>(null)
+  const { promotionNetworkByType, promotionNetworkByDistrict, getPromotionNetworkDashboardDataByDistrict } = usePromotionNetworkStore()
+
+  // 메서드 실행돼서 데이터 업데이트 되면 실행
+  useEffect(() => {
+
+  }, [promotionNetworkByType, promotionNetworkByDistrict])
+  
+  // 어떤 지역이 선택되면 관련 메서드 실행 (API 호출 포함)
+  useEffect(() => {
+    if (isSelected && selectedDongCode) {
+      getPromotionNetworkDashboardDataByType({dongCode: Number(selectedDongCode)})
+      getPromotionNetworkDashboardDataByDistrict(Number(selectedDongCode))
+    }
+  }, [isSelected, selectedDongCode, getPromotionNetworkDashboardDataByType, getPromotionNetworkDashboardDataByDistrict])
+
+  useEffect(() => {
+    
+  }, [promotionNetworkByType, promotionNetworkByDistrict])
 
   // 실제 구현에서는 API 호출로 대체
   useEffect(() => {

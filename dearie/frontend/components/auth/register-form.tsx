@@ -140,7 +140,7 @@ export function RegisterForm() {
     try {
       const response = await signup(formData);
       if (response === 201) {
-        router.push(ROUTES.HOME);
+        router.push(ROUTES.AUTH.LOGIN);
       }
     } catch (err) {
       const axiosError = err as AxiosError;

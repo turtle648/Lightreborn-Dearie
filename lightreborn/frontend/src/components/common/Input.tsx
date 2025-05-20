@@ -1,9 +1,12 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { File } from 'lucide-react'
+import { File, Check, AlertCircle } from 'lucide-react'
 import Button from "./Button"
 import { Card } from "./Card"
+import { updatePromotionNetworkData, updateWelfareCenterData, updateYouthPopulationData } from "@/apis/data-input"
+import { useYouthConsultationStore } from "@/stores/useYouthConsultaionStore"
+
 
 // 파일 유형 정의
 export type FileType = 'spreadsheet' | 'word'
@@ -25,6 +28,7 @@ const fileTypeConfig = {
 }
 
 interface InputProps {
+  activeTab: string
   fileType: FileType
   onFileSelect?: (file: File) => void
   onFileRemove?: () => void
@@ -35,6 +39,7 @@ interface InputProps {
 }
 
 export default function Input({
+  activeTab,
   fileType = 'spreadsheet',
   onFileSelect,
   onFileRemove,
@@ -48,6 +53,9 @@ export default function Input({
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [uploadMessage, setUploadMessage] = useState("")
   
   // 파일 입력 참조
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -67,6 +75,7 @@ export default function Input({
     e.preventDefault()
     setIsDragging(false)
     setError(null)
+    setUploadSuccess(false)
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileSelection(e.dataTransfer.files[0])
@@ -83,6 +92,7 @@ export default function Input({
   // 파일 변경 핸들러
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null)
+    setUploadSuccess(false)
     if (e.target.files && e.target.files.length > 0) {
       handleFileSelection(e.target.files[0])
     }
@@ -114,6 +124,8 @@ export default function Input({
   // 파일 제거 핸들러
   const handleRemoveFile = () => {
     setSelectedFile(null)
+    setUploadSuccess(false)
+    setError(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -184,6 +196,72 @@ export default function Input({
         return <File size={32} className="text-blue-500" />
     }
   }
+
+  const { uploadSurveyResponseWordFile } = useYouthConsultationStore();
+
+  const handleSubmitFile = async (file: File) => {
+    if (!file) {
+      setError("파일을 선택해주세요.");
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    setUploadSuccess(false);
+    
+    try {
+      let response;
+      console.log("input.tsx - handleSubmitFile 실행 - activeTab:", activeTab, "selectedFile:", file);
+      
+      if (activeTab === "youth-population") {
+        response = await updateYouthPopulationData(file);
+      } else if (activeTab === "promotion-network") {
+        response = await updatePromotionNetworkData(file);
+      } else if (activeTab === "welfare-center") {
+        response = await updateWelfareCenterData(file);
+      } else if (activeTab === "youth-management") {
+        const formData = new FormData();
+        formData.append("file", file);
+        response = await uploadSurveyResponseWordFile(formData);
+      } else {
+        throw new Error("유효하지 않은 activeTab 값입니다.");
+      }
+      
+      // 성공 처리
+      setUploadSuccess(true);
+      setUploadMessage(response.message || "파일이 성공적으로 업로드되었습니다.");
+      console.log("input.tsx - handleSubmitFile 실행 - response : ", response)
+
+      // // 파일 선택 상태 초기화 (선택적)
+      // setSelectedFile(null);
+      // if (fileInputRef.current) {
+      //   fileInputRef.current.value = '';
+      // }
+      
+    } catch (error) {
+      console.error("파일 업로드 중 오류 발생:", error);
+      
+      // 오류 메시지 설정
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("파일 업로드 중 오류가 발생했습니다.");
+      }
+      setUploadSuccess(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // 다른 파일 업로드하기 핸들러
+  const handleUploadAnotherFile = () => {
+    setSelectedFile(null);
+    setUploadSuccess(false);
+    setError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
   
   return (
     <div className={`mb-4 ${className}`}>
@@ -193,7 +271,7 @@ export default function Input({
       >
         {selectedFile ? (
           // 파일이 선택된 경우
-          <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+          <div className="flex flex-col gap-4 bg-blue-50 border border-blue-200 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 {getFileIcon()}
@@ -206,14 +284,53 @@ export default function Input({
                   </p>
                 </div>
               </div>
-              <Button
-                variant="text"
-                onClick={handleRemoveFile}
-                className="text-gray-500 hover:text-red-500"
-              >
-                삭제
-              </Button>
+              {!isLoading && !uploadSuccess && (
+                <Button
+                  variant="text"
+                  onClick={handleRemoveFile}
+                  className="text-gray-500 hover:text-red-500"
+                >
+                  삭제
+                </Button>
+              )}
             </div>
+            
+            {uploadSuccess ? (
+              // 업로드 성공 시 표시
+              <div className="mt-2">
+                <div className="flex items-center text-green-600 mb-4">
+                  <Check className="w-5 h-5 mr-2" />
+                  <p className="text-sm font-medium">{uploadMessage}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleUploadAnotherFile}
+                  className="w-full"
+                >
+                  다른 파일 업로드하기
+                </Button>
+              </div>
+            ) : (
+              // 업로드 버튼 (로딩 중이거나 성공하지 않은 경우)
+              <Button
+                variant="primary"
+                onClick={() => handleSubmitFile(selectedFile)}
+                disabled={isLoading}
+                className="w-full"
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    업로드 중...
+                  </span>
+                ) : (
+                  "파일 업로드하기"
+                )}
+              </Button>
+            )}
           </div>
         ) : (
           // 파일이 선택되지 않은 경우 (드롭 영역)
@@ -247,7 +364,10 @@ export default function Input({
       </Card>
       
       {error && (
-        <p className="text-xs text-red-500 mt-1">{error}</p>
+        <div className="flex items-center text-red-500 mt-2">
+          <AlertCircle className="w-4 h-4 mr-1" />
+          <p className="text-xs">{error}</p>
+        </div>
       )}
     </div>
   )

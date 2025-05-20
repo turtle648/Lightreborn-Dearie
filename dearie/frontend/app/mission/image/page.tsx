@@ -55,7 +55,7 @@ export default function ImageMissionPage() {
   const [verificationResult, setVerificationResult] = useState<MissionResult | null>(null);
   const [position, setPosition] = useState<{ latitude: number; longitude: number } | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
-  const imageKeyword = searchParams.get("label") || "cup"; // fallback도 있음
+  const imageKeyword = searchParams.get("label") || "카페"; // fallback도 있음
 
 
   // 위치 정보 가져오기
@@ -134,32 +134,53 @@ export default function ImageMissionPage() {
         longitude: position?.longitude,
       });
 
-      // 위치 정보가 있으면 추가
-      if (response?.code === 200) {
+      // API 응답 구조에 맞게 검증 상태 확인
+      const isVerified = response.result?.verified || false;
+
+      // 검증 결과 설정 (성공, 실패 둘 다 처리)
+      setVerificationProgress(100);
+      setVerificationResult({
+        missionId,
+        resultType: response.result?.resultType || "IMAGE",
+        completedAt: response.result?.completedAt || new Date().toISOString(),
+        detail: {
+          // 실제 API에서 반환한 detections 사용
+          detections: response.result?.detail?.detections || [],
+        },
+        requiredObjectLabel: response.result?.requiredObjectLabel || imageKeyword,
+        verified: isVerified,
+      });
+
+      if (isVerified) {
         setIsCompleted(true);
         setIsSaved(true);
-        setVerificationProgress(100);
-        setVerificationResult({
-          missionId,
-          resultType: "IMAGE",
-          completedAt: new Date().toISOString(),
-          detail: {
-            detections: [], // 실제 검증 결과로 대체 가능
-          },
-          requiredObjectLabel: imageKeyword,
-          verified: true,
-        });
-
+        
         toast({
           title: "이미지 미션 완료",
           description: `${imageKeyword} 미션을 완료했어요!`,
           variant: "default",
         });
       } else {
-        throw new Error("미션 검증 실패");
+        // 검증 실패한 경우 (에러 던지지 않고 실패 상태로 설정)
+        toast({
+          title: "미션 검증 실패",
+          description: `${imageKeyword}가 이미지에서 인식되지 않았습니다. 다시 시도해주세요.`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("이미지 검증 중 오류 발생:", error);
+      
+      // 네트워크 에러 등의 경우 실패 상태로 설정
+      setVerificationResult({
+        missionId,
+        resultType: "IMAGE",
+        completedAt: new Date().toISOString(),
+        detail: { detections: [] },
+        requiredObjectLabel: imageKeyword,
+        verified: false,
+      });
+      
       toast({
         title: "오류 발생",
         description: "이미지 검증 중 문제가 발생했습니다. 다시 시도해주세요.",
@@ -256,7 +277,7 @@ export default function ImageMissionPage() {
                           transition={{ delay: 0.3, duration: 0.5 }}
                           className="text-xl font-bold mb-2"
                         >
-                          오늘의 카페 미션
+                          오늘의 사진 미션
                         </motion.h2>
                         <motion.p
                           initial={{ opacity: 0, y: 10 }}
@@ -336,12 +357,24 @@ export default function ImageMissionPage() {
                     <div className="text-center mb-6">
                       <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1, rotate: [0, 10, -10, 0] }}
+                        animate={{ 
+                          scale: 1, 
+                          opacity: 1, 
+                          rotate: verificationResult.verified ? [0, 10, -10, 0] : 0 
+                        }}
                         transition={{ delay: 0.2, duration: 0.8 }}
-                        className="w-28 h-28 bg-gradient-to-br from-[#fbb6a7] to-[#f7b0c5] rounded-full flex items-center justify-center mx-auto mb-4"
+                        className={`w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                          verificationResult.verified 
+                            ? "bg-gradient-to-br from-[#fbb6a7] to-[#f7b0c5]" 
+                            : "bg-gradient-to-br from-gray-200 to-gray-300"
+                        }`}
                       >
                         <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
-                          <ImageIcon className="h-12 w-12 text-[#fbb6a7]" />
+                          {verificationResult.verified ? (
+                            <ImageIcon className="h-12 w-12 text-[#fbb6a7]" />
+                          ) : (
+                            <RefreshCw className="h-12 w-12 text-gray-400" />
+                          )}
                         </div>
                       </motion.div>
                       <motion.div
@@ -362,7 +395,7 @@ export default function ImageMissionPage() {
                       >
                         {verificationResult.verified
                           ? `소중한 순간을 사진으로 담았습니다.\n이런 기록들이 모여\n당신의 마음 여정을 만들어갑니다.`
-                          : `다시 시도해 주세요.`}
+                          : `${imageKeyword}가 이미지에서 인식되지 않았습니다.\n다시 찍어 볼까요?`}
                       </motion.p>
                     </div>
                     <div className="flex-1 mb-6 flex items-center justify-center">
@@ -372,29 +405,45 @@ export default function ImageMissionPage() {
                             src={capturedImage || "/placeholder.svg"}
                             alt="촬영된 사진"
                             fill
-                            className="object-contain rounded-2xl"
+                            className={`object-contain rounded-2xl ${!verificationResult.verified ? "opacity-70" : ""}`}
                           />
                         )}
                         {/* 성공 시 박스 오버레이 */}
                         {verificationResult.verified && renderBoxes()}
+                        
+                        {/* 실패 시 오버레이 */}
+                        {!verificationResult.verified && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="flex flex-col items-center">
+                              <Badge 
+                                variant="destructive" 
+                                className="mb-2 px-3 py-1 bg-red-100 text-red-600 border border-red-200"
+                              >
+                                {imageKeyword} 인식 실패
+                              </Badge>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex justify-center gap-4 w-full mt-4">
                       {verificationResult.verified ? (
                         <Button
                           onClick={() => router.push(`/mission/recent-success/${userMissionId}?type=IMAGE`)}
-                          
                           className="flex-1 py-3 rounded-full bg-gradient-to-r from-[#fbb6a7] to-[#f7b0c5] text-white font-semibold shadow-lg shadow-primary/20"
                         >
                           돌아가기
                         </Button>
                       ) : (
-                        <Button
-                          onClick={retakePhoto}
-                          className="flex-1 py-3 rounded-full border-[#fbb6a7] text-[#fbb6a7] border-2 bg-white hover:bg-[#fbb6a7]/10 font-semibold"
-                        >
-                          다시 찍기
-                        </Button>
+                        <>
+                          <Button
+                            onClick={retakePhoto}
+                            className="flex-1 py-3 rounded-full border-[#fbb6a7] text-[#fbb6a7] border-2 bg-white hover:bg-[#fbb6a7]/10 font-semibold"
+                          >
+                            <Camera className="mr-2 h-4 w-4" />
+                            다시 촬영하기
+                          </Button>
+                        </>
                       )}
                     </div>
                   </motion.div>

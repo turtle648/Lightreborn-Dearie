@@ -45,16 +45,6 @@ export default function LoginPage() {
                 <span className="px-2 bg-white text-gray-500">또는</span>
               </div>
             </div>
-
-            <div className="mt-6">
-              <button
-                onClick={handleGuestLogin}
-                disabled={isLoading}
-                className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-              >
-                {isLoading ? "처리 중..." : "게스트로 시작하기"}
-              </button>
-            </div>
           </div>
 
           <div className="mt-6 text-center">

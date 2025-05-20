@@ -13,11 +13,12 @@ import { ROUTES } from "@/constants/routes";
 import { getDailyMissions } from "@/apis/mission-api";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { MissionItem } from "@/components/feature/mission/mission-item";
 import { useMissionStore } from "@/stores/mission-store";
 import axios from "axios";
+import { MissionItem } from "@/components/feature/mission/mission-item";
+import api from "@/apis/axiosClient";
 
-// 동적 임포트로 코드 스플리팅 적용
+// 동적 임포트
 const DailyMission = dynamic(
   () => import("@/components/feature/mission/daily-mission"),
   {
@@ -79,6 +80,9 @@ export default function HomePage() {
   const router = useRouter();
   const { preview, loading, error, fetchDaily } = useMissionStore();
   const [diaries, setDiaries] = useState<Diary[]>([]);
+  const [emotionWindowPath, setEmotionWindowPath] = useState(
+    "/images/night-window.gif"
+  );
 
   useEffect(() => {
     fetchDaily(2);
@@ -100,10 +104,7 @@ export default function HomePage() {
             withCredentials: true,
           }
         );
-
         console.log("✅ 다이어리 API 응답", res.data);
-
-        // 구조 확인 후 반영
         const fetched = res.data.result.result ?? [];
         setDiaries(fetched);
       } catch (err) {
@@ -114,14 +115,29 @@ export default function HomePage() {
     fetchDiaries();
   }, []);
 
+  useEffect(() => {
+    const fetchEmotionWindow = async () => {
+      try {
+        const res = await api.get("/diaries/emotion-window");
+        console.log("🎭 감정 창문 API 응답:", res.data);
+        const path = res.data.result?.path;
+        if (path) setEmotionWindowPath(path);
+      } catch (err) {
+        console.error("❌ 감정 창문 이미지 불러오기 실패:", err);
+      }
+    };
+
+    fetchEmotionWindow();
+  }, []);
+
   return (
     <AppLayout hideHeader>
       <div className="pb-6">
         {/* 배경 이미지 */}
         <div className="relative w-full h-[380px]">
           <Image
-            src="./images/night-window.gif"
-            alt="밤 창문 풍경"
+            src={emotionWindowPath}
+            alt="감정 창문 이미지"
             fill
             className="object-cover"
             priority

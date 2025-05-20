@@ -3,11 +3,32 @@
 import Input from "@/components/common/Input"
 import Sheet from "@/components/common/Sheet"
 import { colors } from "@/constants/colors"
-import { useState } from "react"
+import { useDataStore } from "@/stores/useDataStore"
+import { useEffect, useState } from "react"
 
 export default function DataInput() {
 
   const [activeTab, setActiveTab] = useState<"youth-population" | "promotion-network" | "welfare-center" >("youth-population")
+
+  const { 
+    youthPopulationData , getYouthPopulationData, 
+    promotionNetworkData, getPromotionNetworkData, 
+    welfareCenterData, getWelfareCenterData 
+  } = useDataStore();
+
+  // 표 데이터 채우기 
+  useEffect(() => {
+    getYouthPopulationData();
+    getPromotionNetworkData();
+    getWelfareCenterData();
+  }, []);
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+
+  console.log("youthPopulationData : ", youthPopulationData)
+  console.log("promotionNetworkData : ", promotionNetworkData)
+  console.log("welfareCenterData : ", welfareCenterData)
 
   return (
     <div className="space-y-6 p-6">
@@ -36,82 +57,90 @@ export default function DataInput() {
           </button>
         </div>
         {activeTab === "youth-population" ? (
-          <Sheet 
-            title="청년 인구 통계 확인"
-            columns={[
-              // {key: "id", title: "ID"},
-              {key: "dongId", title: "행정동"},
-              {key: "cityzenAll", title: "전체 인구"},
-              {key: "youthAll", title: "전체 청년인구"},
-              {key: "youthRate", title: "청년인구 비율"},
-              {key: "youthMale", title: "청년 남자"},
-              {key: "youthFemale", title: "청년 여자"},
-              {key: "youthMaleRate", title: "청년 남자 비율"},
-              {key: "youthFemaleRate", title: "청년 여자 비율"},
-            ]}
-            data={[
-              {id: 1, dongId: "동면", cityzenAll: 10000, youthAll: 1000, youthRate: 10, youthMale: 500, youthFemale: 500, youthMaleRate: 50, youthFemaleRate: 50},  
-              {id: 2, dongId: "물금읍", cityzenAll: 10000, youthAll: 1000, youthRate: 10, youthMale: 500, youthFemale: 500, youthMaleRate: 50, youthFemaleRate: 50},  
-              {id: 3, dongId: "월곡동", cityzenAll: 10000, youthAll: 1000, youthRate: 10, youthMale: 500, youthFemale: 500, youthMaleRate: 50, youthFemaleRate: 50},
-              {id: 4, dongId: "화곡동", cityzenAll: 10000, youthAll: 1000, youthRate: 10, youthMale: 500, youthFemale: 500, youthMaleRate: 50, youthFemaleRate: 50},
-              {id: 5, dongId: "이곡동", cityzenAll: 10000, youthAll: 1000, youthRate: 10, youthMale: 500, youthFemale: 500, youthMaleRate: 50, youthFemaleRate: 50},
-              {id: 6, dongId: "...", cityzenAll: 0, youthAll: 0, youthRate: 0, youthMale: 0, youthFemale: 0, youthMaleRate: 0, youthFemaleRate: 0},
-            ]}
-          />
-              
-        ) : activeTab === "promotion-network" ? (
-          <Sheet 
-            title="청년 홍보 네트워크 확인"
-            columns={[
-              {key: "id", title: "ID"},
-            ]}
-            data={[
-              {id: 1, title: "청년 홍보 네트워크 파일 업로드"}
-            ]}
-          />
-        ) : (
-          <Sheet 
-            title="복지센터 정보 확인"
-            columns={[
-              {key: "id", title: "ID"},
-            ]}
-            data={[
-              {id: 1, title: "복지센터 정보 파일 업로드"}
-            ]}
-          />
-        )}
-        {activeTab === "youth-population" ? (
           <Input 
+            activeTab={activeTab}
             fileType="spreadsheet"
-            onFileSelect={() => {}}
-            onFileRemove={() => {}}
             title="청년 인구 통계 파일 업로드"
             description="청년 인구 통계 파일을 업로드해주세요."
             maxFileSize={10}
           />
-
-          // <Input />
         ) : activeTab === "promotion-network" ? (
           <Input 
+            activeTab={activeTab}
             fileType="spreadsheet"
-            onFileSelect={() => {}}
-            onFileRemove={() => {}}
             title="청년 홍보 네트워크 파일 업로드"
             description="청년 홍보 네트워크 파일을 업로드해주세요."
             maxFileSize={10}
           />
-          // <Input />
         ) : (
           <Input 
-            fileType="word"
-            onFileSelect={() => {}}
-            onFileRemove={() => {}}
+            activeTab={activeTab}
+            fileType="spreadsheet"
             title="복지센터 정보 파일 업로드"
             description="복지센터 정보 파일을 업로드해주세요."
             maxFileSize={10}
           />
-          // <Input />
         )}
+      {activeTab === "youth-population" ? (
+        <Sheet 
+          title="청년 인구 통계 확인"
+          columns={[
+            {key: "dongName", title: "행정동"},
+            {key: "youthPopulation", title: "전체 청년인구"},
+            {key: "maleYouth", title: "청년 남자"},
+            {key: "femaleYouth", title: "청년 여자"},
+            {key: "youthOnePersonHousehold", title: "전체 청년 1인가구"},
+            {key: "maleOnePersonHousehold", title: "청년 남자 1인가구"},
+            {key: "femaleOnePersonHousehold", title: "청년 여자 1인가구"},
+          ]}
+          data={youthPopulationData}
+          pagination={{
+            currentPage,
+            pageSize : 5,
+            totalItems: youthPopulationData.length,
+            onChange: (page) => setCurrentPage(page),
+          }}
+        />
+            
+      ) : activeTab === "promotion-network" ? (
+        <Sheet 
+          title="청년 홍보 네트워크 확인"
+          columns={[
+            {key: "placeName", title: "장소명"},
+            {key: "locationType", title: "홍보물 장소 유형"},
+            {key: "promotionType", title: "홍보물 유형"},
+            {key: "promotionContent", title: "홍보물 내용"},
+            {key: "posted", title: "게시 상태"},
+            {key: "dongName", title: "행정동"},
+            {key: "address", title: "주소"},
+          ]}
+          data={promotionNetworkData}
+          pagination={{
+            currentPage,
+            pageSize : 12,
+            totalItems: promotionNetworkData.length,
+            onChange: (page) => setCurrentPage(page),
+          }}
+        />
+      ) : (
+        <Sheet 
+          title="복지센터 정보 확인"
+          columns={[
+            {key: "hangjungName", title: "행정동"},
+            {key: "organizationType", title: "기관 유형"},
+            {key: "organizationName", title: "기관 이름"},
+            {key: "callNumber", title: "전화번호"},
+            {key: "address", title: "주소"},
+          ]}
+          data={welfareCenterData}
+          pagination={{
+            currentPage,
+            pageSize : 5,
+            totalItems: welfareCenterData.length,
+            onChange: (page) => setCurrentPage(page),
+          }}
+        />
+      )}
       </div>  
     </div>
   )

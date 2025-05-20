@@ -1,5 +1,6 @@
 package com.ssafy.backend.auth.service;
 
+import com.ssafy.backend.auth.model.dto.response.UserActivityDTO;
 import com.ssafy.backend.auth.model.entity.User;
 import com.ssafy.backend.auth.exception.AuthErrorCode;
 import com.ssafy.backend.auth.exception.AuthException;
@@ -8,6 +9,8 @@ import com.ssafy.backend.auth.model.dto.request.SignUpDTO;
 import com.ssafy.backend.auth.model.dto.response.LoginResponseDTO;
 import com.ssafy.backend.auth.model.vo.SignUpVO;
 import com.ssafy.backend.auth.repository.UserRepository;
+import com.ssafy.backend.diary.reader.DiaryReader;
+import com.ssafy.backend.mission.reader.UserMissionReader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +22,9 @@ import org.springframework.stereotype.Service;
 public class AuthServiceImpl implements AuthService{
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    private final DiaryReader diaryReader;
+    private final UserMissionReader userMissionReader;
 
     @Override
     public LoginResponseDTO login(LoginRequestDTO loginRequestDTO) {
@@ -70,11 +76,12 @@ public class AuthServiceImpl implements AuthService{
 
         log.info("[AuthServiceImpl] 사용자를 찾았습니다: {}", user);
 
-        return LoginResponseDTO.builder()
-                .id(user.getLoginId())
-                .name(user.getName())
-                .nickName(user.getNickname())
-                .profileImage(user.getProfileImg())
-                .build();
+        Integer diaryCount = diaryReader.getCountByUserId(user.getId());
+        Integer completeMissionCount = userMissionReader.getUserCompletedMissionCount(user.getId());
+        Integer consecutiveCount = diaryReader.getCountConsecutiveDiaryDays(user.getId());
+
+        UserActivityDTO userActivityDTO = UserActivityDTO.from(diaryCount, completeMissionCount, consecutiveCount);
+
+        return LoginResponseDTO.from(user, userActivityDTO);
     }
 }
