@@ -47,10 +47,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.Period;
-import java.time.Year;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -107,15 +104,9 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         LocalDateTime start = now.withDayOfMonth(1).atStartOfDay();
         LocalDateTime end = start.plusMonths(1).minusNanos(1);
 
-        if (StringUtils.hasText(request.getDate())) {
-            LocalDate parsedDate = LocalDate.parse(request.getDate());
-            start = parsedDate.atStartOfDay();
-            end = start.plusDays(1).minusNanos(1);
-        }
-
         if (request.getYear() != null) {
             start = LocalDate.of(request.getYear(), 1, 1).atStartOfDay();
-            end = start.plusMonths(1).minusNanos(1);
+            end = LocalDate.of(request.getYear(), 12, 31).atTime(LocalTime.MAX);
         }
 
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
@@ -314,11 +305,6 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
 
             PersonalInfoCollector personalInfoCollector = surveyContext.getPersonalInfoCollector();
             SurveyAnswerCollector surveyAnswerCollector = surveyContext.getAnswers();
-
-            Optional<PersonalInfo> existPersonalInfo = personalInfoRepository.findByNameAndPhoneNumber(
-                    personalInfoCollector.getName(),
-                    personalInfoCollector.getPhoneNumber()
-            );
 
             PersonalInfo savedPersonalInfo = personalInfoRepository.save(
                     PersonalInfo.builder()
