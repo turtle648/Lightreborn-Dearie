@@ -54,6 +54,18 @@ export default function MissionDetailPage() {
   const [detailLoading, setDetailLoading] = useState(true);
   const [detailError, setDetailError] = useState<string | null>(null);
 
+  const parseISODurationToSeconds = (isoDuration: string): number => {
+    const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
+    if (!match) return 0;
+
+    const [, hours, minutes, seconds] = match;
+    return (
+      (hours ? parseInt(hours) * 3600 : 0) +
+      (minutes ? parseInt(minutes) * 60 : 0) +
+      (seconds ? parseFloat(seconds) : 0)
+    );
+  };
+
   useEffect(() => {
     const fetchMissionDetail = async () => {
       setDetailLoading(true);
@@ -166,9 +178,12 @@ export default function MissionDetailPage() {
               <div className="space-y-2">
                 <p className="text-sm text-gray-500">소요 시간</p>
                 <p className="font-medium">
-                  {detail.duration 
-                    ? `${Math.floor(detail.duration.seconds / 60)}분 ${detail.duration.seconds % 60}초` 
-                    : '정보 없음'}
+                  {detail.duration ? (() => {
+                    const totalSeconds = parseISODurationToSeconds(detail.duration);
+                    const minutes = Math.floor(totalSeconds / 60);
+                    const seconds = Math.floor(totalSeconds % 60);
+                    return `${minutes}분 ${seconds}초`;
+                  })() : '정보 없음'}
                 </p>
               </div>
             </div>

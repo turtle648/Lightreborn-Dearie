@@ -56,6 +56,7 @@ export function MissionItem({ mission }: MissionItemProps) {
     const query = new URLSearchParams({
       userMissionId: mission.id.toString(),
       missionId: mission.missionId.toString(),
+      requiredObjectLabel: mission.requiredObjectLabel,
     });
     if (mission.requiredObjectLabel === "cup") {
       query.set("label", "카페");
