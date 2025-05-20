@@ -1,74 +1,104 @@
 "use client";
 
-import dynamic from "next/dynamic"
-import { Suspense } from "react"
-import { AppLayout } from "@/components/layout/app-layout"
-import { LoadingSpinner } from "@/components/common/loading-spinner"
-import { Button } from "@/components/ui/button"
-import { ChevronRight } from "lucide-react"
-import { Bell } from "@/components/ui/bell"
-import Link from "next/link"
-import Image from "next/image"
-import { ROUTES } from "@/constants/routes"
-import { getDailyMissions } from "@/apis/mission-api"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { MissionItem } from "@/components/feature/mission/mission-item"
-import { useMissionStore } from "@/stores/mission-store"
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
+import { AppLayout } from "@/components/layout/app-layout";
+import { LoadingSpinner } from "@/components/common/loading-spinner";
+import { Button } from "@/components/ui/button";
+import { ChevronRight } from "lucide-react";
+import { Bell } from "@/components/ui/bell";
+import Link from "next/link";
+import Image from "next/image";
+import { ROUTES } from "@/constants/routes";
+import { getDailyMissions } from "@/apis/mission-api";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { MissionItem } from "@/components/feature/mission/mission-item";
+import { useMissionStore } from "@/stores/mission-store";
 import axios from "axios";
 
 // 동적 임포트로 코드 스플리팅 적용
-const DailyMission = dynamic(() => import("@/components/feature/mission/daily-mission"), {
-  loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded-lg"></div>,
-  ssr: true,
-})
+const DailyMission = dynamic(
+  () => import("@/components/feature/mission/daily-mission"),
+  {
+    loading: () => (
+      <div className="h-32 bg-gray-100 animate-pulse rounded-lg"></div>
+    ),
+    ssr: true,
+  }
+);
 
-const DiaryCard = dynamic(() => import("@/components/feature/diary/diary-card"), {
-  loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>,
-  ssr: true,
-})
+const DiaryCard = dynamic(
+  () => import("@/components/feature/diary/diary-card"),
+  {
+    loading: () => (
+      <div className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>
+    ),
+    ssr: true,
+  }
+);
 
 // Diary 타입
 interface Diary {
   diaryId: number;
   content: string;
-  createTime: string;
+  date: string;
   images: string[];
   bookmarked: boolean;
 }
 
 // 날짜 변환 함수
 const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return `${String(date.getMonth() + 1).padStart(2, "0")}.${String(
-      date.getDate()
-  ).padStart(2, "0")}`;
+  if (!dateString) return "날짜 없음";
+
+  try {
+    const date = new Date(dateString);
+
+    // 유효한 날짜인지 확인
+    if (isNaN(date.getTime())) {
+      console.error("유효하지 않은 날짜:", dateString);
+      return "날짜 오류";
+    }
+
+    // YYYY.MM.DD 형식으로 변환
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+
+    return `${year}.${String(month).padStart(2, "0")}.${String(day).padStart(
+      2,
+      "0"
+    )}`;
+  } catch (error) {
+    console.error("날짜 변환 오류:", error);
+    return "날짜 오류";
+  }
 };
 
 export default function HomePage() {
-  const router = useRouter()
-  const { preview, loading, error, fetchDaily } = useMissionStore()
+  const router = useRouter();
+  const { preview, loading, error, fetchDaily } = useMissionStore();
   const [diaries, setDiaries] = useState<Diary[]>([]);
 
   useEffect(() => {
-    fetchDaily(2)
-  }, [fetchDaily])
+    fetchDaily(2);
+  }, [fetchDaily]);
 
   useEffect(() => {
     const fetchDiaries = async () => {
       try {
         const res = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/diaries`,
-            {
-              params: {
-                sort: "latest",
-                keyword: "",
-                bookmark: false,
-                page: 0,
-                size: 2,
-              },
-              withCredentials: true,
-            }
+          `${process.env.NEXT_PUBLIC_API_URL}/diaries`,
+          {
+            params: {
+              sort: "latest",
+              keyword: "",
+              bookmark: false,
+              page: 0,
+              size: 2,
+            },
+            withCredentials: true,
+          }
         );
 
         console.log("✅ 다이어리 API 응답", res.data);
@@ -128,7 +158,11 @@ export default function HomePage() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">오늘의 미션</h2>
             <Link href={ROUTES.MISSION.LIST} aria-label="미션 더보기">
-              <Button variant="ghost" size="sm" className="text-gray-500 gap-1 p-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-500 gap-1 p-0"
+              >
                 더보기
                 <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </Button>
@@ -138,11 +172,11 @@ export default function HomePage() {
             <Suspense fallback={<LoadingSpinner />}>
               {loading && <LoadingSpinner />}
               {error && <div className="text-red-500">{error}</div>}
-              {!loading && !error &&
-                preview.map(mission => (
+              {!loading &&
+                !error &&
+                preview.map((mission) => (
                   <MissionItem key={mission.id} mission={mission} />
-                ))
-              }
+                ))}
             </Suspense>
           </div>
         </div>
@@ -168,7 +202,7 @@ export default function HomePage() {
                 key={diary.diaryId}
                 diary={{
                   id: diary.diaryId,
-                  date: formatDate(diary.createTime),
+                  date: formatDate(diary.date),
                   image: diary.images[0] || "./placeholder.svg",
                   content: diary.content,
                   bookmarked: diary.bookmarked,
