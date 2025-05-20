@@ -17,7 +17,7 @@ public interface YouthConsultationService {
     SpeechResponseDTO getGeneralSummarize(String loginUser, SpeechRequestDTO responseDTO);
     SurveyUploadDTO uploadIsolationYouthInfo(MultipartFile file);
     SpeechResponseDTO updateCounselingLog(Long id, UpdateCounselingLogRequestDTO requestDTO);
-
+    void patchIsolationYouthStep(Long youthId, PatchProcessStep processStep);
     void getKafkaSurveySendDate(SurveySendRequestDTO requestDTO);
 
     /**
