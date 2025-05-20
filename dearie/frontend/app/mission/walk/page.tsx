@@ -5,26 +5,29 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Play, Square, Save, AlertTriangle, RefreshCw } from "lucide-react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { WalkingMapBox } from "@/components/feature/mission/walking-mapbox";
 import { WalkingSummary } from "@/components/feature/mission/walking-summary";
 import type { MapRef } from "react-map-gl/maplibre";
 import maplibregl from "maplibre-gl";
 import { useMissionStore } from "@/stores/mission-store";
-import type { MissionCompletionRequest } from "@/types/mission";
+import { submitMissionCompletion } from "@/apis/mission-api";
 
 export default function WalkingMissionPage() {
   const router = useRouter();
   const mapRef = useRef<MapRef>(null);
-  const { userMissionId } = useParams();
-  const userMissionIdNum = Number(userMissionId);
-  const { all, preview, fetchAll } = useMissionStore();
+
+  const [userMissionId, setUserMissionId] = useState<number | null>(null);
+  const [missionId, setMissionId] = useState<number | null>(null);
 
   const [isTracking, setIsTracking] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isCaptured, setIsCaptured] = useState(false);
-  const [capturedMapBlob, setCapturedMapBlob] = useState<Blob | null>(null);  // Blob state 추가
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [capturedMapBlob, setCapturedMapBlob] = useState<Blob | null>(null);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [duration, setDuration] = useState(0);
@@ -36,22 +39,36 @@ export default function WalkingMissionPage() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [capturedMapUrl, setCapturedMapUrl] = useState<string | null>(null);
-  const { stopRecording, walkLoading, walkError, setStatus } = useMissionStore();
 
-  // 미션 정보 찾기 (all, preview 등에서)
-  const mission = useMemo(
-    () =>
-      all.find(m => m.id === userMissionIdNum) ||
-      preview.find(m => m.id === userMissionIdNum),
-    [all, preview, userMissionIdNum]
-  );
+  const { all, preview, fetchAll, setStatus } = useMissionStore();
 
-  // 없으면 fetchAll 등으로 불러오기
+    useEffect(() => {
+    const url = new URL(window.location.href);
+    const userMissionIdParam = url.searchParams.get("userMissionId");
+    const missionIdParam = url.searchParams.get("missionId");
+
+    const parsedUserMissionId = userMissionIdParam ? Number(userMissionIdParam) : null;
+    const parsedMissionId = missionIdParam ? Number(missionIdParam) : null;
+
+    if (!parsedUserMissionId || isNaN(parsedUserMissionId)) {
+      router.push(ROUTES.MISSION.LIST);
+      return;
+    }
+
+    setUserMissionId(parsedUserMissionId);
+    setMissionId(parsedMissionId);
+  }, []);
+
+
+    const mission = useMemo(() => {
+    if (!userMissionId) return null;
+    return all.find(m => m.id === userMissionId) || preview.find(m => m.id === userMissionId);
+  }, [all, preview, userMissionId]);
+
   useEffect(() => {
     if (!mission) fetchAll();
   }, [mission, fetchAll]);
 
-  // 초기 위치 설정
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
       setCurrentPosition({ lat: 35.0883, lng: 128.8442 });
@@ -119,7 +136,6 @@ export default function WalkingMissionPage() {
     }, 1000);
   };
 
-  // 종료
   const stopWalking = () => {
     setIsTracking(false);
     setIsCompleted(true);
@@ -130,60 +146,122 @@ export default function WalkingMissionPage() {
     const map = mapRef.current?.getMap();
     if (!map || path.length < 2) return;
 
+    setIsCapturing(true);
+
     // bounds 계산 및 fit
     const bounds = path.reduce(
       (b: maplibregl.LngLatBounds, p) => b.extend([p.lng, p.lat]),
       new maplibregl.LngLatBounds([path[0].lng, path[0].lat], [path[0].lng, path[0].lat])
     );
+    
+    // 지도 범위 조정 (애니메이션 없이)
     map.fitBounds(bounds, { padding: 40, duration: 0 });
-
-    // idle 후 캡처
+    
+    // 캡처 타임아웃 설정 - 최대 3초간 대기
+    const captureTimeout = setTimeout(() => {
+      // 3초 후에도 캡처가 완료되지 않았다면 강제로 캡처 시도
+      if (isCapturing) {
+        try {
+          const cv = map.getCanvas();
+          const url = cv.toDataURL("image/jpeg", 0.7);
+          setCapturedMapUrl(url);
+          
+          cv.toBlob(blob => {
+            if (blob) setCapturedMapBlob(blob);
+            setIsCaptured(true);
+            setIsCapturing(false);
+          }, "image/jpeg", 0.7);
+        } catch (err) {
+          console.error("강제 캡처 오류:", err);
+          setIsCaptured(true);
+          setIsCapturing(false);
+        }
+      }
+    }, 3000);
+    
+    // 일정 시간 후 캡처 시도 (짧은 대기 시간)
+    setTimeout(() => {
+      try {
+        const cv = map.getCanvas();
+        const url = cv.toDataURL("image/jpeg", 0.7);
+        setCapturedMapUrl(url);
+        
+        cv.toBlob(blob => {
+          if (blob) setCapturedMapBlob(blob);
+          clearTimeout(captureTimeout); // 타임아웃 취소
+          setIsCaptured(true);
+          setIsCapturing(false);
+        }, "image/jpeg", 0.7);
+      } catch (err) {
+        // 오류 발생 시 타임아웃으로 처리되게 놔둠
+        console.error("첫 번째 캡처 시도 실패:", err);
+      }
+    }, 500);
+    
+    // 원래 방식도 병행 (가장 먼저 완료되는 방식이 적용됨)
     map.once("idle", () => {
-      const cv = map.getCanvas();
-      const url = cv.toDataURL("image/png");
-      setCapturedMapUrl(url);
-      cv.toBlob(blob => {
-        if (blob) setCapturedMapBlob(blob);
-      }, "image/png");  // Blob 저장
-      setIsCaptured(true);
+      if (!isCaptured) {
+        try {
+          const cv = map.getCanvas();
+          const url = cv.toDataURL("image/jpeg", 0.7);
+          setCapturedMapUrl(url);
+          
+          cv.toBlob(blob => {
+            if (blob) setCapturedMapBlob(blob);
+            clearTimeout(captureTimeout); // 타임아웃 취소
+            setIsCaptured(true);
+            setIsCapturing(false);
+          }, "image/jpeg", 0.7);
+        } catch (err) {
+          console.error("idle 이벤트 캡처 오류:", err);
+          // 오류 발생 시 타임아웃으로 처리되게 놔둠
+        }
+      }
     });
   };
 
-  // 저장 
   const handleSave = async () => {
-    if (!isCaptured || !capturedMapBlob) {
-      return alert("지도 캡처 중입니다. 잠시만 기다려주세요.");
+    if (!isCaptured || !capturedMapBlob || !userMissionId || !missionId) {
+      alert("저장 조건이 충족되지 않았습니다.");
+      return;
     }
+
+    setIsSaving(true);
+
     try {
-      const pathJson = JSON.stringify(path); // 경로 정보
-      const snapshotFile = capturedMapBlob; // File 또는 Blob
+      const pathJson = JSON.stringify(path);
+      const snapshotFile = new File([capturedMapBlob], "walk_path.jpg", { type: "image/jpeg" });
 
-      const missionId = mission?.missionId;
-      const missionTitle = mission?.missionTitle;
-      const missionContent = mission?.content;
-
-      const request: MissionCompletionRequest = {
-        missionId: missionId!,
+      await submitMissionCompletion(userMissionId, {
+        missionId,
         missionExecutionType: "WALK",
         pathJson,
-        startTime: startTime ? startTime.toISOString() : undefined,
-        endTime: endTime ? endTime.toISOString() : undefined,
+        startTime: startTime?.toISOString(),
+        endTime: endTime?.toISOString(),
         distance,
-      };
+        snapshotFile,
+      });
 
-      await setStatus(userMissionIdNum, request);
-      alert("서버에 저장되었습니다!");
-    } catch {
-      alert("저장에 실패했습니다. 다시 시도해주세요.");
+      router.push(`/mission/recent-success/${userMissionId}?type=WALK`);
+    } catch (error) {
+      console.error("산책 미션 제출 실패", error);
+      alert("저장 중 오류가 발생했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsSaving(false);
     }
   };
+
 
   // 권한 재요청
   const requestLocationPermission = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
-      pos => { setCurrentPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLocationError(null); setPermissionDenied(false); },
-      err => { /* ... */ },
+      pos => {
+        setCurrentPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocationError(null);
+        setPermissionDenied(false);
+      },
+      () => {},
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
@@ -236,15 +314,32 @@ export default function WalkingMissionPage() {
 
         <div className="mt-4 flex justify-center">
           {isCompleted ? (
-            <Button onClick={handleSave} className="px-8 py-6 rounded-full bg-gradient-soft" disabled={!isCaptured}>
-              <Save className="mr-2" /> 저장하기
+            <Button
+              onClick={handleSave}
+              className="px-8 py-6 rounded-full bg-gradient-soft"
+              disabled={!isCaptured || isCapturing || isSaving}
+            >
+              {isCapturing || isSaving ? (
+                <div className="flex items-center">
+                  <RefreshCw className="animate-spin mr-2" />
+                  {isCapturing ? "지도 캡처 중..." : "저장 중..."}
+                </div>
+              ) : (
+                <>
+                  <Save className="mr-2" /> 저장하기
+                </>
+              )}
             </Button>
           ) : isTracking ? (
             <Button onClick={stopWalking} className="px-8 py-6 rounded-full bg-red-500">
               <Square className="mr-2" /> 산책 완료
             </Button>
           ) : (
-            <Button onClick={startWalking} disabled={!currentPosition || !!locationError} className="px-8 py-6 rounded-full bg-gradient-soft">
+            <Button
+              onClick={startWalking}
+              disabled={!currentPosition || !!locationError}
+              className="px-8 py-6 rounded-full bg-gradient-soft"
+            >
               <Play className="mr-2" /> 산책 시작
             </Button>
           )}
