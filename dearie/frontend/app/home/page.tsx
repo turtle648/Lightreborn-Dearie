@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,9 @@ import { Bell } from "@/components/ui/bell";
 import Link from "next/link";
 import Image from "next/image";
 import { ROUTES } from "@/constants/routes";
+import { getDailyMissions } from "@/apis/mission-api";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useMissionStore } from "@/stores/mission-store";
 import axios from "axios";
 import { MissionItem } from "@/components/feature/mission/mission-item";
@@ -41,17 +43,37 @@ const DiaryCard = dynamic(
 interface Diary {
   diaryId: number;
   content: string;
-  createTime: string;
+  date: string;
   images: string[];
   bookmarked: boolean;
 }
 
 // 날짜 변환 함수
 const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return `${String(date.getMonth() + 1).padStart(2, "0")}.${String(
-    date.getDate()
-  ).padStart(2, "0")}`;
+  if (!dateString) return "날짜 없음";
+
+  try {
+    const date = new Date(dateString);
+
+    // 유효한 날짜인지 확인
+    if (isNaN(date.getTime())) {
+      console.error("유효하지 않은 날짜:", dateString);
+      return "날짜 오류";
+    }
+
+    // YYYY.MM.DD 형식으로 변환
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+
+    return `${year}.${String(month).padStart(2, "0")}.${String(day).padStart(
+      2,
+      "0"
+    )}`;
+  } catch (error) {
+    console.error("날짜 변환 오류:", error);
+    return "날짜 오류";
+  }
 };
 
 export default function HomePage() {
@@ -196,7 +218,7 @@ export default function HomePage() {
                 key={diary.diaryId}
                 diary={{
                   id: diary.diaryId,
-                  date: formatDate(diary.createTime),
+                  date: formatDate(diary.date),
                   image: diary.images[0] || "./placeholder.svg",
                   content: diary.content,
                   bookmarked: diary.bookmarked,
