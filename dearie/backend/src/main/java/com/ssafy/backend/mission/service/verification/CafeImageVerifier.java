@@ -19,7 +19,7 @@ import java.util.Map;
 public class CafeImageVerifier implements ImageVerifier {
 
     private final GeoSearchService geoSearchService;
-    private static final int SEARCH_RADIUS = 50; // 50미터 반경 내 검색
+    private static final int SEARCH_RADIUS = 10;
 
     @Override
     public ImageResultDetail verify(MissionCompletionRequestDTO request, String imageUrl, List<YoloDetectionResult> detections) {
@@ -50,7 +50,7 @@ public class CafeImageVerifier implements ImageVerifier {
                         }).block();
 
                 if (placeResult != null && placeResult.isSuccess()) {
-                    // 검색 결과가 있고, 거리가 50m 이내인 경우 성공
+                    // 검색 결과가 있고, 거리가 Search Radius 이내인 경우 성공
                     if (placeResult.getDistance() != null && placeResult.getDistance() <= SEARCH_RADIUS) {
                         isLocationVerified = true;
                         log.info("카페 위치 검증 성공. 장소명: {}, 카테고리: {}, 거리: {}m",
@@ -75,7 +75,7 @@ public class CafeImageVerifier implements ImageVerifier {
                 .anyMatch(obj -> (obj.getLabel().equalsIgnoreCase("cup") ||
                         obj.getLabel().equalsIgnoreCase("mug") ||
                         obj.getLabel().equalsIgnoreCase("coffee")) &&
-                        obj.getConfidence() > 0.5);
+                        obj.getConfidence() > CONFIDENCE_THRESHOLD);
 
         log.info("컵/커피 객체 검증 결과: {}", isCupDetected);
 

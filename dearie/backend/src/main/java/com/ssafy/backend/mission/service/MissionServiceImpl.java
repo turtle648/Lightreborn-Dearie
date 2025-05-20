@@ -26,6 +26,7 @@ import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -69,7 +70,6 @@ public class MissionServiceImpl implements MissionService {
 
         // 1. MissionResult 생성
         MissionResult missionResult = MissionResult.of(userMission, executionType, "");
-        missionResult = missionResultRepository.save(missionResult);
 
         String missionTitle = userMission.getMission().getMissionTitle();
         String missionContent = userMission.getMission().getContent();
@@ -79,6 +79,8 @@ public class MissionServiceImpl implements MissionService {
             case TEXT ->
             {
                 log.info("TEXT 미션 검증 시작");
+
+                missionResult = missionResultRepository.save(missionResult);
 
                 TextResult textResult = TextResult.of(missionResult, request.getTextContent());
 
@@ -93,6 +95,8 @@ public class MissionServiceImpl implements MissionService {
             }
             case MUSIC ->
             {
+                missionResult = missionResultRepository.save(missionResult);
+
                 MusicResult musicResult = MusicResult.of(
                         missionResult,
                         request.getArtist(),
@@ -121,17 +125,25 @@ public class MissionServiceImpl implements MissionService {
                         imageResult.getS3ImageUrl()
                 );
 
-                completeMission(
-                        missionResult,
-                        userMission,
-                        () -> yoloResultRepository.save(yoloResult),
-                        "image:" + request.getTextContent()
-                );
+                if(imageResult.isVerified())
+                {
+                    //이미지 미션의 경우만 검증 후 저장.
+                    missionResult = missionResultRepository.save(missionResult);
+                    completeMission(
+                            missionResult,
+                            userMission,
+                            () -> yoloResultRepository.save(yoloResult),
+                            "image:" + request.getTextContent()
+                    );
+                }
+
+                log.info("imageResult verification: {}", imageResult.isVerified());
 
                 yield imageResult;
             }
             case WALK ->
             {
+                missionResult = missionResultRepository.save(missionResult);
                 String pathJson = request.getPathJson();
 
                 if (snapshotFile == null || snapshotFile.isEmpty() || pathJson == null) {
