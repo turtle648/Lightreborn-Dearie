@@ -1,28 +1,49 @@
 import { api } from "./index";
 
-// 홍보 네트워크망 대시보드 통합 데이터 
+// 각 행정동의 청년인구당 홍보물 비율 
 export const getPromotionNetworkDashboardData = async () => {
   const response = await api.get("/promotion-networks");
   return response.data;
 };
 
-// 행정동 별 청년인구 대비 홍보 현황 
+// [BarChart] 행정동의 홍보물 유형 비율 
+export const getPromotionNetworkDashboardDataByType = async (data : {dongCode : number}) => {
+  try {
+    const response = await api.get(`/promotion-networks/${data.dongCode}/ratio`);
+    console.log("getPromotionNetworkDashboardDataByType response : ", response);
+    return response.data;
+  } catch (error) {
+    console.error("getPromotionNetworkDashboardDataByType error : ", error);
+    throw new Error("getPromotionNetworkDashboardDataByType error 발생했습니다.");
+  }
+};
+
+// [Sheet] 특정 행정동의 홍보물 리스트 조회 
 export const getPromotionNetworkDashboardDataByDistrict = async (data : {dongCode : number}) => {
-  const response = await api.get(`/promotion-networks/${data.dongCode}`);
-  return response.data;
+  try {
+    const response = await api.get(`/promotion-networks/${data.dongCode}/details`);
+    console.log("getPromotionNetworkDashboardDataByDistrict response : ", response);
+    return response.data;
+  } catch (error) {
+    console.error("getPromotionNetworkDashboardDataByDistrict error : ", error);
+    throw new Error("getPromotionNetworkDashboardDataByDistrict error 발생했습니다.");
+  }
 };
 
-// 행정동 내 홍보 상세 현황 
+// [Sheet] 행정동의 홍보물 상세정보 리스트 다운로드 
 export const getPromotionNetworkDashboardDataByDistrictDetail = async (data : {dongCode : number}) => {
-  const response = await api.get(`/promotion-networks/${data.dongCode}/details`);
-  return response.data;
+  try {
+    const response = await api.get(`/promotion-networks/${data.dongCode}/file`);
+    return response.data; // 파일 타입 response 가 나올 텐데 ? 
+  } catch (error) {
+    console.error("getPromotionNetworkDashboardDataByDistrictDetail error : ", error);
+    throw new Error("getPromotionNetworkDashboardDataByDistrictDetail error 발생했습니다.");
+  }
 };
 
-// 홍보물 설치 전체 현황 
-export const getPromotionNetworkDashboardDataByXlsx = async () => {
-  const response = await api.get("/promotion-networks/files");
-  return response.data;
-};
+// 홍보물 네트워크 페이지 데이터 통합 조회 
+
+// 행정동의 홍보물 비치장소 비율 (??) 
 
 // 홍보물 대시보드 데이터 추가 
 export const addPromotionNetworkDashboardData = async (data : {file : Blob, filename : string}) => {

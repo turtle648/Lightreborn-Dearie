@@ -169,7 +169,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       style={{ 
         borderColor: colors.table.border,
       }}>
-        <nav className="flex flex-col justify-between h-[calc(100vh-64px)] overflow-y-auto py-2">
+        <nav className="flex flex-col overflow-y-auto py-2">
           <ul>
             {sidebarItems.map(item => renderMenuItem(item))}
           </ul>

@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, useMemo, useState, useCallback } from 'react'
 import { Card } from './Card'
 import Button from './Button'
 import Image from 'next/image'
@@ -92,6 +92,70 @@ export default function Sheet({
     }
     return (record as Record<string, unknown>)[rowKey as string]?.toString() || index.toString()
   }
+
+  // 페이지네이션 관리 
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const { totalData, totalPages } = useMemo(() => {
+    const processData = dataTransform ? dataTransform(data) : data;
+    
+    // 페이지 사이즈 기본값 설정
+    const pageSize = pagination?.pageSize || 5; // 기본값을 5로 설정
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    
+    const paginatedData = processData.slice(startIndex, endIndex);
+    const calculatedTotalPages = Math.ceil(processData.length / pageSize);
+
+    return {
+      totalData: paginatedData,
+      totalPages: calculatedTotalPages,
+    };
+  }, [data, dataTransform, currentPage, pagination]);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    pagination?.onChange?.(page)
+  }, [pagination]);
+  
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="py-3 flex items-center justify-center space-x-4">
+        <button 
+          onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="px-2 py-2 disabled:opacity-50"
+        >
+          {'<'}
+        </button>
+
+        {[...Array(totalPages)].map((_, index) => (
+          <button
+            key={index}
+            onClick={() => handlePageChange(index + 1)}
+            className={`px-4 py-2 rounded ${
+              currentPage === index + 1 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-white text-blue-500'
+            }`}
+          >
+            {index + 1}
+          </button>
+        ))}
+
+        <button 
+          onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 rounded disabled:opacity-50"
+        >
+          {'>'}
+        </button>
+      </div>
+    );
+  };
+
   
   // 테이블 렌더링
   const renderTable = () => {
@@ -113,7 +177,6 @@ export default function Sheet({
         </div>
       )
     }
-    
     return (
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -131,7 +194,7 @@ export default function Sheet({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {tableData.map((record, index) => (
+            {totalData.map((record, index) => (
               <tr 
                 key={getRowKey(record, index)}
                 onClick={onRowClick ? () => onRowClick(record, index) : undefined}
@@ -160,16 +223,7 @@ export default function Sheet({
         </table>
         
         {/* 페이지네이션 */}
-        {pagination && pagination.totalItems && pagination.totalItems > 0 && (
-          <div className="py-3 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                총 <span className="font-medium">{pagination.totalItems}</span> 항목
-              </p>
-            </div>
-            {/* 페이지네이션 컨트롤은 여기에 추가 가능 */}
-          </div>
-        )}
+        {renderPagination()}
       </div>
     )
   }
