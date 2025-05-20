@@ -33,5 +33,28 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             Pageable pageable);
 
     List<Diary> findByUser(User user);
+<<<<<<< Updated upstream
 
 }
+=======
+<<<<<<< Updated upstream
+}
+=======
+
+    @Query(value = """
+    SELECT COUNT(*) AS streak
+    FROM (
+        SELECT DATE(created_at) AS diary_date,
+               ROW_NUMBER() OVER (ORDER BY DATE(created_at) DESC) AS rn
+        FROM diary
+        WHERE user_id = :userId AND DATE(created_at) <= CURRENT_DATE
+        GROUP BY DATE(created_at)
+    ) AS dated
+    WHERE CURRENT_DATE - diary_date = rn - 1
+    """, nativeQuery = true)
+    Integer countConsecutiveDiaryDays(@Param("userId") Long userId);
+
+    Integer countByUserId(Long userId);
+}
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
