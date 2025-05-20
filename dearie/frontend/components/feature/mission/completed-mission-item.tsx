@@ -49,7 +49,7 @@ export function CompletedMissionCard({ mission }: CompletedMissionCardProps) {
                 size="sm"
                 variant="ghost"
                 className="text-sm p-0 h-auto text-primary"
-                onClick={() => router.push(`/missions/recent-success/${mission.userMissionId}`)}
+                onClick={() => router.push(`/missions/recent-success/${mission.userMissionId}?type=${mission.missionExecutionType}`)}
               >
                 자세히 보기 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>

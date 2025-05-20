@@ -55,7 +55,9 @@ export default function ImageMissionPage() {
   const [verificationResult, setVerificationResult] = useState<MissionResult | null>(null);
   const [position, setPosition] = useState<{ latitude: number; longitude: number } | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
-  const imageKeyword = searchParams.get("label") || "카페"; // fallback도 있음
+
+  const requiredObjectLabel = searchParams.get("requiredObjectLabe") || "";
+  const imageKeyword = searchParams.get("label") || requiredObjectLabel; // fallback도 있음
 
 
   // 위치 정보 가져오기
@@ -108,6 +110,7 @@ export default function ImageMissionPage() {
     verifyAndSaveImage(file)
   }
 
+  
   // 검증 및 저장 함수
   const verifyAndSaveImage = async (file: File) => {
     setIsVerifying(true);
@@ -395,7 +398,7 @@ export default function ImageMissionPage() {
                       >
                         {verificationResult.verified
                           ? `소중한 순간을 사진으로 담았습니다.\n이런 기록들이 모여\n당신의 마음 여정을 만들어갑니다.`
-                          : `${imageKeyword}가 이미지에서 인식되지 않았습니다.\n다시 찍어 볼까요?`}
+                          : `${requiredObjectLabel}가 이미지에서 인식되지 않았습니다.\n다시 찍어 볼까요?`}
                       </motion.p>
                     </div>
                     <div className="flex-1 mb-6 flex items-center justify-center">
@@ -419,7 +422,7 @@ export default function ImageMissionPage() {
                                 variant="destructive" 
                                 className="mb-2 px-3 py-1 bg-red-100 text-red-600 border border-red-200"
                               >
-                                {imageKeyword} 인식 실패
+                                {requiredObjectLabel} 인식 실패
                               </Badge>
                             </div>
                           </div>
