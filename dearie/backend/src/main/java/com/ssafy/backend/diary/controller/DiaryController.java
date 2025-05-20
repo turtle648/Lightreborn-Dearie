@@ -1,16 +1,18 @@
 package com.ssafy.backend.diary.controller;
 
+import com.ssafy.backend.diary.model.dto.response.EmotionTagDTO;
+import com.ssafy.backend.diary.model.dto.response.GetDiaryReportDTO;
+import com.ssafy.backend.diary.service.DiaryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import com.ssafy.backend.common.dto.BaseResponse;
-import com.ssafy.backend.diary.model.entity.Diary;
 import com.ssafy.backend.diary.model.request.CreateDiaryRequestDTO;
 import com.ssafy.backend.diary.model.request.DiarySearchRequest;
 import com.ssafy.backend.diary.model.response.DiaryListResponse;
 import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
-import com.ssafy.backend.diary.service.DiaryService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.time.LocalDate;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,6 +30,30 @@ import java.util.List;
 public class DiaryController {
 
     private final DiaryService diaryService;
+
+    @Operation(summary = "주간 일기 조회 API", description = "주간 일기 목록을 조회합니다.")
+    @GetMapping("/weekly")
+    public List<GetDiaryReportDTO> getWeeklyDiaries(
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam("userId") Long userId
+    ) {
+        return diaryService.getDiariesOfWeek(userId, date);
+    }
+
+    @Operation(summary = "특정 일기 감정 태그 조회 API", description = "일기의 감정 태그 목록을 조회합니다.")
+    @GetMapping("/{diaryId}/emotions")
+    public List<EmotionTagDTO> getDiaryEmotions(@PathVariable Long diaryId) {
+        return diaryService.getDiaryEmotions(diaryId);
+    }
+
+    @Operation(summary = "주간 감정 그래프용 데이터 조회", description = "사용자가 선택한 감정 태그를 바탕으로 주간의 5대 감정 통계를 제공합니다.")
+    @GetMapping("/graph")
+    public Map<String, Integer> getWeeklyEmotionStats(
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam("userId") Long userId
+    ) {
+        return diaryService.getWeeklyEmotionSummary(userId, date);
+    }
 
     @Operation(summary = "내가 작성한 일기 조회", description = "사용자는 작성한 일기 목록을 검색, 정렬하여 조회할 수 있다.")
     @GetMapping
@@ -42,7 +70,7 @@ public class DiaryController {
     public ResponseEntity<BaseResponse<GetDiaryDetailDto>> getDiaryDetail(
             @AuthenticationPrincipal String userId,
             @PathVariable Long diaryId
-       ) {
+    ) {
 
         GetDiaryDetailDto result = diaryService.getDiary(diaryId, userId);
 

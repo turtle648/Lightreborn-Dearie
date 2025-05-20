@@ -1,12 +1,19 @@
 package com.ssafy.backend.diary.service;
 
+import com.ssafy.backend.diary.model.dto.response.EmotionTagDTO;
+import com.ssafy.backend.diary.model.dto.response.GetDiaryReportDTO;
+import com.ssafy.backend.diary.model.entity.Diary;
+import com.ssafy.backend.diary.model.entity.EmotionTag;
+import com.ssafy.backend.diary.model.state.EmotionType;
+import com.ssafy.backend.diary.repository.DiaryRepository;
+import com.ssafy.backend.diary.repository.EmotionTagRepository;
+import com.ssafy.backend.diary.util.EmotionMapper;
+import lombok.RequiredArgsConstructor;
 import com.ssafy.backend.auth.model.entity.User;
 import com.ssafy.backend.auth.repository.UserRepository;
 import com.ssafy.backend.common.config.S3Uploader;
 import com.ssafy.backend.common.exception.CustomException;
 import com.ssafy.backend.common.exception.ErrorCode;
-import com.ssafy.backend.diary.model.entity.Bookmark;
-import com.ssafy.backend.diary.model.entity.Diary;
 import com.ssafy.backend.diary.model.entity.DiaryImage;
 import com.ssafy.backend.diary.model.request.DiarySearchRequest;
 import com.ssafy.backend.diary.model.request.OpenAiMessage;
@@ -17,7 +24,6 @@ import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
 import com.ssafy.backend.diary.model.response.OpenAiResponse;
 import com.ssafy.backend.diary.repository.BookmarkRepository;
 import com.ssafy.backend.diary.repository.DiaryImageRepository;
-import com.ssafy.backend.diary.repository.DiaryRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
@@ -30,32 +36,88 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DiaryServiceImpl implements DiaryService {
 
     private final DiaryRepository diaryRepository;
+    private final EmotionTagRepository emotionTagRepository;
     private final UserRepository userRepository;
     private final S3Uploader s3Uploader;
     private final DiaryImageRepository diaryImageRepository;
     private final WebClient openAiWebClient;
     private final BookmarkRepository bookmarkRepository;
 
-    public DiaryServiceImpl(DiaryRepository diaryRepository,
-                            UserRepository userRepository,
-                            S3Uploader s3Uploader,
-                            DiaryImageRepository diaryImageRepository,
-                            WebClient openAiWebClient, BookmarkRepository bookmarkRepository) {
-        this.diaryRepository = diaryRepository;
-        this.userRepository = userRepository;
-        this.s3Uploader = s3Uploader;
-        this.diaryImageRepository = diaryImageRepository;
-        this.openAiWebClient = openAiWebClient;
-        this.bookmarkRepository = bookmarkRepository;
+
+    @Override
+    public List<GetDiaryReportDTO> getDiariesOfWeek(Long userId, LocalDate date) {
+        LocalDate startOfWeek = date.with(DayOfWeek.MONDAY);     // 월요일
+        LocalDate endOfWeek = startOfWeek.plusDays(6); // 일요일
+
+        List<Diary> diaries = diaryRepository.findByUserIdAndCreatedAtBetween(
+                userId,
+                startOfWeek.atStartOfDay(),
+                endOfWeek.plusDays(1).atStartOfDay()
+        );
+
+        return diaries.stream()
+                .map(GetDiaryReportDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<EmotionTagDTO> getDiaryEmotions(Long diaryId) {
+        return emotionTagRepository.findByDiaryId(diaryId)
+                .stream()
+                .map(EmotionTagDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, Integer> getWeeklyEmotionSummary(Long userId, LocalDate date) {
+        // 1. 주간 범위 계산
+        LocalDate startOfWeek = date.with(DayOfWeek.MONDAY);
+        LocalDate endOfWeek = startOfWeek.plusDays(6);
+
+        // 2. 해당 주차의 일기 조회
+        List<Diary> diaries = diaryRepository.findByUserIdAndCreatedAtBetween(
+                userId,
+                startOfWeek.atStartOfDay(),
+                endOfWeek.plusDays(1).atStartOfDay()
+        );
+
+        List<Long> diaryIds = diaries.stream()
+                .map(Diary::getId)
+                .toList();
+
+        // 3. 감정 태그 조회
+        List<EmotionTag> emotionTags = emotionTagRepository.findByDiaryIdIn(diaryIds);
+
+        // 4. 태그 문자열 → EmotionType (enum) 변환
+        List<EmotionType> emotionTypes = emotionTags.stream()
+                .map(tag -> {
+                    try {
+                        return EmotionType.fromKorean(tag.getTag());
+                    } catch (IllegalArgumentException e) {
+                        return null; // 예외 감지 후 skip
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+        // 5. 5대 감정으로 매핑하여 카운트
+        return EmotionMapper.mapToMainEmotions(emotionTypes);
     }
 
     private Pair<User, Diary> validateAndGetOwnDiaryWithUser(String loginId, Long diaryId) {
@@ -291,5 +353,4 @@ public class DiaryServiceImpl implements DiaryService {
 
         return Objects.requireNonNull(response).getChoices().getFirst().getMessage().getContent();
     }
-
 }

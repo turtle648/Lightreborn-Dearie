@@ -46,7 +46,8 @@ public class Diary {
     @JoinColumn(name = "sticker_id")
     private Sticker sticker;
 
-    @OneToOne(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "emotion_score_id")
     private EmotionScore emotionScore;
 
     public enum EmotionTag {
