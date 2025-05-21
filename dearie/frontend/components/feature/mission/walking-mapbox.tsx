@@ -1,6 +1,7 @@
 import React, { forwardRef, useState, useEffect } from "react";
 import Map, { type MapRef, Source, Layer } from "react-map-gl/maplibre";
 import type { Feature, GeoJsonProperties, LineString, Point } from "geojson";
+import maplibregl from "maplibre-gl";
 
 interface LatLng {
   lat: number;
