@@ -10,14 +10,21 @@ import Link from 'next/link';
 interface Props {
   userId: number;
   date: string; // yyyy-mm-dd
+  diaryCount: number;
 }
 
-const ReportSummary = ({ userId, date }: Props) => {
+const ReportSummary = ({ userId, date, diaryCount }: Props) => {
   const [data, setData] = useState<ReportSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (diaryCount === 0) {
+      setLoading(false);
+      setData(null);
+      setError(null);
+      return;
+    }
     const loadData = async () => {
       try {
         setLoading(true);
@@ -31,15 +38,24 @@ const ReportSummary = ({ userId, date }: Props) => {
         setLoading(false);
       }
     };
-
     loadData();
-  }, [userId, date]);
+  }, [userId, date, diaryCount]);
 
   if (loading) {
     return (
       <Card className="w-full">
         <CardContent className="flex items-center justify-center p-6">
           <div className="text-center">불러오는 중...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (diaryCount === 0) {
+    return (
+      <Card className="w-full">
+        <CardContent className="p-6">
+          <div className="text-center">작성한 일기가 없습니다.</div>
         </CardContent>
       </Card>
     );

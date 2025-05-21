@@ -36,6 +36,7 @@ public class AuthServiceImpl implements AuthService{
         }
 
         return LoginResponseDTO.builder()
+                .userId(user.getId())
                 .id(user.getLoginId())
                 .name(user.getName())
                 .build();
