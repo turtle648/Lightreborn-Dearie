@@ -28,7 +28,10 @@ const DailyMission = dynamic(
 );
 
 const DiaryCard = dynamic(
-  () => import("@/components/feature/diary/diary-card").then(mod => mod.default),
+  () =>
+    import("@/components/feature/diary/diary-card").then(
+      (mod) => mod.DiaryCard
+    ),
   {
     loading: () => (
       <div className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>
@@ -193,15 +196,15 @@ export default function HomePage() {
           <div className="space-y-6">
             {diaries.map((diary) => (
               <DiaryCard
-              key={diary.diaryId}
-              diary={{
-                id: diary.diaryId,
-                date: formatDate(diary.date),
-                image: diary.images[0] || "./placeholder.svg",
-                content: diary.content,
-                bookmarked: diary.bookmarked,
-              }}
-            />
+                key={diary.diaryId}
+                diary={{
+                  id: diary.diaryId,
+                  date: formatDate(diary.date),
+                  image: diary.images[0] || "./placeholder.svg",
+                  content: diary.content,
+                  bookmarked: diary.bookmarked,
+                }}
+              />
             ))}
           </div>
         </div>
