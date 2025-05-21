@@ -4,6 +4,7 @@ import com.ssafy.backend.common.client.GeoSearchService;
 import com.ssafy.backend.common.client.dto.PlaceCheckResult;
 import com.ssafy.backend.common.client.dto.YoloDetectionResult;
 import com.ssafy.backend.mission.model.dto.request.MissionCompletionRequestDTO;
+import com.ssafy.backend.mission.model.dto.vo.ImageAndLocationVerificationResult;
 import com.ssafy.backend.mission.model.dto.vo.ImageResultDetail;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,7 @@ public class CafeImageVerifier implements ImageVerifier {
     private static final int SEARCH_RADIUS = 10;
 
     @Override
-    public ImageResultDetail verify(MissionCompletionRequestDTO request, String imageUrl, List<YoloDetectionResult> detections) {
+    public ImageAndLocationVerificationResult verify(MissionCompletionRequestDTO request, String imageUrl, List<YoloDetectionResult> detections) {
         log.info("카페 이미지 검증 시작");
 
         boolean isLocationVerified = false;
@@ -83,7 +84,7 @@ public class CafeImageVerifier implements ImageVerifier {
         boolean isVerified = isLocationVerified && isCupDetected;
         log.info("카페 미션 최종 검증 결과: {}", isVerified);
 
-        return new ImageResultDetail(detections, request.getImageKeyword(), isVerified, imageUrl);
+        return new ImageAndLocationVerificationResult(detections, request.getImageKeyword(), isVerified, isCupDetected, imageUrl, isLocationVerified);
     }
 
     /**
