@@ -9,6 +9,7 @@ import lombok.Getter;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class LoginResponseDTO {
+    private Long userId; // 추가: DB PK
     private String id;
     private String name;
     private String nickName;
@@ -18,6 +19,7 @@ public class LoginResponseDTO {
 
     public static LoginResponseDTO from (User user, UserActivityDTO userActivity) {
         return LoginResponseDTO.builder()
+                .userId(user.getId()) // PK 값 추가
                 .id(user.getLoginId())
                 .name(user.getName())
                 .nickName(user.getNickname())

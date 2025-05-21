@@ -32,22 +32,22 @@ export const fetchReportSummary = async (userId: number, date: string): Promise<
       error: error.response?.data
     });
 
-    if (error.response?.status === 404) {
-      console.log('리포트가 없어 자동으로 생성합니다...')
-      // 리포트가 없으면 자동으로 생성 시도
-      try {
-        const report = await analyzeReport(userId, date)
-        console.log('리포트 자동 생성 성공:', report);
-        return report;
-      } catch (analyzeError: any) {
-        console.error('리포트 자동 생성 실패:', {
-          status: analyzeError.response?.status,
-          message: analyzeError.response?.data?.message || analyzeError.message,
-          error: analyzeError.response?.data
-        });
-        throw new Error('리포트 생성에 실패했습니다. 잠시 후 다시 시도해주세요.')
-      }
-    }
+    // if (error.response?.status === 404) {
+    //   console.log('리포트가 없어 자동으로 생성합니다...')
+    //   // 리포트가 없으면 자동으로 생성 시도
+    //   try {
+    //     const report = await analyzeReport(userId, date)
+    //     console.log('리포트 자동 생성 성공:', report);
+    //     return report;
+    //   } catch (analyzeError: any) {
+    //     console.error('리포트 자동 생성 실패:', {
+    //       status: analyzeError.response?.status,
+    //       message: analyzeError.response?.data?.message || analyzeError.message,
+    //       error: analyzeError.response?.data
+    //     });
+    //     throw new Error('리포트 생성에 실패했습니다. 잠시 후 다시 시도해주세요.')
+    //   }
+    // }
     throw error
   }
 }
