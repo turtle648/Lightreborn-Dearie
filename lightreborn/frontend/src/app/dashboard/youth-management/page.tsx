@@ -8,72 +8,150 @@ import { useRouter } from "next/navigation"
 import Input from "@/components/common/Input"
 import { useYouthConsultationStore } from "@/stores/useYouthConsultaionStore"
 
-// 진행 상태 유형 정의
-type ProgressStatus = "온라인 자가척도 작성" | "상담 진행" | "내부 회의 진행";
+// 단계 유형 정의
+type ProcessStage = "SELF_DIAGNOSIS" | "COUNSELING" | "INTERNAL_REVIEW";
+type IsolationLevel = "NON_RISK" | "AT_RISK" | "ISOLATED_YOUTH" | "RECLUSIVE_YOUTH";
 
 export default function YouthManagement() {
-
   const router = useRouter();
 
   // 상태 필터링을 위한 선택된 진행 상태
-  const [selectedStatus, setSelectedStatus] = useState<ProgressStatus | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<ProcessStage | null>(null);
+
+  const { registeredYouthList, getRegisteredYouthList, isolatedYouthList, getIsolatedYouthList, uploadSurveyResponseWordFile } = useYouthConsultationStore();
+
+  // 진행 중인 청년과 최종 판정된 청년을 분리하기 위한 상태
+  const [processingYouthList, setProcessingYouthList] = useState<Array<{
+    id: number,
+    name: string, 
+    age: number, 
+    processStage: ProcessStage
+  }>>([]);
   
-  // // 신규 설문 등록 청년 데이터
-  // const { preSupportYouthConsultation, getPreSupportYouthConsultation } = useYouthConsultationStore();
-
-  // useEffect(() => {
-  //   getPreSupportYouthConsultation();
-  //   console.log("preSupportYouthConsultation : ", preSupportYouthConsultation);
-  // }, []);
-
-
-  const newSurveyData = [
-    {name: "이OO", age: 27, progress: "온라인 자가척도 작성"},
-    {name: "김OO", age: 25, progress: "상담 진행"},
-    {name: "박OO", age: 22, progress: "내부 회의 진행"},
-    {name: "최OO", age: 29, progress: "온라인 자가척도 작성"},
-    {name: "정OO", age: 26, progress: "상담 진행"},
-  ];
+  // 판정이 완료된 청년 데이터
+  const [classifiedYouthList, setClassifiedYouthList] = useState<Array<{
+    id: number, 
+    name: string, 
+    age: number, 
+    status: string, 
+    recentDate: string, 
+    specialNote: string, 
+    isolationLevel: IsolationLevel
+  }>>([]);
   
-  // 은둔고립청년 데이터
-  const { isolatedYouthList, getIsolatedYouthList } = useYouthConsultationStore();
-  const [youthData, setYouthData] = useState<Array<{id: number, name: string, age: number, status: string, recentDate: string, specialNote: string}>>([]);
+  // 로딩 상태
+  const [isLoading, setIsLoading] = useState(false);
+  // 파일 업로드 상태
+  const [isUploading, setIsUploading] = useState(false);
+  console.log("isUploading : ", isUploading);
 
+  // 초기 데이터 로드
   useEffect(() => {
-    getIsolatedYouthList(); // 마운트 시점 업로드 
-    console.log("isolatedYouthList : ", isolatedYouthList);
-  }, []);
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        // 등록 청년 조회
+        await getRegisteredYouthList();
+        // 은둔 고립 청년 리스트 조회
+        await getIsolatedYouthList();
+        setIsLoading(false);
+      } catch (error) {
+        console.error("데이터 조회 오류:", error);
+        setIsLoading(false);
+      }
+    };
 
+    fetchData();
+  }, [getRegisteredYouthList, getIsolatedYouthList]);
+
+  // isolatedYouthList와 registeredYouthList가 로드된 후 데이터 분류
   useEffect(() => {
-    if (isolatedYouthList && Array.isArray(isolatedYouthList) && isolatedYouthList.length > 0) {
-      const newYouthData = isolatedYouthList.map((item) => ({
-        id: item.id,
-        name: item.name,
-        age: item.age,
-        status: item.status,
-        recentDate: item.recentDate,
-        specialNote: item.specialNote,
-      }));
-      setYouthData(newYouthData);
-    } 
-  }, [isolatedYouthList]);
+    // 콘솔에 더 자세한 디버깅 정보 출력
+    console.log("Raw registeredYouthList:", registeredYouthList);
+    console.log("Raw isolatedYouthList:", isolatedYouthList);
+    
+    // 모든 청년 데이터 처리
+    if (
+      (isolatedYouthList && Array.isArray(isolatedYouthList)) ||
+      (registeredYouthList && Array.isArray(registeredYouthList))
+    ) {
+      const processing: Array<{id: number, name: string, age: number, processStage: ProcessStage}> = [];
+      const classified: Array<{id: number, name: string, age: number, status: string, recentDate: string, specialNote: string, isolationLevel: IsolationLevel}> = [];
 
+      // 모든 청년 데이터 분류
+      isolatedYouthList?.forEach(youth => {
+        if (!youth) {
+          console.log("isolatedYouthList에 데이터가 없습니다.");
+          return;
+        }
+        
+        console.log("Processing youth:", youth.name, "status:", youth.status);
+        
+        // 실제 필드 이름에 맞게 수정
+        const processStep = youth.status || "SELF_DIAGNOSIS"; // status 필드 사용
+        const isolationLevel = youth.status; // status 필드 사용
+        
+        // 아직 내부 회의까지 진행 중인 경우 (판정 전)
+        if (["SELF_DIAGNOSIS", "COUNSELING", "INTERNAL_REVIEW"].includes(processStep)) {
+          processing.push({
+            id: youth.id,
+            name: youth.name,
+            age: youth.age,
+            processStage: processStep as ProcessStage
+          });
+        } 
+        // 판정이 완료된 경우 (모든 isolationLevel을 포함)
+        else if (["NON_RISK", "AT_RISK"].includes(isolationLevel)) {
+          let status;
+          switch(isolationLevel) {
+            case "NON_RISK":
+              status = "비위험군";
+              break;
+            case "AT_RISK":
+              status = "고립 위험군";
+              break;
+            case "ISOLATED_YOUTH":
+              status = "고립 청년";
+              break;
+            case "RECLUSIVE_YOUTH":
+              status = "은둔 청년";
+              break;
+            default:
+              status = "미분류";
+          }
+          
+          classified.push({
+            id: youth.id,
+            name: youth.name,
+            age: youth.age,
+            status: status,
+            recentDate: youth.recentDate || "", // 실제 필드 이름 사용
+            specialNote: youth.specialNote || "", // 실제 필드 이름 사용
+            isolationLevel: isolationLevel as IsolationLevel
+          });
+        }
+      });
 
+      console.log("분류 결과 - 진행 중:", processing.length, "판정 완료:", classified.length);
+      setProcessingYouthList(processing);
+      setClassifiedYouthList(classified);
+    }
+  }, [isolatedYouthList, registeredYouthList]);
 
-  // 필터링된 신규 설문 데이터
-  const filteredNewSurveyData = selectedStatus 
-    ? newSurveyData.filter(item => item.progress === selectedStatus) 
-    : newSurveyData;
+  // 필터링된 진행 중인 청년 데이터
+  const filteredProcessingList = selectedStatus 
+    ? processingYouthList.filter(item => item.processStage === selectedStatus) 
+    : processingYouthList;
 
   // 진행 상태 아이콘 렌더링 함수
-  const renderProgressIcons = (progress: string) => {
-    const statuses: ProgressStatus[] = ["온라인 자가척도 작성", "상담 진행", "내부 회의 진행"];
-    const currentIndex = statuses.indexOf(progress as ProgressStatus);
+  const renderProgressIcons = (processStage: ProcessStage) => {
+    const stages: ProcessStage[] = ["SELF_DIAGNOSIS", "COUNSELING", "INTERNAL_REVIEW"];
+    const currentIndex = stages.indexOf(processStage);
     
     return (
       <div className="flex items-center">
         <div className="relative flex items-center w-full">
-          {statuses.map((status, index) => {
+          {stages.map((stage, index) => {
             const isActive = index <= currentIndex;
             const isCurrent = index === currentIndex;
             
@@ -92,19 +170,9 @@ export default function YouthManagement() {
                     {index === 0 ? "✓" : index === 1 ? "📋" : "👥"}
                   </div>
                   <span className="mt-1 text-xs text-gray-500">
-                    {index === 0 ? "자가척도 작성" : index === 1 ? "상담 진행" : "내부 회의 진행"}
+                    {index === 0 ? "자가척도 작성" : index === 1 ? "상담 진행" : "내부 회의"}
                   </span>
                 </div>
-                
-                {/* 연결선 */}
-                {/* {index < statuses.length - 1 && (
-                  <div className="absolute h-1" style={{ 
-                    left: `calc(${index * 33}% + 28px)`,  // 노드 너비(8px) + 오른쪽 여백(20px)
-                    width: 'calc(33% - 36px)',            // 33% 너비에서 양쪽 노드 반경 제외
-                    top: '14px',
-                    backgroundColor: isActive ? '#3b82f6' : '#e5e7eb'
-                  }}></div>
-                )} */}
               </div>
             );
           })}
@@ -115,7 +183,12 @@ export default function YouthManagement() {
 
   // 상태 필터 버튼 렌더링
   const renderStatusFilters = () => {
-    const statuses: ProgressStatus[] = ["온라인 자가척도 작성", "상담 진행", "내부 회의 진행"];
+    const stages: ProcessStage[] = ["SELF_DIAGNOSIS", "COUNSELING", "INTERNAL_REVIEW"];
+    const stageLabels = {
+      "SELF_DIAGNOSIS": "자가척도 작성",
+      "COUNSELING": "상담 진행",
+      "INTERNAL_REVIEW": "내부 회의"
+    };
     
     return (
       <div className="flex flex-wrap gap-2 mb-4">
@@ -127,21 +200,20 @@ export default function YouthManagement() {
         >
           전체
         </button>
-        {statuses.map((status, index) => (
+        {stages.map((stage, index) => (
           <button
-            key={status}
+            key={stage}
             className={`px-3 py-1 text-sm rounded-md flex items-center ${
-              selectedStatus === status ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200"
+              selectedStatus === stage ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200"
             }`}
-            onClick={() => setSelectedStatus(status)}
+            onClick={() => setSelectedStatus(stage)}
           >
             <span className={`w-5 h-5 rounded-full flex items-center justify-center mr-1 ${
-              selectedStatus === status ? "bg-white text-blue-500" : "bg-gray-300 text-gray-600"
+              selectedStatus === stage ? "bg-white text-blue-500" : "bg-gray-300 text-gray-600"
             }`}>
               {index === 0 ? "✓" : index === 1 ? "📋" : "👥"}
             </span>
-            {status === "온라인 자가척도 작성" ? "자가척도" : 
-             status === "상담 진행" ? "상담 진행" : "내부 회의"}
+            {stageLabels[stage]}
           </button>
         ))}
       </div>
@@ -149,17 +221,16 @@ export default function YouthManagement() {
   };
 
   // Sheet 컴포넌트 커스텀 컬럼 설정 
-  const newSurveyColumns = [
+  const processingYouthColumns = [
     {key: "name", title: "이름", width: "15%"},
     {key: "age", title: "나이", width: "10%"},
     {
-      key: "progress", 
+      key: "processStage", 
       title: "은둔고립청년 발굴 절차 진행도",
       width: "75%",
-      // 여기서 이 컬럼의 위치를 조정할 수 있나? 
       render: (value: unknown) => (
         <div className="py-2 relative" style={{ height: '60px' }}>
-          {renderProgressIcons(value as string)}
+          {renderProgressIcons(value as ProcessStage)}
         </div>
       )
     },
@@ -167,15 +238,52 @@ export default function YouthManagement() {
 
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = async (file: File) => {
     setUploadedFile(file);
-    console.log("uploadedFile : ", uploadedFile);
+    console.log("선택한 파일:", file.name);
+    console.log("uploadFile : ", uploadedFile);
+    
+    // 파일이 선택되면 바로 업로드 시작
+    if (file) {
+      try {
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        await uploadSurveyResponseWordFile(formData);
+        
+        // 업로드 성공 후 목록 새로고침
+        await getRegisteredYouthList();
+        await getIsolatedYouthList();
+        
+        alert('설문 파일이 성공적으로 업로드되었습니다.');
+        setIsUploading(false);
+        setUploadedFile(null); // 업로드 후 파일 선택 상태 초기화
+      } catch (error) {
+        console.error("파일 업로드 오류:", error);
+        alert('파일 업로드에 실패했습니다.');
+        setIsUploading(false);
+      }
+    }
   };
 
   const handleFileRemove = () => {
     setUploadedFile(null);
-    console.log("uploadedFile : ", uploadedFile);
   };
+
+  // 데이터 로딩 상태 표시
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <h1 className="text-2xl font-bold" style={{ color: colors.text.primary }}>
+          상담 대상자 관리
+        </h1>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6">
@@ -192,30 +300,33 @@ export default function YouthManagement() {
           title="원클릭 은둔고립청년 척도설문 추가하기"
           description="새로운 척도설문 데이터 워드 파일을 이 곳에 드래그해주세요."
           maxFileSize={10}
+          // disabled 속성 제거 (Input 컴포넌트에 없는 속성)
+          // loading={isUploading}
         /> 
       </div>
 
       <div className="grid grid-cols-1">
-        <Card title="신규 설문 등록 청년 리스트">
+        <Card title="진행 단계에 따른 청년 리스트">
           {renderStatusFilters()}
           <Sheet 
             className="border-none shadow-none"
-            title="진행 상태에 따른 청년 리스트"
-            subTitle="은둔고립청년 판정 프로세스 진행도를 확인할 수 있습니다."
-            data={filteredNewSurveyData}
-            columns={newSurveyColumns}
+            title="은둔고립청년 판정 진행 중"
+            subTitle="아직 최종 판정되지 않은 청년 목록입니다. 은둔고립청년 판정 프로세스 진행도를 확인할 수 있습니다."
+            data={filteredProcessingList}
+            columns={processingYouthColumns}
             onRowClick={(record) => {
               console.log("행 클릭:", record);
-              // 여기에 행 클릭 시 처리 로직 추가
+              router.push(`/dashboard/youth-processing/${(record as { id: number }).id}`);
             }}
+            // emptyText 속성 제거 (Sheet 컴포넌트에 없는 속성)
           /> 
         </Card>
       </div>
 
       <div className="grid grid-cols-1">
         <Sheet 
-          title="은둔고립청년 리스트"
-          subTitle="센터에 등록된 은둔고립청년 리스트입니다."
+          title="은둔고립청년 판정 완료 리스트"
+          subTitle="판정 절차가 완료된 청년 리스트입니다."
           columns={[
             {key: "name", title: "이름"},   
             {key: "age", title: "나이"},
@@ -224,9 +335,10 @@ export default function YouthManagement() {
               title: "고립은둔 유형",
               render: (value: unknown) => (
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  value === "은둔 청년" ? "bg-purple-100 text-purple-800" :
+                  value === "비위험군" ? "bg-green-100 text-green-800" :
                   value === "고립 위험군" ? "bg-yellow-100 text-yellow-800" :
                   value === "고립 청년" ? "bg-orange-100 text-orange-800" :
+                  value === "은둔 청년" ? "bg-purple-100 text-purple-800" :
                   "bg-blue-100 text-blue-800"
                 }`}>
                   {value as string}
@@ -236,12 +348,12 @@ export default function YouthManagement() {
             {key: "recentDate", title: "최근상담일자"},
             {key: "specialNote", title: "특이사항"},
           ]}
-          data={youthData}
+          data={classifiedYouthList}
           onRowClick={(record) => {
             router.push(`/dashboard/youth-management/${(record as { id: number }).id}`);
             console.log("행 클릭:", record);
-            // 여기에 행 클릭 시 처리 로직 추가
           }}
+          // emptyText 속성 제거 (Sheet 컴포넌트에 없는 속성)
         />
       </div>
     </div>

@@ -46,7 +46,7 @@ export default function WelfareCenterPage() {
   // 마운트되자마자 불러와야 하는 정보들 
   useEffect(() => {
     getWelfareCenterData()
-  }, [getWelfareCenterData])
+  }, [])
 
   // 선택된 동의 코드가 변경되면 불러와야 하는 메서드들 
   useEffect(() => {
@@ -207,6 +207,21 @@ export default function WelfareCenterPage() {
         </div>
       </div>
 
+      {/* <Card title="행정동별 협력기관 현황" subTitle="행정동별 협력기관 수를 나타냅니다.">
+        <BarChart
+          data={welfareCenterLocaData.sort((a, b) => b.regionValue - a.regionValue).map(entry => ({
+            name: entry.regionName,
+            value: entry.regionValue,
+            color: entry.regionName === selectedDongName ? colors.chart.blue : colors.chart.lightGray
+          }))}
+          height={250}
+          valueUnit="개"
+          valueName="협력기관 수"
+          tooltipFormatter={(value) => [`${value}개`, '협력기관 수']}
+          marginBottom={40}
+        />
+      </Card> */}
+          
       <Card title="행정동별 청년인구 대비 협력기관 현황" subTitle="청년 10,000명당 협력기관 수를 행정동별로 나타냅니다.">
         <BarChart
           data={welfareCenterPer10000Data.sort((a, b) => b.regionValue - a.regionValue).map(entry => ({

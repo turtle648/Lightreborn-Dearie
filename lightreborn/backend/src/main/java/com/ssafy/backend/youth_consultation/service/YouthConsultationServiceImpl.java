@@ -19,7 +19,6 @@ import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.model.entity.*;
 import com.ssafy.backend.youth_consultation.model.state.CounselingConstants;
 import com.ssafy.backend.youth_consultation.model.state.ProcessStep;
-import com.ssafy.backend.youth_consultation.model.state.SurveyStepConstants;
 import com.ssafy.backend.youth_consultation.model.vo.IsolationYouthVO;
 import com.ssafy.backend.youth_consultation.repository.*;
 import jakarta.transaction.Transactional;
@@ -197,22 +196,11 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
 
     @Override
     public PeopleInfoResponseDTO searchPeopleInfo(PeopleInfoRequestDTO peopleInfoRequestDTO) {
-        SurveyProcessStep surveyProcessStep = SurveyStepConstants.DEFAULT_STEP;
         Pageable pageable = PageRequest.of(peopleInfoRequestDTO.getPageNum(), peopleInfoRequestDTO.getSizeNum());
 
-        Page<IsolatedYouth> isolatedYouthPage = null;
+        String name = !StringUtils.hasText(peopleInfoRequestDTO.getName()) ? "" : peopleInfoRequestDTO.getName();
 
-        if(!StringUtils.hasText(peopleInfoRequestDTO.getName())) {
-            isolatedYouthPage = isolatedYouthRepository.findBySurveyProcessStep(surveyProcessStep, pageable);
-        }
-
-        if(StringUtils.hasText(peopleInfoRequestDTO.getName())) {
-            isolatedYouthPage = isolatedYouthRepository.findBySurveyProcessStepAndName(
-                    surveyProcessStep,
-                    peopleInfoRequestDTO.getName(),
-                    pageable
-            );
-        }
+        Page<IsolatedYouth> isolatedYouthPage = isolatedYouthRepository.findByName(name, pageable);
 
         PeopleInfoCollector peopleInfoCollector = new PeopleInfoCollector(isolatedYouthPage);
 

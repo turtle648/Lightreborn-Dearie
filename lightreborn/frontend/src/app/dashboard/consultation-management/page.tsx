@@ -9,89 +9,125 @@ import { UserInfo } from "@/components/common/UserInfo"
 import ConsultationCalendar, { Consultation, formatDate, formatTime } from "@/components/common/Calendar"
 import Sheet from '@/components/common/Sheet'
 import { useRouter } from 'next/navigation'
+import { useYouthConsultationStore } from '@/stores/useYouthConsultaionStore'
+
+interface CounselingLogItem {
+  id: number;
+  consultationDate: string;
+  voiceFileUrl?: string;
+  fullScript?: string;
+  summarize?: string;
+  counselorKeyword?: string;
+  clientKeyword?: string;
+  memoKeyword?: string;
+  counselingProcess?: string;
+  isolatedYouth?: {
+    id?: number;
+    isolationLevel?: string;
+    economicLevel?: string;
+    economicActivityRecent?: string;
+    isolatedScore?: number;
+    surveyProcessStep?: string;
+    personalInfo?: {
+      id?: number;
+      name?: string;
+      phoneNumber?: string;
+      birthDate?: string;
+      emergencyContact?: string;
+      age?: number;
+    };
+  };
+  user?: {
+    id?: number;
+    userId?: string;
+    name?: string;
+    role?: number;
+  };
+}
 
 export default function ConsultationManagementPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const consultations : Consultation[] = [
-    {
-      id: '1',
-      clientId: '1',
-      clientName: '이OO',
-      clientAge: 20,
-      clientGender: '남',
-      title: '심리상담',
-      type: '심리상담',
-      date: new Date(2025, 4, 10, 10, 0), // 2025년 5월 10일 10시
-      time: '10:00',
-      status: '완료',
-      notes: '초기 상담'
-    },
-    {
-      id: '2',
-      clientId: '2',
-      clientName: '김OO',
-      clientAge: 22,
-      clientGender: '여',
-      title: '직업상담',
-      type: '직업상담',
-      date: new Date(2025, 4, 13, 14, 0), // 2025년 5월 13일 14시
-      time: '14:00',
-      status: '미작성',
-      notes: '취업 상담'
-    },
-    {
-      id: '3',
-      clientId: '3',
-      clientName: '박OO',
-      clientAge: 19,
-      clientGender: '남',
-      title: '생활상담',
-      type: '생활상담',
-      date: new Date(2025, 4, 13, 16, 0), // 2025년 5월 13일 16시 (같은 날 추가)
-      time: '16:00',
-      status: '완료',
-      notes: '생활 지원 상담'
-    },
-    {
-      id: '4',
-      clientId: '4',
-      clientName: '최OO',
-      clientAge: 21,
-      clientGender: '여',
-      title: '심리상담',
-      type: '심리상담',
-      date: new Date(2025, 4, 26, 13, 0), // 2025년 5월 26일 13시
-      time: '13:00',
-      status: '진행전',
-      notes: '정기 상담'
-    },
-    {
-      id: '5',
-      clientId: '5',
-      clientName: '정OO',
-      clientAge: 18,
-      clientGender: '여',
-      title: '진로상담',
-      type: '진로상담',
-      date: new Date(2025, 4, 26, 15, 0), // 2025년 5월 26일 15시 (같은 날 추가)
-      time: '15:00',
-      status: '진행전',
-      notes: '진로 탐색'
-    },
-    {
-      id: '6',
-      clientId: '6',
-      clientName: '강OO',
-      clientAge: 23,
-      clientGender: '남',
-      title: '취업상담',
-      type: '취업상담',
-      date: new Date(2025, 4, 26, 17, 0), // 2025년 5월 26일 17시 (같은 날 추가)
-      time: '17:00',
-      status: '진행전',
-      notes: '취업 준비'
-    }
-  ]
+  const [consultations, setConsultations] = useState<Consultation[]>([])
+  // const consultations : Consultation[] = [
+  //   {
+  //     id: '1',
+  //     clientId: '1',
+  //     clientName: '이OO',
+  //     clientAge: 20,
+  //     clientGender: '남',
+  //     title: '심리상담',
+  //     type: '심리상담',
+  //     date: new Date(2025, 4, 10, 10, 0), // 2025년 5월 10일 10시
+  //     time: '10:00',
+  //     status: '완료',
+  //     notes: '초기 상담'
+  //   },
+  //   {
+  //     id: '2',
+  //     clientId: '2',
+  //     clientName: '김OO',
+  //     clientAge: 22,
+  //     clientGender: '여',
+  //     title: '직업상담',
+  //     type: '직업상담',
+  //     date: new Date(2025, 4, 13, 14, 0), // 2025년 5월 13일 14시
+  //     time: '14:00',
+  //     status: '미작성',
+  //     notes: '취업 상담'
+  //   },
+  //   {
+  //     id: '3',
+  //     clientId: '3',
+  //     clientName: '박OO',
+  //     clientAge: 19,
+  //     clientGender: '남',
+  //     title: '생활상담',
+  //     type: '생활상담',
+  //     date: new Date(2025, 4, 13, 16, 0), // 2025년 5월 13일 16시 (같은 날 추가)
+  //     time: '16:00',
+  //     status: '완료',
+  //     notes: '생활 지원 상담'
+  //   },
+  //   {
+  //     id: '4',
+  //     clientId: '4',
+  //     clientName: '최OO',
+  //     clientAge: 21,
+  //     clientGender: '여',
+  //     title: '심리상담',
+  //     type: '심리상담',
+  //     date: new Date(2025, 4, 26, 13, 0), // 2025년 5월 26일 13시
+  //     time: '13:00',
+  //     status: '진행전',
+  //     notes: '정기 상담'
+  //   },
+  //   {
+  //     id: '5',
+  //     clientId: '5',
+  //     clientName: '정OO',
+  //     clientAge: 18,
+  //     clientGender: '여',
+  //     title: '진로상담',
+  //     type: '진로상담',
+  //     date: new Date(2025, 4, 26, 15, 0), // 2025년 5월 26일 15시 (같은 날 추가)
+  //     time: '15:00',
+  //     status: '진행전',
+  //     notes: '진로 탐색'
+  //   },
+  //   {
+  //     id: '6',
+  //     clientId: '6',
+  //     clientName: '강OO',
+  //     clientAge: 23,
+  //     clientGender: '남',
+  //     title: '취업상담',
+  //     type: '취업상담',
+  //     date: new Date(2025, 4, 26, 17, 0), // 2025년 5월 26일 17시 (같은 날 추가)
+  //     time: '17:00',
+  //     status: '진행전',
+  //     notes: '취업 준비'
+  //   }
+  // ]
 
   // 선택된 날짜의 일정
   const [selectedDateConsultations, setSelectedDateConsultations] = useState<Consultation[]>([])
@@ -133,10 +169,64 @@ export default function ConsultationManagementPage() {
     }
   }
 
-  // 초기 로드 시 오늘 날짜의 일정 불러오기
+  const { consultationListByYear, getConsultationListByYear } = useYouthConsultationStore();
+
+  // 초기 로드 시
   useEffect(() => {
     handleDateChange(new Date())
+    getConsultationListByYear(new Date().getFullYear())
   }, [])
+
+  useEffect(() => {
+    // 백엔드 데이터를 Consultation 타입으로 변환
+    const mappedConsultations = consultationListByYear.map((item: CounselingLogItem) => {
+      // consultationDate 문자열을 Date 객체로 변환
+      const date = new Date(item.consultationDate);
+      // 시간 포맷 (HH:MM)
+      const time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      
+      // 상담 유형 설정 (키워드 기반으로)
+      let consultationType = '심리상담';
+      if (item.counselorKeyword) {
+        if (item.counselorKeyword.includes('적응문제')) consultationType = '적응상담';
+        else if (item.counselorKeyword.includes('취업')) consultationType = '취업상담';
+        else if (item.counselorKeyword.includes('진로')) consultationType = '진로상담';
+        else if (item.counselorKeyword.includes('생활')) consultationType = '생활상담';
+      }
+      
+      // 상담 상태 변환 - Consultation 타입의 status에 맞게 제한
+      let status: "완료" | "진행전" | "미작성" = "미작성";
+      if (item.counselingProcess === 'COMPLETED') status = '완료';
+      else if (item.counselingProcess === 'SCHEDULED') status = '진행전';
+      else status = '미작성';
+      
+      // 날짜 포맷팅 (YYYY. MM. DD. HH:MM)
+      const dateString = `${date.getFullYear()}. ${(date.getMonth() + 1).toString().padStart(2, '0')}. ${date.getDate().toString().padStart(2, '0')}.`;
+      console.log("dateString : ", dateString);
+      console.log("date.getFullYear() : ", date.getFullYear());
+      console.log("date.getMonth() : ", date.getMonth());
+      console.log("date.getDate() : ", date.getDate());
+      console.log("time : ", time);
+      
+      return {
+        id: item.id.toString(),
+        clientId: item.isolatedYouth?.personalInfo?.id?.toString() || '',
+        clientName: item.isolatedYouth?.personalInfo?.name || '미상',
+        clientAge: item.isolatedYouth?.personalInfo?.age || 0,
+        clientGender: '남', // 기본값으로 '남' 설정
+        consultantName: item.user?.name || '',
+        title: consultationType,
+        type: consultationType,
+        date: date,
+        dateString: dateString, // 포맷된 날짜 문자열 추가
+        time: time,
+        status: status,
+        notes: item.summarize || item.fullScript?.substring(0, 50) || '특이사항 없음'
+      } as Consultation; // 타입 단언을 통해 Consultation 타입으로 변환
+    });
+    
+    setConsultations(mappedConsultations);
+  }, [consultationListByYear]);
 
   const router = useRouter()
   const handleMakeNewConsultation = () => {
@@ -232,7 +322,7 @@ export default function ConsultationManagementPage() {
                           id={consultation.clientId}
                           name={consultation.clientName}
                           age={consultation.clientAge || 0}
-                          gender={consultation.clientGender || '남'}
+                          // gender={consultation.clientGender || '남'}
                         />  
                       </div>
 
@@ -315,10 +405,10 @@ export default function ConsultationManagementPage() {
               {key: 'clientName', title: '상담 대상자'},
               {key: 'consultantName', title: '상담자'},
               {key: 'status', title: '진행여부'},
-              {key: 'date', title: '상담 일시'},
+              {key: 'dateString', title: '상담 일시'},
               {key: 'notes', title: '특이사항'},
             ]}
-            data={consultations}
+            data={consultations.sort((a, b) => b.date.getTime() - a.date.getTime())}
           />
         </div>
     </div>

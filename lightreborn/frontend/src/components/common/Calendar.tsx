@@ -11,9 +11,11 @@ export interface Consultation {
   clientName: string
   clientAge?: number
   clientGender?: string
+  consultantName?: string
   title: string
   type: string
   date: Date
+  dateString?: string
   time: string
   status: "진행전" | "완료" | "미작성"
   notes?: string
