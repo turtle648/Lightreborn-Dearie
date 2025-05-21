@@ -1,4 +1,4 @@
-import { getConsultationComment, getConsultationDetail, getConsultationList, getConsultationListByYear, getCumulativeConsultationStatus, getIsolatedYouthList, getMonthlyConsultationStatus, getRecentConsultationData, getRegisteredYouthList, makeNewConsultation, updateConsultationComment, uploadSurveyResponseWordFile } from "@/apis/youthConsultationApi";
+import { getConsultationComment, getConsultationDetail, getConsultationList, getConsultationListByYear, getCumulativeConsultationStatus, getIsolatedYouthList, getMonthlyConsultationStatus, getRecentConsultationData, getRegisteredYouthList, getRegisteredYouthListWithProcessStep, makeNewConsultation, updateConsultationComment, uploadSurveyResponseWordFile } from "@/apis/youthConsultationApi";
 import { create } from "zustand";
 
 interface MonthlyConsultationStatus {
@@ -68,6 +68,9 @@ interface YouthConsultationStore {
 
   registeredYouthList : Array<{id: number, name: string, age: number, status: string, recentDate: string, specialNote: string}>;
   getRegisteredYouthList : () => Promise<void>;
+
+  registeredYouthListWithProcessStep : Array<{id: number, name: string, age: number, processStep: string}>;
+  getRegisteredYouthListWithProcessStep : () => Promise<void>;
 
   makeNewConsultation : (youthId: number, date: string) => Promise<void>;
 
@@ -164,6 +167,18 @@ export const useYouthConsultationStore = create<YouthConsultationStore>((set) =>
       set({ registeredYouthList : response.result.youthInfos });
     } catch (error) {
       console.error("getRegisteredYouthList error : ", error);
+    }
+  },
+
+  // [consultationManagement/] 등록 청년 상태 포함 조회하기 
+  registeredYouthListWithProcessStep : [],
+  getRegisteredYouthListWithProcessStep : async () => {
+    try {
+      const response = await getRegisteredYouthListWithProcessStep();
+      console.log("useYouthConsultationStore - getRegisteredYouthListWithProcessStep response : ", response.result.content);
+      set({ registeredYouthListWithProcessStep : response.result.content });
+    } catch (error) {
+      console.error("getRegisteredYouthListWithProcessStep error : ", error);
     }
   },
 
