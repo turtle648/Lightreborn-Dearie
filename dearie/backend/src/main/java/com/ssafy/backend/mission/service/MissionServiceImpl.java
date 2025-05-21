@@ -11,10 +11,7 @@ import com.ssafy.backend.mission.model.dto.response.DailyMissionResponseDTO;
 import com.ssafy.backend.mission.model.dto.response.MissionCompletionResponseDTO;
 import com.ssafy.backend.mission.model.dto.response.MissionDetailResponseDTO;
 import com.ssafy.backend.mission.model.dto.response.RecentMissionResponseDTO;
-import com.ssafy.backend.mission.model.dto.vo.ImageResultDetail;
-import com.ssafy.backend.mission.model.dto.vo.MusicResultDetail;
-import com.ssafy.backend.mission.model.dto.vo.TextResultDetail;
-import com.ssafy.backend.mission.model.dto.vo.WalkResultDetail;
+import com.ssafy.backend.mission.model.dto.vo.*;
 import com.ssafy.backend.mission.model.entity.*;
 import com.ssafy.backend.mission.model.enums.MissionExecutionType;
 import com.ssafy.backend.mission.repository.*;
@@ -137,7 +134,7 @@ public class MissionServiceImpl implements MissionService {
                     );
                 }
 
-                log.info("imageResult verification: {}", imageResult.isVerified());
+                log.info("imageResult verification: {}", imageResult.isRequiredObjectDetected());
 
                 yield imageResult;
             }
@@ -268,9 +265,12 @@ public class MissionServiceImpl implements MissionService {
 
         LocalDate today = LocalDate.now();
 
+        log.info("userID: {}", userId);
+
         List<UserMission> ums = userMissionRepository
                 .findByUser_IdAndDate(userId, today);
 
+        log.info("ums: {}", ums.stream().toList());
 
         return ums.stream()
                 .map(um -> new DailyMissionResponseDTO(

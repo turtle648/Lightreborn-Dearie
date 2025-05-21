@@ -35,7 +35,8 @@ interface MissionResult {
     detections: Detection[]
   }
   requiredObjectLabel: string
-  verified: boolean
+  verified: boolean,
+  locationVerified: boolean
 }
 
 export default function ImageMissionPage() {
@@ -80,7 +81,7 @@ export default function ImageMissionPage() {
 
   // confetti: 성공 시에만
   useEffect(() => {
-    if (verificationResult?.verified) {
+    if (verificationResult?.verified && verificationResult?.locationVerified) {
       confetti({
         particleCount: 120,
         spread: 80,
@@ -138,7 +139,12 @@ export default function ImageMissionPage() {
       });
 
       // API 응답 구조에 맞게 검증 상태 확인
-      const isVerified = response.result?.detail.verified || false;
+      const isVerified = response.result?.detail.requiredObjectDetected || false;
+      const isLocationVerified =
+        imageKeyword === "카페"
+          ? response.result?.detail.locationVerified || false
+          : true;
+
 
       // 검증 결과 설정 (성공, 실패 둘 다 처리)
       setVerificationProgress(100);
@@ -152,25 +158,31 @@ export default function ImageMissionPage() {
         },
         requiredObjectLabel: response.result?.requiredObjectLabel || imageKeyword,
         verified: isVerified,
+        locationVerified: isLocationVerified
       });
 
-      if (isVerified) {
-        setIsCompleted(true);
-        setIsSaved(true);
-        
-        toast({
-          title: "이미지 미션 완료",
-          description: `${imageKeyword} 미션을 완료했어요!`,
-          variant: "default",
-        });
-      } else {
-        // 검증 실패한 경우 (에러 던지지 않고 실패 상태로 설정)
+      if (!isVerified) {
         toast({
           title: "미션 검증 실패",
           description: `${imageKeyword}가 이미지에서 인식되지 않았습니다. 다시 시도해주세요.`,
           variant: "destructive",
         });
+      } else if (!isLocationVerified) {
+        toast({
+          title: "위치 확인 실패",
+          description: "사진은 잘 찍었지만, 지금은 지정된 장소가 아닌 것 같아요.",
+          variant: "destructive",
+        });
+      } else {
+        setIsCompleted(true);
+        setIsSaved(true);
+        toast({
+          title: "이미지 미션 완료",
+          description: `${imageKeyword} 미션을 완료했어요!`,
+          variant: "default",
+        });
       }
+
     } catch (error) {
       console.error("이미지 검증 중 오류 발생:", error);
       
@@ -182,6 +194,7 @@ export default function ImageMissionPage() {
         detail: { detections: [] },
         requiredObjectLabel: imageKeyword,
         verified: false,
+        locationVerified: false,
       });
       
       toast({
@@ -367,13 +380,13 @@ export default function ImageMissionPage() {
                         }}
                         transition={{ delay: 0.2, duration: 0.8 }}
                         className={`w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                          verificationResult.verified 
+                          verificationResult.verified && verificationResult.locationVerified
                             ? "bg-gradient-to-br from-[#fbb6a7] to-[#f7b0c5]" 
                             : "bg-gradient-to-br from-gray-200 to-gray-300"
                         }`}
                       >
                         <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
-                          {verificationResult.verified ? (
+                          {verificationResult.verified && verificationResult.locationVerified? (
                             <ImageIcon className="h-12 w-12 text-[#fbb6a7]" />
                           ) : (
                             <RefreshCw className="h-12 w-12 text-gray-400" />
@@ -387,7 +400,7 @@ export default function ImageMissionPage() {
                         className="mb-2"
                       >
                         <h3 className="text-2xl font-bold mb-1">
-                          {verificationResult.verified ? "검증 성공했습니다!" : "검증 실패했습니다."}
+                          {verificationResult.verified && verificationResult.locationVerified ? "검증 성공했습니다!" : "검증 실패했습니다."}
                         </h3>
                       </motion.div>
                       <motion.p
@@ -396,9 +409,13 @@ export default function ImageMissionPage() {
                         transition={{ delay: 0.5, duration: 0.5 }}
                         className="text-gray-600 mt-2 whitespace-pre-line text-center"
                       >
-                        {verificationResult.verified
-                          ? `소중한 순간을 사진으로 담았습니다.\n이런 기록들이 모여\n당신의 마음 여정을 만들어갑니다.`
-                          : `${requiredObjectLabel}가 이미지에서 인식되지 않았습니다.\n다시 찍어 볼까요?`}
+                        {
+                          !verificationResult?.verified
+                            ? `${verificationResult?.requiredObjectLabel}가 이미지에서 인식되지 않았습니다.\n다시 한 번 찍어볼까요?`
+                            : !verificationResult?.locationVerified
+                              ? `사진은 잘 찍혔지만,\n지금은 지정된 장소가 아닌 것 같아요.\n조금만 더 이동해서 다시 시도해볼까요?`
+                              : `소중한 순간을 사진으로 담았습니다.\n이런 기록들이 모여\n당신의 마음 여정을 만들어갑니다.`
+                        }
                       </motion.p>
                     </div>
                     <div className="flex-1 mb-6 flex items-center justify-center">
@@ -412,10 +429,10 @@ export default function ImageMissionPage() {
                           />
                         )}
                         {/* 성공 시 박스 오버레이 */}
-                        {verificationResult.verified && renderBoxes()}
+                        {verificationResult.verified && verificationResult.locationVerified && renderBoxes()}
                         
                         {/* 실패 시 오버레이 */}
-                        {!verificationResult.verified && (
+                        {!verificationResult.verified && verificationResult.locationVerified && (
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div className="flex flex-col items-center">
                               <Badge 
@@ -430,7 +447,7 @@ export default function ImageMissionPage() {
                       </div>
                     </div>
                     <div className="flex justify-center gap-4 w-full mt-4">
-                      {verificationResult.verified ? (
+                      {verificationResult.verified && verificationResult.locationVerified ? (
                         <Button
                           onClick={() => router.push(`/mission/recent-success/${userMissionId}?type=IMAGE`)}
                           className="flex-1 py-3 rounded-full bg-gradient-to-r from-[#fbb6a7] to-[#f7b0c5] text-white font-semibold shadow-lg shadow-primary/20"
