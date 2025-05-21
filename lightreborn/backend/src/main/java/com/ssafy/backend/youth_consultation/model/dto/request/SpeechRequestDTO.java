@@ -13,5 +13,5 @@ public class SpeechRequestDTO {
     private MultipartFile file;
 
     @Schema(description = "고립 청년 ID", example = "1", required = true)
-    private Long isolatedYouthId;
+    private Long counselingLogId;
 }

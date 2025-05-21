@@ -42,6 +42,8 @@ public class CounselingLog {
 
     @PrePersist
     protected void onCreate() {
-        this.consultationDate = LocalDateTime.now();
+        if (this.consultationDate == null) {
+            this.consultationDate = LocalDateTime.now();
+        }
     }
 }

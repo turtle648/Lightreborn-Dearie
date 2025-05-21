@@ -228,10 +228,12 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
                         new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_PERSON)
                 );
 
+        LocalDateTime consultationDateTime = addScheduleRequestDTO.getDate().atStartOfDay();
+
         CounselingLog log = counselingLogRepository.save(
                 CounselingLog.builder()
                         .user(user)
-                        .consultationDate(addScheduleRequestDTO.getDate().atStartOfDay())
+                        .consultationDate(consultationDateTime)
                         .isolatedYouth(isolatedYouth)
                         .counselingProcess(CounselingConstants.DEFAULT_STEP)
                         .build()
@@ -248,9 +250,8 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         User user = userRepository.findByUserId(loginUser)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
 
-        IsolatedYouth isolatedYouth = isolatedYouthRepository.findById(requestDTO.getIsolatedYouthId())
-                .orElseThrow(() -> new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_PERSON));
-
+        CounselingLog counselingLog = counselingLogRepository.findById(requestDTO.getCounselingLogId())
+                .orElseThrow(() -> new YouthConsultationException(YouthConsultationErrorCode.NO_MATCH_COUNSELING));
 
         TranscriptionContext transcriptionContext = new TranscriptionContext(
                 restTemplate,
@@ -273,15 +274,17 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
 
         counselingLogRepository.save(
                 CounselingLog.builder()
+                        .id(counselingLog.getId())
                         .user(user)
-                        .fullScript(transcript)
+                        .clientKeyword(client)
                         .counselorKeyword(counselor)
                         .memoKeyword(notes)
-                        .isolatedYouth(isolatedYouth)
-                        .clientKeyword(client)
+                        .fullScript(transcript)
                         .summarize(summarize)
+                        .isolatedYouth(counselingLog.getIsolatedYouth())
                         .voiceFileUrl(transcriptionContext.getUploadUrl())
                         .counselingProcess(CounselingProcess.COMPLETED)
+                        .consultationDate(counselingLog.getConsultationDate())
                         .build()
         );
 
@@ -298,49 +301,71 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
     @Transactional
     public SurveyUploadDTO uploadIsolationYouthInfo(MultipartFile file) {
         try {
-
             Map<String, SurveyQuestion> questions = getQuestions();
+            log.info("[SpeechServiceImpl] 질문 리스트 : {}", questions);
 
-            log.info("[SpeechServiceImpl] 질문 리스트 : {}",questions);
+            SurveyContext context = new SurveyContext(questions, file);
+            PersonalInfoCollector infoCollector = context.getPersonalInfoCollector();
+            SurveyAnswerCollector answerCollector = context.getAnswers();
 
-            SurveyContext surveyContext = new SurveyContext(questions, file);
+            PersonalInfo personalInfo = findOrCreatePersonalInfo(infoCollector);
+            SurveyVersion version = createNewSurveyVersion(personalInfo);
+            answerCollector.addVersion(version);
 
-            PersonalInfoCollector personalInfoCollector = surveyContext.getPersonalInfoCollector();
-            SurveyAnswerCollector surveyAnswerCollector = surveyContext.getAnswers();
-
-            PersonalInfo savedPersonalInfo = personalInfoRepository.save(
-                    PersonalInfo.builder()
-                            .name(personalInfoCollector.getName())
-                            .phoneNumber(personalInfoCollector.getPhoneNumber())
-                            .emergencyContact(personalInfoCollector.getEmergencyContent())
-                            .birthDate(personalInfoCollector.getBirthDate())
-                            .build()
-            );
-
-            SurveyVersion newSurveyVersion = surveyVersionRepository.save(
-                    SurveyVersion.builder()
-                            .personalInfo(savedPersonalInfo)
-                            .build()
-            );
-
-            surveyAnswerCollector.addVersion(newSurveyVersion);
-            surveyAnswerRepository.saveAll(surveyAnswerCollector.getAnswers());
+            surveyAnswerRepository.saveAll(answerCollector.getAnswers());
 
             isolatedYouthRepository.save(
-                    IsolatedYouth.builder()
-                            .isolatedScore(surveyAnswerCollector.getScore())
-                            .personalInfo(savedPersonalInfo)
-                            .surveyProcessStep(SurveyProcessStep.SELF_DIAGNOSIS)
-                            .build()
+                    isolatedYouthRepository.findByPersonalInfoId(personalInfo.getId())
+                            .map(existing -> IsolatedYouth.builder()
+                                    .id(existing.getId())
+                                    .isolatedScore(answerCollector.getScore())
+                                    .personalInfo(personalInfo)
+                                    .surveyProcessStep(SurveyProcessStep.SELF_DIAGNOSIS)
+                                    .build()
+                            )
+                            .orElseGet(() -> IsolatedYouth.builder()
+                                    .isolatedScore(answerCollector.getScore())
+                                    .personalInfo(personalInfo)
+                                    .surveyProcessStep(SurveyProcessStep.SELF_DIAGNOSIS)
+                                    .build()
+                            )
             );
 
             return SurveyUploadDTO.builder()
-                    .personalInfo(personalInfoCollector)
-                    .answers(surveyAnswerCollector)
+                    .personalInfo(infoCollector)
+                    .answers(answerCollector)
                     .build();
+
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("파일 처리 중 오류 발생", e);
         }
+    }
+
+    private PersonalInfo findOrCreatePersonalInfo(PersonalInfoCollector collector) {
+        return personalInfoRepository.findByNameAndPhoneNumber(
+                        collector.getName(), collector.getPhoneNumber())
+                .orElseGet(() -> personalInfoRepository.save(
+                        PersonalInfo.builder()
+                                .name(collector.getName())
+                                .phoneNumber(collector.getPhoneNumber())
+                                .emergencyContact(collector.getEmergencyContent())
+                                .birthDate(collector.getBirthDate())
+                                .build()
+                ));
+    }
+
+    private SurveyVersion createNewSurveyVersion(PersonalInfo personalInfo) {
+        return surveyVersionRepository.findTopByPersonalInfoOrderByVersionDesc(personalInfo)
+                .map(prevVersion -> surveyVersionRepository.save(
+                        SurveyVersion.builder()
+                                .version(prevVersion.getVersion() + 1L)
+                                .personalInfo(personalInfo)
+                                .build()
+                )).orElseGet(() -> surveyVersionRepository.save(
+                        SurveyVersion.builder()
+                                .personalInfo(personalInfo)
+                                .build()
+                ));
     }
 
     @Override
