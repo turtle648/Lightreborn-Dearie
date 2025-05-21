@@ -76,7 +76,7 @@ export default function Sheet({
   // 기본 다운로드 버튼을 제공하거나 사용자 정의 headerRight을 사용
   const headerRightContent = headerRight || (onDownload ? (
     <Button 
-      variant="secondary"
+      variant="text"
       size="sm"
       onClick={onDownload}
       disabled={downloadDisabled || isEmpty}
