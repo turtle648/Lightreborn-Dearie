@@ -18,6 +18,7 @@ import com.ssafy.backend.youth_consultation.model.dto.request.*;
 import com.ssafy.backend.youth_consultation.model.dto.response.*;
 import com.ssafy.backend.youth_consultation.model.entity.*;
 import com.ssafy.backend.youth_consultation.model.state.CounselingConstants;
+import com.ssafy.backend.youth_consultation.model.state.ProcessStep;
 import com.ssafy.backend.youth_consultation.model.state.SurveyStepConstants;
 import com.ssafy.backend.youth_consultation.model.vo.IsolationYouthVO;
 import com.ssafy.backend.youth_consultation.repository.*;
@@ -443,7 +444,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         return new IsolatedYouthResponseDTO(
                 pi.getName(),
                 age,
-                log.getIsolatedYouth().getIsolationLevel(),
+                ProcessStep.getProcessStepName(log.getIsolatedYouth().getSurveyProcessStep(), log.getIsolatedYouth().getIsolationLevel()),
                 log.getConsultationDate(),
                 log.getMemoKeyword());
     }
