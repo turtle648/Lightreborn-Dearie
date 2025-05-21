@@ -35,6 +35,12 @@ public class ReportServiceImpl implements ReportService {
     public DiaryAnalyzeResponseDTO analyzeAndSaveReport(Long userId, LocalDate date) {
     // 1. GPT 분석
     List<GetDiaryReportDTO> diaries = diaryService.getDiariesOfWeek(userId, date);
+
+    // 일기가 없으면 리포트 생성하지 않고 404 에러 발생
+    if (diaries == null || diaries.isEmpty()) {
+        throw new ReportNotFoundException("최근 일주일간 작성한 일기가 없습니다.");
+    }
+    
     System.out.println("diaries: " + diaries);
     String prompt = GptPromptUtil.makePrompt(diaries);
     System.out.println("GPT Prompt: " + prompt);

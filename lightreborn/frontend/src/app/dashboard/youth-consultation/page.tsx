@@ -10,7 +10,7 @@ import { useYouthConsultationStore } from "@/stores/useYouthConsultaionStore"
 
 export default function Dashboard() {
 
-  const { monthlyConsultationStatusFor2Years, getMonthlyConsultationStatusFor2Years, recentConsultationData, getRecentConsultationData } = useYouthConsultationStore();
+  const { monthlyConsultationStatusFor2Years, getMonthlyConsultationStatusFor2Years, recentConsultationData, getRecentConsultationData, cumulativeConsultationStatus, getCumulativeConsultationStatus } = useYouthConsultationStore();
 
   const [monthlyData, setMonthlyData] = useState<ComboChartItem[]>([]);
   const [recentData, setRecentData] = useState([
@@ -22,6 +22,7 @@ export default function Dashboard() {
   useEffect(() => {
     getMonthlyConsultationStatusFor2Years();
     getRecentConsultationData();
+    getCumulativeConsultationStatus();
   }, []);
 
   useEffect(() => {
@@ -64,6 +65,15 @@ export default function Dashboard() {
     }
   }, [recentConsultationData]);
 
+  
+
+  useEffect(() => {
+    console.log("cumulativeConsultationStatus 의존성배열 실행");
+    console.log("cumulativeConsultationStatus : ", cumulativeConsultationStatus);
+    if (cumulativeConsultationStatus && Array.isArray(cumulativeConsultationStatus) && cumulativeConsultationStatus.length > 0) {
+      // setCumulativeData(cumulativeConsultationStatus);
+    }
+  }, [cumulativeConsultationStatus]);
 
   // 누적 상담 현황 데이터
   const consultationTypeData = [

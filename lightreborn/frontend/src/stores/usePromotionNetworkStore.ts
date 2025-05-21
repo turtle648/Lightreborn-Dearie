@@ -1,4 +1,4 @@
-import { getPromotionNetworkDashboardDataByDistrict } from "@/apis/promotionNetworkApi";
+import { getPromotionNetworkDashboardDataByDistrict, getPromotionNetworkLatestData } from "@/apis/promotionNetworkApi";
 import { getPromotionNetworkDashboardDataByType } from "@/apis/promotionNetworkApi";
 import { create } from "zustand";
 
@@ -10,11 +10,28 @@ interface PromotionNetwork {
   link: string;
 } 
 
+interface PromotionNetworkLatestData {
+  id: string;
+  address: string;
+  latitude: number;
+  longitude: number;  
+  statusChangedAt: string;
+  locationType: string;
+  dongCode: string;
+  dongName: string;
+  placeName: string;
+  promotionType: string;
+  promotionContent: string;
+  posted: boolean;
+}
+
 interface PromotionNetworkStore {
   promotionNetworkByType: PromotionNetwork[];
   promotionNetworkByDistrict: PromotionNetwork[];
+  promotionNetworkLatestData: PromotionNetworkLatestData[];
   getPromotionNetworkDashboardDataByType: (dongCode: number | null) => Promise<void>;
   getPromotionNetworkDashboardDataByDistrict: (dongCode: number | null) => Promise<void>; 
+  getPromotionNetworkLatestData: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
 }
@@ -89,4 +106,25 @@ export const usePromotionNetworkStore = create<PromotionNetworkStore>((set) => (
       });
     }
   },
+
+  promotionNetworkLatestData: [],
+
+  getPromotionNetworkLatestData: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await getPromotionNetworkLatestData();
+      console.log("getPromotionNetworkLatestData response : ", response);
+      set({
+        promotionNetworkLatestData: response.result,
+        isLoading: false
+      });
+    } catch (error) {
+      console.error("getPromotionNetworkLatestData error : ", error);
+      set({
+        error: "홍보물 최신 정보를 가져오는데 실패했습니다",
+        isLoading: false
+      });
+    }
+  }
+
 }));

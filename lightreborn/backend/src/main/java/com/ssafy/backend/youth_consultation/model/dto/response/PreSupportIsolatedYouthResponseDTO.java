@@ -12,5 +12,5 @@ import lombok.Setter;
 public class PreSupportIsolatedYouthResponseDTO {
     String name;
     int age;
-    SurveyProcessStep processStep;
+    String processStep;
 }

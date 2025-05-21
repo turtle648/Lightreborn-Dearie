@@ -8,6 +8,7 @@ import { motion } from "framer-motion"
 import Link from "next/link"
 import { fetchReportSummary, type ReportSummaryResponse } from "@/apis/report-api"
 import { format, startOfWeek } from "date-fns"
+import { useUserStore } from "@/stores/user-store"
 
 // 감정별 이모지 매핑
 const emotionEmojis: { [key: string]: string } = {
@@ -24,8 +25,16 @@ export function WeeklyReportPreview() {
   const [data, setData] = useState<ReportSummaryResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { profile } = useUserStore()
 
   useEffect(() => {
+    // diaryCount가 0이면 API 호출하지 않음
+    if (profile?.userActivity?.diaryCount === 0) {
+      setLoading(false)
+      setData(null)
+      setError(null)
+      return
+    }
     const loadData = async () => {
       try {
         setLoading(true)
@@ -47,7 +56,7 @@ export function WeeklyReportPreview() {
       }
     }
     loadData()
-  }, [])
+  }, [profile?.userActivity?.diaryCount])
 
   // 감정 높이 계산 함수 수정
   function getEmotionHeight(emotion: string, score: number) {
@@ -65,6 +74,38 @@ export function WeeklyReportPreview() {
           <div className="text-center">불러오는 중...</div>
         </CardContent>
       </Card>
+    )
+  }
+
+  // 일기 개수가 0이면 안내문구만 보여주기
+  if (profile?.userActivity?.diaryCount === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        <Card className="border-none shadow-md overflow-hidden">
+          <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent flex items-start">
+            <CardTitle className="text-lg flex items-center">
+              <ClipboardList className="h-5 w-5 mr-2 text-primary" />
+              주간 리포트
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-center mt-7">
+                <div className="relative w-full h-24 flex items-center justify-center">
+                  <div className="text-center text-gray-400 text-base">
+                    아직 작성된 일기가 없습니다.<br />
+                    오늘의 감정을 일기로 남겨보세요!
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     )
   }
 

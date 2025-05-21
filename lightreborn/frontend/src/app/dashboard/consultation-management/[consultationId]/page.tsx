@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card } from "@/components/common/Card"
 import Button from "@/components/common/Button"
 import { colors } from "@/constants/colors"
@@ -10,6 +10,8 @@ import { ColorBox } from "@/components/common/ColorBox"
 import { useParams, useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
+import { useYouthConsultationStore } from "@/stores/useYouthConsultaionStore"
+
 
 export default function ConsultationPage() {
   
@@ -18,7 +20,41 @@ export default function ConsultationPage() {
 
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<"summary" | "keywords">("summary")
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { consultationDetail, getConsultationDetail } = useYouthConsultationStore();
+
+  useEffect(() => {
+    const fetchConsultationDetail = async () => {
+      try {
+        setIsLoading(true);
+        await getConsultationDetail(Number(consultationId));
+        setIsLoading(false);
+
+        setTimeout(() => {
+          if (consultationDetail) {
+            const hasNoContent = !consultationDetail.result.counselingLog.fullScript && 
+              !consultationDetail.result.counselingLog.clientKeyword && 
+              !consultationDetail.result.counselingLog.counselorKeyword && 
+              !consultationDetail.result.counselingLog.summarize && 
+              !consultationDetail.result.counselingLog.memoKeyword;
+
+            if (hasNoContent) {
+              router.push(`/dashboard/consultation-management/${consultationId}/edit`);
+            }
+          }
+        }, 100);
+          
+      } catch (err) {
+        setError('상담 정보를 불러오는 데 실패했습니다.');
+        setIsLoading(false);
+        console.error('상담 정보 로딩 에러:', err);
+      }
+    };
   
+    fetchConsultationDetail();
+  }, [consultationId, getConsultationDetail, isLoading, error]);
+
   // 상담 데이터 (실제로는 API 호출로 가져올 데이터)
   const consultationData = {
     type: "정기상담",
@@ -62,6 +98,46 @@ export default function ConsultationPage() {
     },
     recordingFile: "20250527_이OO_정기상담.mp3"
   }
+
+  const displayData = consultationDetail ? {
+    type: "정기상담", // API에 없는 값은 기본값 설정
+    date: consultationDetail.result.counselingLog.consultationDate || new Date().toISOString(),
+    time: new Date(consultationDetail.result.counselingLog.consultationDate || new Date()).toLocaleTimeString('ko-KR', { hour: '2-digit' }),
+    duration: "60", // API에 없는 값은 기본값 설정
+    client: {
+      name: consultationDetail.result.counselingLog.isolatedYouth?.personalInfo?.name || "이름 없음",
+      id: (consultationDetail.result.counselingLog.id || "0").toString(),
+      age: consultationDetail.result.counselingLog.isolatedYouth?.personalInfo?.age || 0,
+      score: consultationDetail.result.counselingLog.isolatedYouth?.isolatedScore || 0,
+      riskLevel: consultationDetail.result.counselingLog.isolatedYouth?.isolationLevel === "RECLUSIVE_YOUTH" ? "고립 위험군" : "일반"
+    },
+    // 빈 문자열 또는 빈 배열로 대체
+    summary: (consultationDetail.result.counselingLog.fullScript || "").split('.').filter(s => s.trim().length > 0).length > 0 
+      ? (consultationDetail.result.counselingLog.fullScript || "").split('.').filter(s => s.trim().length > 0) 
+      : ["상담 내용이 없습니다."],
+    
+    keywords: (consultationDetail.result.counselingLog.clientKeyword || "").split(',').filter(k => k.trim().length > 0).length > 0 
+      ? (consultationDetail.result.counselingLog.clientKeyword || "").split(',').map(k => k.trim()) 
+      : ["키워드가 없습니다."],
+    
+    interventions: (consultationDetail.result.counselingLog.counselorKeyword || "").split(',').filter(k => k.trim().length > 0).length > 0 
+      ? (consultationDetail.result.counselingLog.counselorKeyword || "").split(',').map(k => k.trim()) 
+      : ["개입 내용이 없습니다."],
+    
+    specialNote: consultationDetail.result.counselingLog.summarize || "특이사항이 없습니다.",
+    
+    nextPlan: {
+      date: new Date().toISOString().split('T')[0], // API에 없는 값은 임시 값 설정
+      time: "10:00", 
+      tasks: (consultationDetail.result.counselingLog.memoKeyword || "").split(',').filter(k => k.trim().length > 0).length > 0 
+        ? (consultationDetail.result.counselingLog.memoKeyword || "").split(',').map(k => k.trim()) 
+        : ["다음 계획이 없습니다."],
+    },
+    
+    recordingFile: consultationDetail.result.counselingLog.voiceFileUrl 
+      ? consultationDetail.result.counselingLog.voiceFileUrl.split('/').pop() 
+      : ""
+  } : consultationData;
   
   // 편집 페이지로 이동
   const handleEdit = () => {
@@ -135,21 +211,21 @@ export default function ConsultationPage() {
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="bg-gray-50 p-4 w-full rounded-lg">
                 <h3 className="text-sm text-gray-500 mb-1">상담유형</h3>
-                <p className="text-xl font-medium text-[#6B9AFF]">{consultationData.type}</p>
+                <p className="text-xl font-medium text-[#6B9AFF]">{displayData.type}</p>
               </div>
               <div className="bg-gray-50 p-4 w-full col-span-2 rounded-lg">
                 <h3 className="text-sm text-gray-500 mb-1">상담일시</h3>
                 <p className="text-xl font-medium text-[#6B9AFF]">
-                  {formatDisplayDate(consultationData.date)} {consultationData.time} ({consultationData.duration}분)
+                  {formatDisplayDate(displayData.date)} {displayData.time} <br/> ({displayData.duration}분 소요)
                 </p>
               </div>
             </div>
             
-            {consultationData.recordingFile && (
+            {displayData.recordingFile && (
               <div className="mt-4">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">녹음 파일</h3>
                 <div className="bg-gray-50 p-3 rounded-lg flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{consultationData.recordingFile}</span>
+                  <span className="text-sm text-gray-600">{displayData.recordingFile}</span>
                   <Button variant="outline" size="sm">
                     다운로드
                   </Button>
@@ -160,17 +236,20 @@ export default function ConsultationPage() {
         </Card>
 
         <Card title="상담대상자 정보">
-          <div className="p-6 flex flex-row gap-4 justify-between">
+          <div 
+            className="p-6 flex flex-row gap-4 justify-between"
+            onClick={() => router.push(`/dashboard/youth-management/${displayData.client.id}`)}
+          >
             <UserInfo 
-              name={consultationData.client.name}
-              id={consultationData.client.id}
-              gender={consultationData.client.gender}
-              age={consultationData.client.age}
+              name={displayData.client.name}
+              id={displayData.client.id}
+              // gender={consultationData.client.gender}
+              age={displayData.client.age}
             />
             <ColorBox 
-              scoreText={`${consultationData.client.score}점`}
+              scoreText={`${displayData.client.score}점`}
               color="#FFCACA"
-              title={consultationData.client.riskLevel}
+              title={displayData.client.riskLevel}
             />
           </div>
         </Card>
@@ -198,65 +277,65 @@ export default function ConsultationPage() {
               <div>
                 <h3 className="text-lg font-medium mb-4">상담 주요 내용 요약</h3>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  {consultationData.summary.map((item, index) => (
+                  {displayData.summary.map((item, index) => (
                     <p key={`summary-${index}`} className="text-sm mb-2 last:mb-0">
                       {item}
                     </p>
                   ))}
+                </div>
+                <div className="mt-8">
+                  <h3 className="text-lg font-medium mb-4">특이사항 / 메모</h3>
+                  <div className="bg-[#FFF8E6] p-4 rounded-lg">
+                    {displayData.specialNote.split('\n').map((paragraph, index) => (
+                      <p key={`note-${index}`} className="text-sm mb-2 last:mb-0">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-8">
+                  <h3 className="text-lg font-medium mb-4">다음 상담 계획</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center mb-3">
+                      <CalendarIcon size={16} className="text-gray-400 mr-2" />
+                      <p className="text-sm font-medium">
+                        {formatDisplayDate(displayData.nextPlan.date)} {displayData.nextPlan.time}
+                      </p>
+                    </div>
+                    
+                    {displayData.nextPlan.tasks.map((task, index) => (
+                      <p key={`task-${index}`} className="text-sm pl-6 mb-2 last:mb-0">
+                        • {task}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (
               <div>
                 <h3 className="text-lg font-medium mb-4">대화자 발언 주요 키워드</h3>
                 <div className="bg-[#FFF8E6] p-4 rounded-lg">
-                  {consultationData.keywords.map((item, index) => (
+                  {displayData.keywords.map((item, index) => (
                     <p key={`keyword-${index}`} className="text-sm mb-3 last:mb-0">
                       {item}
                     </p>
                   ))}
                 </div>
+                <div className="mt-8">
+                  <h3 className="text-lg font-medium mb-4">상담자의 주요 개입 내용</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    {displayData.interventions.map((item, index) => (
+                      <p key={`intervention-${index}`} className="text-sm mb-2 last:mb-0">
+                        {item}
+                      </p>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
-            <div className="mt-8">
-              <h3 className="text-lg font-medium mb-4">상담자의 주요 개입 내용</h3>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                {consultationData.interventions.map((item, index) => (
-                  <p key={`intervention-${index}`} className="text-sm mb-2 last:mb-0">
-                    {item}
-                  </p>
-                ))}
-              </div>
-            </div>
 
-            <div className="mt-8">
-              <h3 className="text-lg font-medium mb-4">특이사항 / 메모</h3>
-              <div className="bg-[#FFF8E6] p-4 rounded-lg">
-                {consultationData.specialNote.split('\n').map((paragraph, index) => (
-                  <p key={`note-${index}`} className="text-sm mb-2 last:mb-0">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-            </div>
 
-            <div className="mt-8">
-              <h3 className="text-lg font-medium mb-4">다음 상담 계획</h3>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-center mb-3">
-                  <CalendarIcon size={16} className="text-gray-400 mr-2" />
-                  <p className="text-sm font-medium">
-                    {formatDisplayDate(consultationData.nextPlan.date)} {consultationData.nextPlan.time}
-                  </p>
-                </div>
-                
-                {consultationData.nextPlan.tasks.map((task, index) => (
-                  <p key={`task-${index}`} className="text-sm pl-6 mb-2 last:mb-0">
-                    • {task}
-                  </p>
-                ))}
-              </div>
-            </div>
           </div>
         </Card>
       </div>

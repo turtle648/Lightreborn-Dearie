@@ -15,6 +15,7 @@ import { useMissionStore } from "@/stores/mission-store";
 import axios from "axios";
 import { MissionItem } from "@/components/feature/mission/mission-item";
 import api from "@/apis/axiosClient";
+import { useUserStore } from "@/stores/user-store";
 
 // 동적 임포트
 const DailyMission = dynamic(
@@ -28,7 +29,10 @@ const DailyMission = dynamic(
 );
 
 const DiaryCard = dynamic(
-  () => import("@/components/feature/diary/diary-card").then(mod => mod.default),
+  () =>
+    import("@/components/feature/diary/diary-card").then(
+      (mod) => mod.DiaryCard
+    ),
   {
     loading: () => (
       <div className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>
@@ -56,6 +60,7 @@ const formatDate = (dateString: string): string => {
 
 export default function HomePage() {
   const router = useRouter();
+  const { profile } = useUserStore();
   const { preview, loading, error, fetchDaily } = useMissionStore();
   const [diaries, setDiaries] = useState<Diary[]>([]);
   const [emotionWindowPath, setEmotionWindowPath] = useState(
@@ -139,7 +144,7 @@ export default function HomePage() {
           <div className="absolute bottom-0 left-0 right-0">
             <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white via-white/80 to-transparent"></div>
             <div className="relative px-6 pb-6 pt-20">
-              <h2 className="text-3xl font-bold text-gray-800">안녕하세요,</h2>
+              <h2 className="text-3xl font-bold text-gray-800">안녕하세요, {profile?.name}님</h2>
               <p className="text-2xl font-medium text-gray-600 mt-1">
                 오늘 하루는 어떠셨나요?
               </p>
@@ -193,15 +198,15 @@ export default function HomePage() {
           <div className="space-y-6">
             {diaries.map((diary) => (
               <DiaryCard
-              key={diary.diaryId}
-              diary={{
-                id: diary.diaryId,
-                date: formatDate(diary.date),
-                image: diary.images[0] || "./placeholder.svg",
-                content: diary.content,
-                bookmarked: diary.bookmarked,
-              }}
-            />
+                key={diary.diaryId}
+                diary={{
+                  id: diary.diaryId,
+                  date: formatDate(diary.date),
+                  image: diary.images[0] || "./placeholder.svg",
+                  content: diary.content,
+                  bookmarked: diary.bookmarked,
+                }}
+              />
             ))}
           </div>
         </div>
