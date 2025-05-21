@@ -114,7 +114,7 @@ public class MissionServiceImpl implements MissionService {
             {
                 log.info("IMAGE 미션 검증 시작");
 
-                ImageResultDetail imageResult = processImageMission(request);
+                ImageResultDetail imageResult = processImageMission(request, userMission);
 
                 YoloResult yoloResult = YoloResult.of(
                         missionResult,
@@ -237,7 +237,7 @@ public class MissionServiceImpl implements MissionService {
     /**
      * 이미지 미션 처리 로직
      */
-    private ImageResultDetail processImageMission(MissionCompletionRequestDTO request) throws IOException {
+    private ImageResultDetail processImageMission(MissionCompletionRequestDTO request, UserMission userMission) throws IOException {
         log.info("ProcessImageMission 시작");
 
         // 1) 파일 유효성 검사
@@ -247,7 +247,8 @@ public class MissionServiceImpl implements MissionService {
         }
 
         // 2) S3 업로드
-        String imageUrl = s3Uploader.upload("missions/image/" + request.getMissionId(), file);
+        String userLoginId = userMission.getUser().getLoginId();
+        String imageUrl = s3Uploader.upload("missions/images/" + userLoginId + "/" + request.getMissionId() + "-" + LocalDateTime.now(), file);
         log.info("imageUrl:{}", imageUrl);
 
         // 3) YOLO 호출
