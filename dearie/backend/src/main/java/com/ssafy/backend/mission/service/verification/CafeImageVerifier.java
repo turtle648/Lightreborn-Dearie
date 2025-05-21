@@ -20,7 +20,7 @@ import java.util.Map;
 public class CafeImageVerifier implements ImageVerifier {
 
     private final GeoSearchService geoSearchService;
-    private static final int SEARCH_RADIUS = 20;
+    private static final int SEARCH_RADIUS = 50;
 
     @Override
     public ImageAndLocationVerificationResult verify(MissionCompletionRequestDTO request, String imageUrl, List<YoloDetectionResult> detections) {
