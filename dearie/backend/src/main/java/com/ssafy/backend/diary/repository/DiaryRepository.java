@@ -23,16 +23,16 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
     @Query("DELETE FROM Diary d WHERE d.id = :id AND d.user.loginId = :loginId")
     int deleteByIdAndUser_LoginId(@Param("id") Long id, @Param("loginId") String loginId);
 
-    @Query("SELECT DISTINCT d FROM Diary d " +
-            "LEFT JOIN Bookmark b ON d.id = b.diary.id AND b.user = :user " +
+    @Query("SELECT d FROM Diary d " +
             "WHERE d.user = :user " +
-            "AND (:bookmark IS NULL OR :bookmark = false OR (:bookmark = true AND b.id IS NOT NULL)) " +
+            "AND (:bookmark IS NULL OR d.bookmarked = :bookmark) " +
             "AND (:keyword IS NULL OR d.content IS NULL OR CAST(d.content AS string) LIKE CONCAT('%', CAST(:keyword AS string), '%'))")
     Page<Diary> findFilteredDiaries(
             @Param("user") User user,
             @Param("bookmark") Boolean bookmark,
             @Param("keyword") String keyword,
-            Pageable pageable);
+            Pageable pageable
+    );
 
     List<Diary> findByUser(User user);
 
