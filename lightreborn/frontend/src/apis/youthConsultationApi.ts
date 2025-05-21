@@ -96,6 +96,18 @@ export const getRegisteredYouthList = async (name?: string, pageNum: number = 0,
   }
 }
 
+// 등록 청년 상태 포함 조회하기 
+export const getRegisteredYouthListWithProcessStep = async (page = 0, size = 500) => {
+  try {
+    const response = await api.get(`/youth-consultation/isolated-youths/pre-support?page=${page}&size=${size}&sort=personalInfo.name%2CASC`);
+    console.log("getRegisteredYouthListWithProcessStep API response : ", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("getRegisteredYouthListWithProcessStep error : ", error);
+    throw new Error("getRegisteredYouthListWithProcessStep error 발생했습니다.");
+  }
+}
+
 // 상담 일정 추가하기 
 export const makeNewConsultation = async (youthId: number, date: string) => {
   try {

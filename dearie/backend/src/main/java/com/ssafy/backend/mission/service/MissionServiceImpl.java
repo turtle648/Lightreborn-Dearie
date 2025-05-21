@@ -253,6 +253,8 @@ public class MissionServiceImpl implements MissionService {
         // 3) YOLO 호출
         List<YoloDetectionResult> detections = openCvYoloService.detectFromUrl(imageUrl);
 
+        log.info("longitude: {}, latitude: {}", request.getLongitude(), request.getLatitude());
+
 
         // 4) 이미지 키워드별 검증 수행
         ImageResultDetail imageResult = imageVerificationService.verifyImage(request, imageUrl, detections);

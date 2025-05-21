@@ -509,7 +509,9 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
         PersonalInfo pi = iy.getPersonalInfo();
         int age = calculateAge(pi);
 
-        return new PreSupportIsolatedYouthResponseDTO(pi.getName(), age, iy.getSurveyProcessStep());
+        String step = ProcessStep.getProcessStepName(iy.getSurveyProcessStep(), iy.getIsolationLevel());
+
+        return new PreSupportIsolatedYouthResponseDTO(pi.getName(), age, step);
     }
 
 
