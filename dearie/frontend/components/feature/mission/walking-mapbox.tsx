@@ -1,9 +1,15 @@
-import React, { forwardRef, useState, useEffect } from "react";
+import React, { forwardRef, useState, useEffect, useRef } from "react";
 import Map, { type MapRef, Source, Layer } from "react-map-gl/maplibre";
-import type { Feature, GeoJsonProperties, LineString, Point } from "geojson";
+import type { Feature, GeoJsonProperties, LineString, Point, FeatureCollection } from "geojson";
 import maplibregl from "maplibre-gl";
+import type { StyleSpecification } from 'maplibre-gl';
+import type { MapDataEvent } from 'maplibre-gl';
 
-interface LatLng {
+interface CustomMapDataEvent extends MapDataEvent {
+  sourceId?: string;
+}
+
+export interface LatLng {
   lat: number;
   lng: number;
 }
@@ -13,12 +19,13 @@ export interface WalkingMapBoxProps {
   path: LatLng[];
   isTracking: boolean;
   isCompleted?: boolean;
+  onMapLoad?: () => void;
 }
 
 export const WalkingMapBox = forwardRef<MapRef, WalkingMapBoxProps>(
-  ({ currentPosition, path, isTracking, isCompleted }, ref) => {
-    const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY!;
-
+  ({ currentPosition, path, isTracking, isCompleted, onMapLoad }, ref) => {
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    
     // Map viewstate: pan during tracking
     const [viewState, setViewState] = useState({
       longitude: currentPosition?.lng ?? 127.024612,
@@ -29,15 +36,73 @@ export const WalkingMapBox = forwardRef<MapRef, WalkingMapBoxProps>(
     // Blink state for pulsing effect
     const [blink, setBlink] = useState(false);
     useEffect(() => {
-      const id = setInterval(() => setBlink(b => !b), 300);
+      const id = setInterval(() => setBlink(b => !b), 600);
       return () => clearInterval(id);
     }, []);
 
-    // Ignore missing sprite/icon errors
+    // 부드러운 깜박임을 위한 opacity 계산
+    const getOpacity = (baseOpacity: number) => {
+      return blink ? baseOpacity : baseOpacity * 0.4;
+    };
+
+    // 맵 로딩 상태 추적
+    const [mapLoaded, setMapLoaded] = useState(false);
+
+    // 간단한 OpenStreetMap 스타일 사용 (모든 환경에서 동일하게)
+    const mapStyle: StyleSpecification = {
+      version: 8,
+      sources: {
+        'raster-tiles': {
+          type: 'raster',
+          tiles: [`https://tile.openstreetmap.org/{z}/{x}/{y}.png`],
+          tileSize: 256,
+          attribution: '&copy; OpenStreetMap Contributors',
+        }
+      },
+      layers: [{
+        id: 'simple-tiles',
+        type: 'raster',
+        source: 'raster-tiles',
+        minzoom: 0,
+        maxzoom: 19
+      }]
+    };
+
+    // 맵 이벤트 처리 및 디버깅 향상
     useEffect(() => {
       const map = (ref as React.MutableRefObject<MapRef | null>).current?.getMap();
-      map?.on("styleimagemissing", () => {});
-    }, [ref]);
+      if (!map) return;
+      
+      // 스타일 이미지 누락 오류 무시
+      map.on("styleimagemissing", (e) => {
+        console.log("스타일 이미지 누락 무시:", e.id);
+      });
+      
+      // 맵 로드 완료 이벤트
+      map.on('load', () => {
+        console.log("맵 로드 완료");
+        setMapLoaded(true);
+        if (onMapLoad) onMapLoad();
+      });
+      
+      // 맵 에러 처리
+      map.on('error', (e) => {
+        console.error("맵 에러:", e.error);
+      });
+      
+      // 맵 렌더링 완료 이벤트 추가
+      map.on('idle', () => {
+        console.log("맵 렌더링 완료 (idle 이벤트)");
+      });
+      
+      // 타일 로드 이벤트 추가
+      map.on('data', (e: CustomMapDataEvent) => {
+        if (e.dataType === 'source' && e.sourceId === 'raster-tiles') {
+          console.log("타일 데이터 업데이트");
+        }
+      });
+      
+    }, [ref, onMapLoad]);
 
     // Pan to current position during tracking
     useEffect(() => {
@@ -60,120 +125,114 @@ export const WalkingMapBox = forwardRef<MapRef, WalkingMapBoxProps>(
       properties: {},
     };
 
-    const startGeoJSON: Feature<Point, GeoJsonProperties> | null = path[0]
-      ? {
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [path[0].lng, path[0].lat] },
-          properties: {},
-        }
-      : null;
-
-    const endGeoJSON: Feature<Point, GeoJsonProperties> | null = path.length > 1
-      ? {
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [path.at(-1)!.lng, path.at(-1)!.lat] },
-          properties: {},
-        }
-      : null;
-
-    const currentGeoJSON: Feature<Point, GeoJsonProperties> | null = currentPosition
-      ? {
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [currentPosition.lng, currentPosition.lat] },
-          properties: {},
-        }
-      : null;
+    // 모든 포인트를 하나의 소스로 통합하여 렌더링 부하 감소
+    const pointsGeoJSON: FeatureCollection<Point, { type: string }> = {
+      type: "FeatureCollection" as const,
+      features: [
+        ...(path[0] ? [{
+          type: "Feature" as const,
+          geometry: { type: "Point" as const, coordinates: [path[0].lng, path[0].lat] },
+          properties: { type: "start" }
+        }] : []),
+        ...(path.length > 1 ? [{
+          type: "Feature" as const,
+          geometry: { type: "Point" as const, coordinates: [path[path.length-1].lng, path[path.length-1].lat] },
+          properties: { type: "end" }
+        }] : []),
+        ...(currentPosition ? [{
+          type: "Feature" as const,
+          geometry: { type: "Point" as const, coordinates: [currentPosition.lng, currentPosition.lat] },
+          properties: { type: "current" }
+        }] : [])
+      ]
+    };
 
     return (
-      <Map
-        ref={ref}
-        {...viewState}
-        onMove={e => setViewState(e.viewState)}
-        style={{
-          width: "100%",
-          height: "100%",
-          borderRadius: 24,
-          boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
-        }}
-        mapStyle={`https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_KEY}`}
-      >
-        {/* 1) 경로: outline + main, with rounded caps */}
-        {path.length > 1 && (
-          <Source id="route" type="geojson" data={pathGeoJSON}>
-            <Layer
-              id="route-outline"
-              type="line"
-              layout={{ "line-cap": "round" }}
-              paint={{ "line-color": "#fff", "line-width": 12 }}
-            />
-            <Layer
-              id="route-main"
-              type="line"
-              layout={{ "line-cap": "round" }}
-              paint={{ "line-color": "#fbb6b6", "line-width": 6 }}
-            />
-          </Source>
-        )}
+      <>
+        <Map
+          ref={ref}
+          {...viewState}
+          onMove={e => setViewState(e.viewState)}
+          style={{
+            width: "100%",
+            height: "100%",
+            borderRadius: 24,
+            boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+            visibility: "visible",
+            display: "block"
+          }}
+          mapStyle={mapStyle}
+        >
+          {/* 경로 라인 */}
+          {path.length > 1 && (
+            <Source id="route" type="geojson" data={pathGeoJSON}>
+              <Layer
+                id="route-main"
+                type="line"
+                layout={{ "line-cap": "round" }}
+                paint={{ 
+                  "line-color": "#ff5555", 
+                  "line-width": 4,
+                  "line-opacity": 0.9  // 고정 opacity
+                }}
+              />
+            </Source>
+          )}
 
-        {/* 2) 시작 지점 (초록): pulsing opacity */}
-        {startGeoJSON && (
-          <Source id="start-point" type="geojson" data={startGeoJSON}>
+          {/* 모든 포인트를 하나의 소스로 통합 */}
+          <Source id="points" type="geojson" data={pointsGeoJSON}>
+            {/* 시작 포인트 (녹색) */}
             <Layer
-              id="start-circle"
+              id="start-point"
               type="circle"
+              filter={["==", ["get", "type"], "start"]}
               paint={{
                 "circle-radius": 8,
                 "circle-color": "#22c55e",
-                "circle-opacity": blink ? 1 : 0.4,
+                "circle-opacity": getOpacity(0.9),
                 "circle-stroke-width": 2,
                 "circle-stroke-color": "#fff",
               }}
             />
-          </Source>
-        )}
-
-        {/* 3) 종료 지점 (빨강): pulsing opacity */}
-        {endGeoJSON && (
-          <Source id="end-point" type="geojson" data={endGeoJSON}>
+            
+            {/* 종료 포인트 (빨간색) */}
             <Layer
-              id="end-circle"
+              id="end-point"
               type="circle"
+              filter={["==", ["get", "type"], "end"]}
               paint={{
                 "circle-radius": 8,
                 "circle-color": "#ef4444",
-                "circle-opacity": blink ? 1 : 0.4,
+                "circle-opacity": getOpacity(0.9),
                 "circle-stroke-width": 2,
                 "circle-stroke-color": "#fff",
               }}
             />
-          </Source>
-        )}
-
-        {/* 4) 현재 위치 (파랑): pulsing ring + solid dot */}
-        {currentGeoJSON && (
-          <Source id="current-point" type="geojson" data={currentGeoJSON}>
+            
+            {/* 현재 위치 (파란색) */}
             <Layer
-              id="current-pulse"
+              id="current-point"
               type="circle"
-              paint={{
-                "circle-radius": blink ? 16 : 8,
-                "circle-color": "#2563eb",
-                "circle-opacity": blink ? 0.3 : 0,
-              }}
-            />
-            <Layer
-              id="current-circle"
-              type="circle"
+              filter={["==", ["get", "type"], "current"]}
               paint={{
                 "circle-radius": 6,
                 "circle-color": "#2563eb",
+                "circle-opacity": getOpacity(0.9),
                 "circle-stroke-width": 2,
                 "circle-stroke-color": "#fff",
               }}
             />
           </Source>
-        )}
-      </Map>
+        </Map>
+        
+        {/* 백업 캔버스 (숨김) - 경로 이미지 생성용 */}
+        <canvas 
+          ref={canvasRef} 
+          width="600" 
+          height="600" 
+          style={{ display: 'none', position: 'absolute', top: -9999 }}
+        />
+      </>
     );
   }
 );
