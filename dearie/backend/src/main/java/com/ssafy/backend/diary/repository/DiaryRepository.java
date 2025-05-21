@@ -25,8 +25,8 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
 
     @Query("SELECT d FROM Diary d " +
             "WHERE d.user = :user " +
-            "AND (:bookmark IS NULL OR d.bookmarked = :bookmark) " +
-            "AND (:keyword IS NULL OR d.content IS NULL OR CAST(d.content AS string) LIKE CONCAT('%', CAST(:keyword AS string), '%'))")
+            "AND (:keyword IS NULL OR d.content IS NULL OR CAST(d.content AS string) LIKE CONCAT('%', CAST(:keyword AS string), '%')) " +
+            "AND (:bookmark IS NOT TRUE OR d.bookmarked = TRUE)")
     Page<Diary> findFilteredDiaries(
             @Param("user") User user,
             @Param("bookmark") Boolean bookmark,
