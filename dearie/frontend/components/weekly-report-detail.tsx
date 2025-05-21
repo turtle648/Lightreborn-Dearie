@@ -9,8 +9,9 @@ import Link from "next/link"
 import { ChevronLeft, ChevronRight, Smile } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { AppLayout } from "@/components/app-layout"
-import { fetchReportSummary, ReportSummaryResponse, analyzeReport } from "@/apis/report-api"
-import { format, getWeek, startOfMonth } from "date-fns"
+import { fetchReportSummary, ReportSummaryResponse } from "@/apis/report-api"
+import { format, getWeek, startOfMonth, startOfWeek } from "date-fns"
+import { useUserStore } from "@/stores/user-store"
 
 const emotionEmojis: { [key: string]: string } = {
   기쁨: "😊",
@@ -22,6 +23,7 @@ const emotionEmojis: { [key: string]: string } = {
 const emotionOrder = ["기쁨", "슬픔", "분노", "불안", "평온"];
 
 export function WeeklyReportDetail() {
+  const { profile } = useUserStore();
   const [currentWeek, setCurrentWeek] = useState("")
   const [data, setData] = useState<ReportSummaryResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -42,15 +44,21 @@ export function WeeklyReportDetail() {
     const loadData = async () => {
       try {
         setLoading(true)
-        const userId = 1 // 일단 1로 유지
-        const currentDate = format(new Date(), 'yyyy-MM-dd')
-        // 항상 analyzeReport로 생성된 최신 리포트만 보여줌
-        const result = await analyzeReport(userId, currentDate)
+        const storedUserId = localStorage.getItem('userId')
+        if (!storedUserId || isNaN(Number(storedUserId))) {
+          setError("유효하지 않은 사용자 ID")
+          return
+        }
+        const userId = Number(storedUserId)
+        const monday = startOfWeek(new Date(), { weekStartsOn: 1 })
+        const weekStartDate = format(monday, "yyyy-MM-dd")
+        // 리포트는 항상 fetchReportSummary로만 조회
+        const result = await fetchReportSummary(userId, weekStartDate)
         setData(result)
         setError(null)
       } catch (err: any) {
         setError('데이터를 불러오는데 실패했습니다.')
-        console.error('Failed to analyze report summary:', err)
+        console.error('Failed to fetch report summary:', err)
       } finally {
         setLoading(false)
       }
@@ -84,7 +92,7 @@ export function WeeklyReportDetail() {
           transition={{ duration: 0.5 }}
           className="px-4 sm:px-0"
         >
-          <h1 className="text-2xl font-bold mb-6">{currentWeek} 감정 리포트</h1>
+          <h1 className="text-2xl font-bold mb-6">{profile?.name}님의 {currentWeek} 감정 리포트</h1>
           
           {loading ? (
             <Card className="border-none shadow-md mb-6">
@@ -176,7 +184,7 @@ export function WeeklyReportDetail() {
 
                   {/* 추천 활동 */}
                   <div className="mb-6">
-                    <h2 className="text-2xl font-bold mb-4 text-gray-900">추천 활동</h2>
+                    <h2 className="text-2xl font-bold mb-4 text-gray-900">{profile?.name}님을 위한 추천 활동</h2>
                     <div className="space-y-3">
                       {(data?.recommendations ?? ["5분 명상하기", "가벼운 산책하기", "감사 일기 쓰기"]).map((activity, index) => (
                         <motion.div
@@ -200,14 +208,19 @@ export function WeeklyReportDetail() {
                     </div>
                   </div>
 
-                  {data.needSurvey && (
+                  {/* 심리 상태 체크 안내 */}
+                  {(data.needSurvey ||
+                    data.emotionScores["분노"] >= 40 ||
+                    data.emotionScores["불안"] >= 40 ||
+                    data.emotionScores["슬픔"] >= 40 ||
+                    (data.emotionScores["분노"] + data.emotionScores["불안"] + data.emotionScores["슬픔"]) >= 50) && (
                     <div className="mt-6 p-6 rounded-xl bg-[#FFF5F5]/60 border border-[#FFDEDE] shadow-sm flex flex-col items-center text-center">
                       <div className="flex items-center mb-2">
                         <span className="text-xl mr-2">📋</span>
                         <span className="text-lg font-medium text-gray-900">심리 상태 체크 안내</span>
                       </div>
                       <p className="text-base text-gray-700 mb-4">
-                        최근 슬픔, 불안, 분노 감정이 조금 높게 나타났어요.
+                        최근 슬픔, 불안, 분노 감정이 높게 나타났어요.
                         <br />
                         <span className="font-medium text-gray-900">마음 건강을 위해 심리 상태를 체크해보세요.</span>
                       </p>

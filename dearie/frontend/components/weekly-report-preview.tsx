@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, ClipboardList } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
-import { fetchReportSummary, type ReportSummaryResponse, analyzeReport } from "@/apis/report-api"
-import { format } from "date-fns"
+import { fetchReportSummary, type ReportSummaryResponse } from "@/apis/report-api"
+import { format, startOfWeek } from "date-fns"
 
 // 감정별 이모지 매핑
 const emotionEmojis: { [key: string]: string } = {
@@ -25,39 +25,29 @@ export function WeeklyReportPreview() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true)
-      const storedUserId = localStorage.getItem('userId')
-      
-      // userId가 없는 경우만 체크
-      if (!storedUserId) {
-        console.error('사용자 ID가 없습니다')
-        setError("로그인이 필요합니다.")
-        return
-      }
-      
-      const userId = Number(storedUserId)  // 문자열을 숫자로 변환
-      const currentDate = format(new Date(), "yyyy-MM-dd")
-      console.log('리포트 생성:', { userId, currentDate, storedUserId })
-      
-      // 항상 analyzeReport로 생성된 최신 리포트만 보여줌
-      const result = await analyzeReport(userId, currentDate)
-      console.log('리포트 생성 결과:', result)
-      setData(result)
-      setError(null)
-    } catch (err: any) {
-      setError("데이터를 불러오는데 실패했습니다.")
-      console.error("Failed to analyze report summary:", err)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  // 컴포넌트 마운트 시에만 데이터 로드
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        const storedUserId = localStorage.getItem('userId')
+        if (!storedUserId) {
+          setError("로그인이 필요합니다.")
+          return
+        }
+        const userId = Number(storedUserId)
+        const monday = startOfWeek(new Date(), { weekStartsOn: 1 })
+        const weekStartDate = format(monday, "yyyy-MM-dd")
+        const result = await fetchReportSummary(userId, weekStartDate)
+        setData(result)
+        setError(null)
+      } catch (err: any) {
+        setError("데이터를 불러오는데 실패했습니다.")
+      } finally {
+        setLoading(false)
+      }
+    }
     loadData()
-  }, [loadData])
+  }, [])
 
   // 감정 높이 계산 함수 수정
   function getEmotionHeight(emotion: string, score: number) {
