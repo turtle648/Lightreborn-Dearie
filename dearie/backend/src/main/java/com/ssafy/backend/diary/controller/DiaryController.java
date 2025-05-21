@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequiredArgsConstructor
@@ -101,7 +102,12 @@ public class DiaryController {
             @PathVariable Long diaryId
     ) {
 
-        String result = diaryService.createAiComment(diaryId, userId);
+        String result;
+        try {
+            result = diaryService.createAiComment(diaryId, userId).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("AI 코멘트 생성 실패", e);
+        }
 
         return ResponseEntity.ok(BaseResponse.success(200, "AI 코멘트 생성 성공", result));
     }

@@ -6,12 +6,15 @@ import com.ssafy.backend.diary.model.dto.response.GetDiaryReportDTO;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
 import com.ssafy.backend.diary.model.entity.Diary;
 import com.ssafy.backend.diary.model.request.DiarySearchRequest;
 import com.ssafy.backend.diary.model.response.DiaryListResponse;
 import com.ssafy.backend.diary.model.response.EmotionWindowResponseDTO;
 import com.ssafy.backend.diary.model.response.GetDiaryDetailDto;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Mono;
 
 
 public interface DiaryService {
@@ -24,7 +27,7 @@ public interface DiaryService {
 
     Long createDiaryWithImages(String content, Diary.EmotionTag emotionTag, List<MultipartFile> images, String userId);
 
-    String createAiComment(Long DiaryId, String userId);
+    CompletableFuture<String> createAiComment(Long DiaryId, String userId);
 
     Integer deleteDiary(Long DiaryId, String userId);
 
