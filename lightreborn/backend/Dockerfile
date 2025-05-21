@@ -23,6 +23,8 @@ RUN apt update && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
+ENV FFMPEG_PATH=/usr/bin/ffmpeg
+
 COPY --from=build /app/build/libs/*.jar lightreborn-backend.jar
 
 EXPOSE 8081
