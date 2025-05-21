@@ -1,4 +1,4 @@
-# 1. 빌드
+# 1. 빌드 단계
 FROM openjdk:21-jdk-slim AS build
 
 WORKDIR /app
@@ -6,22 +6,23 @@ WORKDIR /app
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 COPY gradlew ./
-
-# 실행 권한 부여
 RUN chmod +x gradlew
 
 COPY . .
 RUN chmod +x gradlew
-
-# 의존성 설치
 RUN ./gradlew build -x test --no-daemon
 
-# 2. 실행 단계
-FROM openjdk:21-jdk
+# 2. 실행 단계 (FFmpeg 포함)
+FROM openjdk:21-jdk-slim
 
 WORKDIR /app
 
-# jar 이름 명확히 설정
+# FFmpeg 설치
+RUN apt update && \
+    apt install -y ffmpeg && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/build/libs/*.jar lightreborn-backend.jar
 
 EXPOSE 8081
