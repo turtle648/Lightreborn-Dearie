@@ -166,8 +166,8 @@ public class DiaryServiceImpl implements DiaryService {
         // 일기 조회 (날짜 검색 제외)
         Page<Diary> diaryPage = diaryRepository.findFilteredDiaries(
                 user,
-                request.getBookmark(),
-                keyword,  // null 또는 실제 검색어
+                Boolean.TRUE.equals(request.getBookmark()),
+                keyword,
                 pageable
         );
 

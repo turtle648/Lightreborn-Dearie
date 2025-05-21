@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { DiaryList } from "@/components/diary-list";
 import {
@@ -22,6 +22,101 @@ export default function DiaryPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [sortOrder, setSortOrder] = useState<"latest" | "oldest">("latest");
   const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [diaries, setDiaries] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const loader = useRef(null);
+  const isFirstLoad = useRef(true);
+
+  const fetchDiaries = useCallback(
+    async (reset: boolean = false) => {
+      if (loading) return;
+      setLoading(true);
+      try {
+        const currentPage = reset ? 0 : page;
+
+        const params = new URLSearchParams({
+          page: String(currentPage),
+          size: "10",
+          sort: sortOrder,
+          keyword: searchQuery || "",
+        });
+
+        if (bookmarkedOnly) {
+          params.append("bookmark", "true");
+        }
+
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/diaries?${params.toString()}`,
+          { credentials: "include" }
+        );
+
+        const data = await res.json();
+
+        if (res.ok) {
+          const newItems = data.result.result || [];
+
+          setDiaries((prev) => {
+            const existingIds = new Set(
+              reset ? [] : prev.map((d) => d.diaryId)
+            );
+            const filteredNewItems = newItems.filter(
+              (item: any) => !existingIds.has(item.diaryId)
+            );
+            return reset ? filteredNewItems : [...prev, ...filteredNewItems];
+          });
+
+          setHasMore(!data.result.last);
+          setPage(currentPage + 1);
+        } else {
+          setHasMore(false);
+        }
+      } catch (err) {
+        console.error("일기 불러오기 실패:", err);
+        setHasMore(false);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [sortOrder, searchQuery, bookmarkedOnly, page, loading]
+  );
+
+  useEffect(() => {
+    setDiaries([]);
+    setPage(0);
+    setHasMore(true);
+    isFirstLoad.current = true;
+  }, [sortOrder, searchQuery, bookmarkedOnly]);
+
+  useEffect(() => {
+    if (isFirstLoad.current) {
+      fetchDiaries(true);
+      isFirstLoad.current = false;
+    }
+  }, [fetchDiaries]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        if (firstEntry.isIntersecting && hasMore && !loading) {
+          fetchDiaries();
+        }
+      },
+      {
+        threshold: 0.5,
+        rootMargin: "100px",
+      }
+    );
+
+    const currentLoader = loader.current;
+    if (currentLoader) observer.observe(currentLoader);
+
+    return () => {
+      if (currentLoader) observer.unobserve(currentLoader);
+    };
+  }, [fetchDiaries, hasMore, loading]);
 
   return (
     <AppLayout>
@@ -112,11 +207,15 @@ export default function DiaryPage() {
           </div>
         </div>
 
-        <DiaryList
-          searchQuery={searchQuery}
-          sortOrder={sortOrder}
-          bookmarkedOnly={bookmarkedOnly}
-        />
+        <DiaryList diaries={diaries} loading={loading} />
+
+        <div
+          ref={loader}
+          className="h-10 mt-6 text-center text-sm text-gray-400"
+        >
+          {loading && "불러오는 중..."}
+          {!hasMore && "모든 일기를 불러왔습니다."}
+        </div>
       </div>
     </AppLayout>
   );
