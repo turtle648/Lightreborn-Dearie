@@ -30,7 +30,7 @@ public class GptClient {
         requestBody.put("messages", List.of(
                 Map.of("role", "user", "content", prompt)
         ));
-        requestBody.put("temperature", 0.7);
+        requestBody.put("temperature", 1.1);
 
         String response = webClient.post()
                 .bodyValue(requestBody)
