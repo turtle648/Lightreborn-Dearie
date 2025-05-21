@@ -274,6 +274,7 @@ public class YouthConsultationServiceImpl implements YouthConsultationService {
 
         counselingLogRepository.save(
                 CounselingLog.builder()
+                        .id(counselingLog.getId())
                         .user(user)
                         .clientKeyword(client)
                         .counselorKeyword(counselor)
