@@ -54,6 +54,17 @@ export const addPromotionNetworkDashboardData = async (data : {file : Blob, file
   return response.data;
 };
 
+// 홍보물 최신 정보 조회 
+export const getPromotionNetworkLatestData = async () => {
+  try {
+    const response = await api.get("/promotion-networks/promotion-latest-data");
+    return response.data;
+  } catch (error) {
+    console.error("getPromotionNetworkLatestData error : ", error);
+    throw new Error("getPromotionNetworkLatestData error 발생했습니다.");
+  }
+};
+
 
 
 
