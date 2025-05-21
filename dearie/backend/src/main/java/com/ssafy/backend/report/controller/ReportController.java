@@ -6,6 +6,7 @@ import com.ssafy.backend.report.service.ReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("my-reports")
@@ -29,8 +31,16 @@ public class ReportController {
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam("userId") Long userId
     ) {
-        DiaryAnalyzeResponseDTO response = reportService.analyzeAndSaveReport(userId, date);
-        return ResponseEntity.ok(response);
+        try {
+            DiaryAnalyzeResponseDTO response = reportService.analyzeAndSaveReportAsync(userId, date).get();
+            if (response == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("❌ 주간 리포트 분석 중 오류", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @Operation(summary = "주간 감정 리포트 조회", description = "저장된 리포트를 조회합니다.")

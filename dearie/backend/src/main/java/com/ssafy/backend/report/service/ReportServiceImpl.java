@@ -14,13 +14,16 @@ import com.ssafy.backend.report.model.entity.AnalysisReport;
 import com.ssafy.backend.report.repository.AnalysisReportRepository;
 import com.ssafy.backend.diary.repository.EmotionScoreRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReportServiceImpl implements ReportService {
@@ -32,51 +35,58 @@ public class ReportServiceImpl implements ReportService {
     private final EmotionScoreRepository emotionScoreRepository;
 
     @Override
-    public DiaryAnalyzeResponseDTO analyzeAndSaveReport(Long userId, LocalDate date) {
-    // 1. GPT 분석
-    List<GetDiaryReportDTO> diaries = diaryService.getDiariesOfWeek(userId, date);
-
-    // 일기가 없으면 리포트 생성하지 않고 404 에러 발생
-    if (diaries == null || diaries.isEmpty()) {
-        throw new ReportNotFoundException("최근 일주일간 작성한 일기가 없습니다.");
+    public CompletableFuture<DiaryAnalyzeResponseDTO> analyzeAndSaveReportAsync(Long userId, LocalDate date) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return analyzeAndSaveReport(userId, date);
+            } catch (Exception e) {
+                log.error("\u274c GPT \ub9ac\ud3ec\ud2b8 \ubd84\uc11d \uc624\ub958", e);
+                return null;
+            }
+        });
     }
-    
-    System.out.println("diaries: " + diaries);
-    String prompt = GptPromptUtil.makePrompt(diaries);
-    System.out.println("GPT Prompt: " + prompt);
-    GptResult result = gptClient.callGpt(prompt);
 
-    System.out.println("GPT summary: " + result.getSummary());
-    System.out.println("GPT comment: " + result.getComment());
-    System.out.println("GPT emotionScores: " + result.getEmotionScores());
+    public DiaryAnalyzeResponseDTO analyzeAndSaveReport(Long userId, LocalDate date) {
+        List<GetDiaryReportDTO> diaries = diaryService.getDiariesOfWeek(userId, date);
 
-    // 2. 감정 점수 저장 (diary 관계 설정)
-    EmotionScore emotionScore = EmotionScore.builder()
-            .joy(Double.valueOf(result.getEmotionScores().getOrDefault("기쁨", 0)))
-            .sadness(Double.valueOf(result.getEmotionScores().getOrDefault("슬픔", 0)))
-            .anger(Double.valueOf(result.getEmotionScores().getOrDefault("분노", 0)))
-            .anxiety(Double.valueOf(result.getEmotionScores().getOrDefault("불안", 0)))
-            .calm(Double.valueOf(result.getEmotionScores().getOrDefault("평온", 0)))
-            .build();
+        if (diaries == null || diaries.isEmpty()) {
+            throw new ReportNotFoundException("최근 일주일간 작성한 일기가 없습니다.");
+        }
 
-    // 2-1. 감정 점수 먼저 저장 (영속 객체로 반환)
-    emotionScore = emotionScoreRepository.save(emotionScore);
+        if (diaries.size() > 30) {
+            diaries = diaries.subList(0, 5);
+        }
 
-    // 3. 유저 조회
-    User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+        String prompt = GptPromptUtil.makePrompt(diaries);
+        GptResult result = gptClient.callGpt(prompt);
 
-    // 4. 리포트 저장 또는 업데이트
-    AnalysisReport report = analysisReportRepository.findByUserIdAndAnalysisWeekDate(userId, date.atStartOfDay())
-            .orElse(null);
+        log.info("diaries: {}", diaries);
+        log.info("GPT Prompt: {}", prompt);
+        log.info("GPT summary: {}", result.getSummary());
+        log.info("GPT comment: {}", result.getComment());
+        log.info("GPT emotionScores: {}", result.getEmotionScores());
 
-    if (report != null) {
-            // 기존 리포트가 있으면 덮어쓰기
+        EmotionScore emotionScore = EmotionScore.builder()
+                .joy(Double.valueOf(result.getEmotionScores().getOrDefault("기쁨", 0)))
+                .sadness(Double.valueOf(result.getEmotionScores().getOrDefault("슬픔", 0)))
+                .anger(Double.valueOf(result.getEmotionScores().getOrDefault("분노", 0)))
+                .anxiety(Double.valueOf(result.getEmotionScores().getOrDefault("불안", 0)))
+                .calm(Double.valueOf(result.getEmotionScores().getOrDefault("평온", 0)))
+                .build();
+
+        emotionScore = emotionScoreRepository.save(emotionScore);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        AnalysisReport report = analysisReportRepository.findByUserIdAndAnalysisWeekDate(userId, date.atStartOfDay())
+                .orElse(null);
+
+        if (report != null) {
             report.setComment(result.getComment());
             report.setEmotionScore(emotionScore);
             analysisReportRepository.save(report);
-    } else {
-            // 없으면 새로 생성
+        } else {
             AnalysisReport newReport = AnalysisReport.builder()
                     .analysisWeekDate(date.atStartOfDay())
                     .comment(result.getComment())
@@ -84,13 +94,13 @@ public class ReportServiceImpl implements ReportService {
                     .user(user)
                     .build();
             analysisReportRepository.save(newReport);
-    }
+        }
 
-    return DiaryAnalyzeResponseDTO.builder()
-            .summary(result.getSummary())
-            .comment(result.getComment())
-            .emotionScores(result.getEmotionScores())
-            .build();
+        return DiaryAnalyzeResponseDTO.builder()
+                .summary(result.getSummary())
+                .comment(result.getComment())
+                .emotionScores(result.getEmotionScores())
+                .build();
     }
 
     @Override

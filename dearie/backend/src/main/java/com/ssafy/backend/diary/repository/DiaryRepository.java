@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,6 +19,11 @@ import java.util.Optional;
 @Repository
 public interface DiaryRepository extends JpaRepository<Diary, Long> {
     List<Diary> findByUserIdAndCreatedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Diary d SET d.aiComment = :comment WHERE d.id = :id")
+    void updateAiComment(@Param("id") Long id, @Param("comment") String comment);
 
     @Modifying
     @Query("DELETE FROM Diary d WHERE d.id = :id AND d.user.loginId = :loginId")
