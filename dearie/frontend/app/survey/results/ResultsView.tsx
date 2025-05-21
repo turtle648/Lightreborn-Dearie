@@ -88,7 +88,7 @@ ${resultUrl}
     <div className="container mx-auto py-8 px-4 max-w-md min-h-screen flex flex-col">
       <div className="mb-8">
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push("/survey/intro")}
           className="flex items-center text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
