@@ -284,10 +284,10 @@ pipeline {
                         docker tag lightreborn-frontend lightreborn-frontend:stable
 
                         # build all
-                        docker build -t dearie-backend:stable .
-                        docker build -t lightreborn-backend:stable .
-                        docker build -t dearie-frontend:stable .
-                        docker build -t lightreborn-frontend:stable .
+                        # docker build -t dearie-backend:stable .
+                        # docker build -t lightreborn-backend:stable .
+                        # docker build -t dearie-frontend:stable .
+                        # docker build -t lightreborn-frontend:stable .
                     '''
                 }
             }

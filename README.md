@@ -1,3 +1,5 @@
+# README
+
 # **📌**목차
 
 ---
@@ -14,7 +16,7 @@
 
 ### **⌛프로젝트 기간**
 
-**2025.04.0 ~ 2025.05.22 (6주)**
+**2025.04.14  ~ 2025.05.22 (6주)**
 
 ## 📖 개요
 
@@ -23,9 +25,7 @@
 <aside>
 💡
 
-본 프로젝트는 **교통약자 빅데이터 솔루션 기업 [윌체어(WillChair)]**와 연계하여 진행되었으며,
-
-청년 복지 사각지대 해소를 위한 프로젝트 입니다.
+본 프로젝트는 **교통약자 빅데이터 솔루션 기업 [윌체어(WillChair)],** [**양산시 웅상종합사회복지관]**과 연계하여 진행되었으며, 청년 복지 사각지대 해소를 위한 프로젝트 입니다.
 
 </aside>
 
@@ -59,15 +59,26 @@
 
 ### 권유주(BE, Infra)
 
-- 
+- 협력기관 대시보드 RESTful API 개발
+- GPT 기반 AI 주간 리포트 RESTful API 개발
+- PWA 프론트엔드 초기 세팅
+- 주간 리포트 프론트엔드 개발
+- Docker 및 Certbot 기반 HTTPS 인프라 구축
 
 ### 김도원(BE, Infra)
 
-- 
+- Docker 컨테이너 및 Nginx관련 인프라 구축
+- 젠킨스 활용 자동화 배포
+- REST API 설계 및 구현
+- DB 설계 및 구현
 
 ### 김민수(FE)
 
-- 
+- Zustand Store 활용한 전역상태관리 시스템 구축
+- 네이버 지도 API, 지역 구분 GeoJson 데이터 활용 지도 컴포넌트 구현
+- rechart 통한 통계 데이터 시각화
+- 반응형 UI/UX 설계 및 구현
+- RESTful API 연동 및 데이터 처리 로직 구현
 
 ### 문영민(BE/Infra)
 
@@ -96,53 +107,53 @@
 - **데이터 시각화 대시보드**
     - **청년 인구 분포 비율 대시보드**
         
-        ![청년인구데이터.gif](attachment:66a8a44a-f03a-47be-af0b-ac521407a757:청년인구데이터.gif)
+        ![청년인구데이터.gif](%EC%B2%AD%EB%85%84%EC%9D%B8%EA%B5%AC%EB%8D%B0%EC%9D%B4%ED%84%B0.gif)
         
         - 각 행정동별 청년 인구 분포 비율 관련 정보를 시각화 하여 조회합니다.
     - **최적화 홍보 네트워크망 대시보드**
         
-        ![최적화 홍보 네트워크 대시보드 - Clipchamp로 제작.gif](attachment:40c7625c-2f6e-489c-9616-23569498ff45:최적화_홍보_네트워크_대시보드_-_Clipchamp로_제작.gif)
+        ![최적화 홍보 네트워크 대시보드 - Clipchamp로 제작.gif](%EC%B5%9C%EC%A0%81%ED%99%94_%ED%99%8D%EB%B3%B4_%EB%84%A4%ED%8A%B8%EC%9B%8C%ED%81%AC_%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
         
         - 각 행정동별 홍보물 관련 정보를 시각화 하여 조회합니다.
     - **협력기관 위치 최적화 대시보드**
         
-        ![협력기관 위치 대시보드 - Clipchamp로 제작.gif](attachment:ba6e37d9-fdea-433e-92ef-3da52a10a1f6:협력기관_위치_대시보드_-_Clipchamp로_제작.gif)
+        ![협력기관 위치 대시보드 - Clipchamp로 제작.gif](%ED%98%91%EB%A0%A5%EA%B8%B0%EA%B4%80_%EC%9C%84%EC%B9%98_%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
         
         - 각 행정동별 협력기관 관련 정보를 시각화 하여 조회합니다.
     - **대시보드 데이터 수정 및 입력**
         
-        ![각 대시보드의 최신 데이터 조회 및 입력 - Clipchamp로 제작.gif](attachment:bd3a21a5-a625-4251-af82-f32a6e221607:각_대시보드의_최신_데이터_조회_및_입력_-_Clipchamp로_제작.gif)
+        ![각 대시보드의 최신 데이터 조회 및 입력 - Clipchamp로 제작.gif](%EA%B0%81_%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C%EC%9D%98_%EC%B5%9C%EC%8B%A0_%EB%8D%B0%EC%9D%B4%ED%84%B0_%EC%A1%B0%ED%9A%8C_%EB%B0%8F_%EC%9E%85%EB%A0%A5_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
         
         - 각 대시보드에 나타나는 데이터는 관리자가 엑셀 파일을 이용하여 입력하거나 수정할 수 있습니다.
 - **은둔 고립 청년 상담 관리**
     - **상담 현황 대시보드**
         
-        ![누적 상담 현황 - Clipchamp로 제작.gif](attachment:608c265a-bfad-461d-b4d3-ba72492b80db:누적_상담_현황_-_Clipchamp로_제작.gif)
+        ![누적 상담 현황 - Clipchamp로 제작.gif](%EB%88%84%EC%A0%81_%EC%83%81%EB%8B%B4_%ED%98%84%ED%99%A9_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
         
         - 누적 상담 인원에 대한 데이터를 조회할 수 있습니다.
     - **상담 대상자 관리**
         
-        ![상담 대상자 관리 - Clipchamp로 제작.gif](attachment:eabf063f-d59e-436f-b866-79cf045778b2:상담_대상자_관리_-_Clipchamp로_제작.gif)
+        ![상담 대상자 관리 - Clipchamp로 제작.gif](%EC%83%81%EB%8B%B4_%EB%8C%80%EC%83%81%EC%9E%90_%EA%B4%80%EB%A6%AC_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
         
         - 각 상담 대상자의 은둔/고립 청년 선발 프로세스 단계 및 척도 설문에 대한 내용을 확인, 관리할 수 있습니다.
     - **상담 일정 관리**
         
-        ![상담 일정 관리 - Clipchamp로 제작.gif](attachment:60781696-8447-40fd-a87d-b6bb674d6c79:상담_일정_관리_-_Clipchamp로_제작.gif)
+        ![상담 일정 관리 - Clipchamp로 제작.gif](%EC%83%81%EB%8B%B4_%EC%9D%BC%EC%A0%95_%EA%B4%80%EB%A6%AC_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
         
         - 캘린더를 이용하여 상담 일정을 조회, 수정할 수 있습니다.
     - **상담 일정 추가**
         
-        ![상담 일정 추가 - Clipchamp로 제작.gif](attachment:fa5d0b61-c455-47c5-8743-4b67cb367ebc:상담_일정_추가_-_Clipchamp로_제작.gif)
+        ![상담 일정 추가 - Clipchamp로 제작.gif](%EC%83%81%EB%8B%B4_%EC%9D%BC%EC%A0%95_%EC%B6%94%EA%B0%80_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
         
         - 새로운 상담 일정을 추가할 수 있습니다.
     - **상담 일지 관리**
         
-        ![상담 일지 관리 - Clipchamp로 제작.gif](attachment:272e6bb8-8b8f-4950-a66a-393ca7bde58b:상담_일지_관리_-_Clipchamp로_제작.gif)
+        ![상담 일지 관리 - Clipchamp로 제작.gif](%EC%83%81%EB%8B%B4_%EC%9D%BC%EC%A7%80_%EA%B4%80%EB%A6%AC_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
         
         - 진행되었던 상담에 대한 상담일지를 확인할 수 있습니다.
     - **상담 일지 작성**
         
-        ![상담일지작상.gif](attachment:58d37393-8382-49c9-affb-c786b044dc11:상담일지작상.gif)
+        ![상담일지작상.gif](%EC%83%81%EB%8B%B4%EC%9D%BC%EC%A7%80%EC%9E%91%EC%83%81.gif)
         
         - 진행된 상담에 대한 상담 일지를, 오디오 파일을 이용하여 작성할 수 있습니다.
 
@@ -151,49 +162,49 @@
 - **데일리 미션**
     - **데일리 미션 조회**
         
-        ![홈 화면.gif](attachment:8641cd45-b356-4047-9076-efb51bdefae5:홈_화면.gif)
+        ![홈 화면.gif](%ED%99%88_%ED%99%94%EB%A9%B4.gif)
         
         - 매일 새롭게 제공되는 데일리 미션을 확인할 수 있습니다.
     - **글쓰기 미션**
         
-        ![글쓰기 미션.gif](attachment:cfd5341f-aa58-40c3-8248-7b61bb869e42:글쓰기_미션.gif)
+        ![글쓰기 미션.gif](%EA%B8%80%EC%93%B0%EA%B8%B0_%EB%AF%B8%EC%85%98.gif)
         
         - 해당 문항에 대한 짧은 답변을 입력하여 미션을 완료할 수 있습니다.
     - **노래 미션**
         
-        ![노래 미션.gif](attachment:238843e8-dee4-408f-a47d-0aef0b9db4df:노래_미션.gif)
+        ![노래 미션.gif](%EB%85%B8%EB%9E%98_%EB%AF%B8%EC%85%98.gif)
         
         - 오늘 들었던 노래를 입력하여 미션을 완료할 수 있습니다.
     - **산책 미션**
         
-        ![제목 없음.gif](attachment:51667db1-6d0a-42d4-9f5f-e535c6907b1e:제목_없음.gif)
+        ![제목 없음.gif](%E1%84%8C%E1%85%A6%E1%84%86%E1%85%A9%E1%86%A8_%E1%84%8B%E1%85%A5%E1%86%B9%E1%84%8B%E1%85%B3%E1%86%B7.gif)
         
         - 산책 과정을 기록해 경로를 저장할 수 있습니다.
     - **물체 인식 미션**
         
-        ![카페 미션.gif](attachment:4eb974f9-8aad-4099-8bb2-b3be17436f0f:카페_미션.gif)
+        ![카페 미션.gif](%EC%B9%B4%ED%8E%98_%EB%AF%B8%EC%85%98.gif)
         
         - 현재 사용자의 위/경도, 지도의 위/경도를 비교하여 카페에서 컵 사진을 업로드하여 미션을 완료할 수 있습니다
 - **일기**
     - **일기 작성**
         
-        ![일기 작성하기.gif](attachment:3e01814a-f4ac-490c-bfd5-5ee67098b30d:일기_작성하기.gif)
+        ![일기 작성하기.gif](%EC%9D%BC%EA%B8%B0_%EC%9E%91%EC%84%B1%ED%95%98%EA%B8%B0.gif)
         
         - 일기를 작성하고, 일기 내용에 대한 **AI의 코멘트**를 확인할 수 있습니다.
     - **일기 조회**
         
-        ![일기 조회 및 상세보기.gif](attachment:caed7d93-b2aa-4706-887d-1852bffe039f:일기_조회_및_상세보기.gif)
+        ![일기 조회 및 상세보기.gif](%EC%9D%BC%EA%B8%B0_%EC%A1%B0%ED%9A%8C_%EB%B0%8F_%EC%83%81%EC%84%B8%EB%B3%B4%EA%B8%B0.gif)
         
         - 작성된 일기를 검색/정렬/북마크 추가 여부로 조회할 수 있습니다.
 - **일기 기반 감정 분석 리포트**
     - **감정 분석 리포트 조회**
         
-        ![감정리포트 조회.gif](attachment:ff7fbc30-5c0b-4fd0-a984-8299ddf67230:감정리포트_조회.gif)
+        ![감정리포트 조회.gif](%EA%B0%90%EC%A0%95%EB%A6%AC%ED%8F%AC%ED%8A%B8_%EC%A1%B0%ED%9A%8C.gif)
         
         - 마이페이지 화면에서 이번 주에 작성된 일기를 바탕으로, **감정을 분석**하고 감정에 따라 어떤 활동을 하면 좋을지 추천받을 수 있습니다.
 - **설문조사 진행**
     
-    ![제목 없음.gif](attachment:531b56e7-6bee-4c09-947a-ea444184f9bd:제목_없음.gif)
+    ![제목 없음.gif](%E1%84%8C%E1%85%A6%E1%84%86%E1%85%A9%E1%86%A8_%E1%84%8B%E1%85%A5%E1%86%B9%E1%84%8B%E1%85%B3%E1%86%B7%201.gif)
     
     - 고립/은둔 청년 자가척도 설문 조사를 통해 위험지수가 높은 청년들은 복지관 상담과 연계될 수 있습니다.
 
@@ -303,7 +314,7 @@
 | **Mattermost** | CI/CD 알림 전달용 (Webhook) |
 - **구성요소**
 
-### **협업툴**
+### **협업 툴**
 
 - **GitLab**
     - 프로젝트의 코드 및 문서를 관리하고, **Git Flow 전략**을 기반으로 효율적인 버전 관리와 협업을 수행
@@ -330,24 +341,74 @@
 - **와이어 프레임**
     - **다시 빛(대시보드)**
         
-        ![image.png](attachment:7d887481-c7d1-4d39-ab3e-9e343ab40db7:image.png)
+        ![image.png](image.png)
         
     - **디어리(미션/ 일기 기반 자기관리 서비스)**
         
-        ![image.png](attachment:dad246e5-d330-4af0-a622-0f6efc276d76:image.png)
+        ![image.png](image%201.png)
         
 
 ### 3. 아키텍처
+
+![아키텍처.png](%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98.png)
 
 ### 4. ERD
 
 - **다시 빛**
     
-    ![image.png](attachment:b7c5c913-7d9c-4971-80e9-77b2d21079ee:image.png)
+    ![image.png](image%202.png)
     
 - **디어리**
     
-    ![image.png](attachment:319b5e00-516f-41f7-9ac2-c061273e2ad2:image.png)
+    ![image.png](image%203.png)
     
 
 ### 5. API 명세서
+
+- **다시 빛**
+    
+    ![image.png](image%204.png)
+    
+    ![image.png](image%205.png)
+    
+    ![image.png](image%206.png)
+    
+    ![image.png](image%207.png)
+    
+    ![image.png](image%208.png)
+    
+    ![image.png](image%209.png)
+    
+    ![image.png](image%2010.png)
+    
+    ![image.png](image%2011.png)
+    
+    ![image.png](image%2012.png)
+    
+    ![image.png](image%2013.png)
+    
+    ![image.png](image%2014.png)
+    
+    ![image.png](image%2015.png)
+    
+    ![image.png](image%2016.png)
+    
+    ![image.png](image%2017.png)
+    
+- **디어리**
+    
+    ![image.png](image%2018.png)
+    
+    ![image.png](image%2019.png)
+    
+    ![image.png](image%2020.png)
+    
+    ![image.png](image%2021.png)
+    
+    ![image.png](image%2022.png)
+    
+    ![image.png](image%2023.png)
+    
+    ![image.png](image%2024.png)
+    
+    ![image.png](image%2025.png)
