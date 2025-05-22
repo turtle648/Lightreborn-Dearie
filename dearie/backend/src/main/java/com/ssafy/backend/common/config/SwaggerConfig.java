@@ -29,7 +29,7 @@ public class SwaggerConfig {
                 .components(new io.swagger.v3.oas.models.Components()
                         .addSecuritySchemes(SECURITY_SCHEMA_NAME,
                                 new SecurityScheme()
-                                        .name("access_token")
+                                        .name("dearie_access_token")
                                         .type(SecurityScheme.Type.APIKEY)
                                         .in(SecurityScheme.In.COOKIE)
                         ));

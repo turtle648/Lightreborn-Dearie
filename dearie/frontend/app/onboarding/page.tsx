@@ -68,6 +68,7 @@ export default function OnboardingPage() {
               alt={slides[currentSlide].title}
               fill
               className="object-contain"
+              loading="eager"
             />
           </div>
 

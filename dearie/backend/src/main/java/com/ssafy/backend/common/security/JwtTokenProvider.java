@@ -48,7 +48,7 @@ public class JwtTokenProvider {
     public ResponseCookie generateTokenCookie(String jwtToken) {
         boolean isDev = activeProfile.equals("local");
 
-        return ResponseCookie.from("access_token", jwtToken)
+        return ResponseCookie.from("dearie_access_token", jwtToken)
                 .httpOnly(true)
                 .secure(false)
 //                .secure(!isDev ? true : false)
@@ -66,7 +66,7 @@ public class JwtTokenProvider {
         String blacklistKey = "blacklist:" + DigestUtils.sha256Hex(jwtToken);
         redisTemplate.opsForValue().set(blacklistKey, "logout", remainTime, TimeUnit.MILLISECONDS);
 
-        return ResponseCookie.from("access_token", jwtToken)
+        return ResponseCookie.from("dearie_access_token", jwtToken)
                 .httpOnly(true)
                 .secure(!isDev)
                 .path("/")
@@ -79,7 +79,7 @@ public class JwtTokenProvider {
         if(request.getCookies() == null) return null;
 
         for(Cookie cookie: request.getCookies()) {
-            if("access_token".equals(cookie.getName())) {
+            if("dearie_access_token".equals(cookie.getName())) {
                 return cookie.getValue();
             }
         }

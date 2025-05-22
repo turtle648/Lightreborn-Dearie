@@ -43,7 +43,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<BaseResponse<String>> logout(@CookieValue(name = "access_token", required = false) String token) {
+    public ResponseEntity<BaseResponse<String>> logout(@CookieValue(name = "dearie_access_token", required = false) String token) {
         ResponseCookie cookie = provider.expiredTokenCookie(token);
 
         return ResponseEntity.ok()
