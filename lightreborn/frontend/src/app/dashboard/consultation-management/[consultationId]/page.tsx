@@ -24,6 +24,9 @@ export default function ConsultationPage() {
   const [error, setError] = useState<string | null>(null);
   const { consultationDetail, getConsultationDetail } = useYouthConsultationStore();
 
+  console.log("isLoading : ", isLoading)
+  console.log("error : ", error)
+
   useEffect(() => {
     const fetchConsultationDetail = async () => {
       try {
@@ -53,7 +56,7 @@ export default function ConsultationPage() {
     };
   
     fetchConsultationDetail();
-  }, [consultationId, getConsultationDetail, isLoading, error]);
+  }, [consultationId, getConsultationDetail, router]);
 
   // 상담 데이터 (실제로는 API 호출로 가져올 데이터)
   const consultationData = {
