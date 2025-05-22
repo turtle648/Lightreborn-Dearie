@@ -1,18 +1,14 @@
-# README
+# 📌목차
 
-# **📌**목차
 
----
-
-1. [서비스 소개](https://github.com/soyeonnnb/dallim#-%EC%86%8C%EA%B0%9C)
-2. [팀 구성](https://github.com/soyeonnnb/dallim#-%ED%8C%80-%EA%B5%AC%EC%84%B1)
-3. [주요 기능](https://github.com/soyeonnnb/dallim#-%EC%A3%BC%EC%9A%94-%EA%B8%B0%EB%8A%A5)
-4. [주요 기술](https://github.com/soyeonnnb/dallim#-%EC%A3%BC%EC%9A%94-%EA%B8%B0%EC%88%A0)
-5. [산출물](https://github.com/soyeonnnb/dallim#-%EC%82%B0%EC%B6%9C%EB%AC%BC) (최종발표자료, 아키텍쳐, 디자인, 요구사항 명세서, ERD, API 명세서)
+1. [서비스 소개](#서비스-소개)
+2. [팀 구성](#팀-구성)
+3. [주요 기능](#주요-기능)
+4. [주요 기술](#주요-기술)
+5. [프로젝트 산출물](#프로젝트-산출물) (최종발표자료, 아키텍쳐, 디자인, 요구사항 명세서, ERD, API 명세서)
 
 # **🌱서비스 소개**
 
----
 
 ### **⌛프로젝트 기간**
 
@@ -22,40 +18,30 @@
 
 **SSAFY 12기 2학기 자율 프로젝트 - 기업연계**
 
-<aside>
-💡
 
-본 프로젝트는 **교통약자 빅데이터 솔루션 기업 [윌체어(WillChair)],** [**양산시 웅상종합사회복지관]**과 연계하여 진행되었으며, 청년 복지 사각지대 해소를 위한 프로젝트 입니다.
+> 본 프로젝트는 **교통약자 빅데이터 솔루션 기업 [윌체어(WillChair)], [양산시 웅상종합사회복지관]** 과 연계하여 진행되었으며,
+> 
+> 청년 복지 사각지대 해소를 위한 프로젝트 입니다.
+
 
 </aside>
 
 **다시 빛 / 디어리**는 고립·은둔 청년 문제를 해결하기 위해 기획된 **데이터 기반 통합 관리 플랫폼**입니다.
 
 - **다시 빛**: 지자체 및 기관을 위한 **시군구·행정동 단위 대시보드**로, 청년 인구 분포와 고립 지표, 홍보물 및 협력기관 현황, 상담 데이터 등을 **지도·차트 기반으로 시각화**하여 정책적 개입을 지원합니다.
-- **디어리**: 고립 청년 본인을 위한 **자가관리 어플리케이션**으로, 감정 일기와 미션 기록을 통해
+- **디어리**: 고립 청년 본인을 위한 **자가관리 어플리케이션**으로, 감정 일기와 미션 기록을 통해 **AI 기반 감정 피드백, 감정 점수 산정**, 맞춤형 회복 행동 추천 및 주간 리포트를 제공합니다.
     
-    **AI 기반 감정 피드백, 감정 점수 산정**, 맞춤형 회복 행동 추천 및 주간 리포트를 제공합니다.
-    
+최근 심각한 사회문제로 대두되고 있는 **은둔·고립 청년 문제**에 대해, 본 서비스는 **데이터 기반 조기 발굴 → 개입 → 자가 회복 → 재고립 방지**까지 이어지는 **전주기적 복지 개입 체계**를 구축함으로써, **실질적 사회적 효과와 행정 효율성**을 함께 기대할 수 있습니다.
 
----
-
-최근 심각한 사회문제로 대두되고 있는 **은둔·고립 청년 문제**에 대해, 본 서비스는 
-
-**데이터 기반 조기 발굴 → 개입 → 자가 회복 → 재고립 방지**까지 이어지는
-
-**전주기적 복지 개입 체계**를 구축함으로써, **실질적 사회적 효과와 행정 효율성**을 함께 기대할 수 있습니다.
-
----
 
 > **"정성 데이터를 정량화하고, 감정 기록을 회복의 시작점으로."**
-> 
-> 
+>
 > 다시 빛과 디어리는 청년 복지의 새로운 패러다임을 제안합니다.
-> 
+
+
 
 # 👥팀 구성
 
----
 
 ### 권유주(BE, Infra)
 
@@ -80,163 +66,173 @@
 - 반응형 UI/UX 설계 및 구현
 - RESTful API 연동 및 데이터 처리 로직 구현
 
-### 문영민(BE/Infra)
+### 문영민(BE, Infra)
 
 - 젠킨스 활용 자동화 배포
 - 도커 컨테이너 활용
 - 미션 조회와 수행 API, 프론트 개발
 - 대시보드 API 개발
 
-### 조원주(BE, Infra, AI)
+### 조원주(BE, AI)
 
-- 
+- Yolo를 통한 이미지에서 객체 감지 기능 개발
+- xlsx, csv 파일을 통한 DB 자동화
+- 카카오 API와 AI를 통한 미션 검증 개발
+- 청년 상담 관련 REST API 구현
 
-### 조희진(BE, Infra)
+### 조희진(BE)
 
 - 사용자 인증 로직
 - 설문 관련 API 구현 (앱/대시보드)
 - 설문 데이터 연동
 - 음성을 통한 상담일지 자동 작성 기능
 
+
+
 # 🚀주요 기능
 
----
 
 ### 🖥️ 다시 빛
 
-- **데이터 시각화 대시보드**
-    - **청년 인구 분포 비율 대시보드**
-        
-        ![청년인구데이터.gif](%EC%B2%AD%EB%85%84%EC%9D%B8%EA%B5%AC%EB%8D%B0%EC%9D%B4%ED%84%B0.gif)
-        
-        - 각 행정동별 청년 인구 분포 비율 관련 정보를 시각화 하여 조회합니다.
-    - **최적화 홍보 네트워크망 대시보드**
-        
-        ![최적화 홍보 네트워크 대시보드 - Clipchamp로 제작.gif](%EC%B5%9C%EC%A0%81%ED%99%94_%ED%99%8D%EB%B3%B4_%EB%84%A4%ED%8A%B8%EC%9B%8C%ED%81%AC_%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
-        
-        - 각 행정동별 홍보물 관련 정보를 시각화 하여 조회합니다.
-    - **협력기관 위치 최적화 대시보드**
-        
-        ![협력기관 위치 대시보드 - Clipchamp로 제작.gif](%ED%98%91%EB%A0%A5%EA%B8%B0%EA%B4%80_%EC%9C%84%EC%B9%98_%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
-        
-        - 각 행정동별 협력기관 관련 정보를 시각화 하여 조회합니다.
-    - **대시보드 데이터 수정 및 입력**
-        
-        ![각 대시보드의 최신 데이터 조회 및 입력 - Clipchamp로 제작.gif](%EA%B0%81_%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C%EC%9D%98_%EC%B5%9C%EC%8B%A0_%EB%8D%B0%EC%9D%B4%ED%84%B0_%EC%A1%B0%ED%9A%8C_%EB%B0%8F_%EC%9E%85%EB%A0%A5_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
-        
-        - 각 대시보드에 나타나는 데이터는 관리자가 엑셀 파일을 이용하여 입력하거나 수정할 수 있습니다.
-- **은둔 고립 청년 상담 관리**
-    - **상담 현황 대시보드**
-        
-        ![누적 상담 현황 - Clipchamp로 제작.gif](%EB%88%84%EC%A0%81_%EC%83%81%EB%8B%B4_%ED%98%84%ED%99%A9_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
-        
-        - 누적 상담 인원에 대한 데이터를 조회할 수 있습니다.
-    - **상담 대상자 관리**
-        
-        ![상담 대상자 관리 - Clipchamp로 제작.gif](%EC%83%81%EB%8B%B4_%EB%8C%80%EC%83%81%EC%9E%90_%EA%B4%80%EB%A6%AC_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
-        
-        - 각 상담 대상자의 은둔/고립 청년 선발 프로세스 단계 및 척도 설문에 대한 내용을 확인, 관리할 수 있습니다.
-    - **상담 일정 관리**
-        
-        ![상담 일정 관리 - Clipchamp로 제작.gif](%EC%83%81%EB%8B%B4_%EC%9D%BC%EC%A0%95_%EA%B4%80%EB%A6%AC_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
-        
-        - 캘린더를 이용하여 상담 일정을 조회, 수정할 수 있습니다.
-    - **상담 일정 추가**
-        
-        ![상담 일정 추가 - Clipchamp로 제작.gif](%EC%83%81%EB%8B%B4_%EC%9D%BC%EC%A0%95_%EC%B6%94%EA%B0%80_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
-        
-        - 새로운 상담 일정을 추가할 수 있습니다.
-    - **상담 일지 관리**
-        
-        ![상담 일지 관리 - Clipchamp로 제작.gif](%EC%83%81%EB%8B%B4_%EC%9D%BC%EC%A7%80_%EA%B4%80%EB%A6%AC_-_Clipchamp%EB%A1%9C_%EC%A0%9C%EC%9E%91.gif)
-        
-        - 진행되었던 상담에 대한 상담일지를 확인할 수 있습니다.
-    - **상담 일지 작성**
-        
-        ![상담일지작상.gif](%EC%83%81%EB%8B%B4%EC%9D%BC%EC%A7%80%EC%9E%91%EC%83%81.gif)
-        
-        - 진행된 상담에 대한 상담 일지를, 오디오 파일을 이용하여 작성할 수 있습니다.
+<details>
+<summary>📊 데이터 시각화 대시보드</summary>
+
+- **청년 인구 분포 비율 대시보드**  
+  <img src="readme_contents/청년인구데이터.gif" width="600"/>  
+  → 각 행정동별 청년 인구 분포 비율 관련 정보를 시각화 하여 조회합니다.
+
+- **최적화 홍보 네트워크망 대시보드**  
+  <img src="readme_contents/최적화_홍보_네트워크_대시보드_-_Clipchamp로_제작.gif" width="600"/>  
+  → 각 행정동별 홍보물 관련 정보를 시각화 하여 조회합니다.
+
+- **협력기관 위치 최적화 대시보드**  
+  <img src="readme_contents/협력기관_위치_대시보드_-_Clipchamp로_제작.gif" width="600"/>  
+  → 각 행정동별 협력기관 관련 정보를 시각화 하여 조회합니다.
+
+- **대시보드 데이터 수정 및 입력**  
+  <img src="readme_contents/각_대시보드의_최신_데이터_조회_및_입력_-_Clipchamp로_제작.gif" width="600"/>  
+  → 관리자가 엑셀 파일을 이용하여 데이터를 입력하거나 수정할 수 있습니다.
+
+</details>
+
+<details>
+<summary>🗂️ 은둔 고립 청년 상담 관리</summary>
+
+- **상담 현황 대시보드**  
+  <img src="readme_contents/누적_상담_현황_-_Clipchamp로_제작.gif" width="600"/>  
+  → 누적 상담 인원에 대한 데이터를 조회할 수 있습니다.
+
+- **상담 대상자 관리**  
+  <img src="readme_contents/상담_대상자_관리_-_Clipchamp로_제작.gif" width="600"/>  
+  → 은둔/고립 청년 선발 단계 및 척도 설문을 확인하고 관리할 수 있습니다.
+
+- **상담 일정 관리**  
+  <img src="readme_contents/상담_일정_관리_-_Clipchamp로_제작.gif" width="600"/>  
+  → 캘린더 기반 상담 일정 조회 및 수정
+
+- **상담 일정 추가**  
+  <img src="readme_contents/상담_일정_추가_-_Clipchamp로_제작.gif" width="600"/>  
+  → 새로운 상담 일정을 추가할 수 있습니다.
+
+- **상담 일지 관리**  
+  <img src="readme_contents/상담_일지_관리_-_Clipchamp로_제작.gif" width="600"/>  
+  → 상담에 대한 일지 내용 열람
+
+- **상담 일지 작성 (음성 기반)**  
+  <img src="readme_contents/상담일지작상.gif" width="600"/>  
+  → 오디오 파일 업로드 기반으로 상담 일지 작성 가능
+
+</details>
+
 
 ### 📓 Dearie
 
-- **데일리 미션**
-    - **데일리 미션 조회**
-        
-        ![홈 화면.gif](%ED%99%88_%ED%99%94%EB%A9%B4.gif)
-        
-        - 매일 새롭게 제공되는 데일리 미션을 확인할 수 있습니다.
-    - **글쓰기 미션**
-        
-        ![글쓰기 미션.gif](%EA%B8%80%EC%93%B0%EA%B8%B0_%EB%AF%B8%EC%85%98.gif)
-        
-        - 해당 문항에 대한 짧은 답변을 입력하여 미션을 완료할 수 있습니다.
-    - **노래 미션**
-        
-        ![노래 미션.gif](%EB%85%B8%EB%9E%98_%EB%AF%B8%EC%85%98.gif)
-        
-        - 오늘 들었던 노래를 입력하여 미션을 완료할 수 있습니다.
-    - **산책 미션**
-        
-        ![제목 없음.gif](%E1%84%8C%E1%85%A6%E1%84%86%E1%85%A9%E1%86%A8_%E1%84%8B%E1%85%A5%E1%86%B9%E1%84%8B%E1%85%B3%E1%86%B7.gif)
-        
-        - 산책 과정을 기록해 경로를 저장할 수 있습니다.
-    - **물체 인식 미션**
-        
-        ![카페 미션.gif](%EC%B9%B4%ED%8E%98_%EB%AF%B8%EC%85%98.gif)
-        
-        - 현재 사용자의 위/경도, 지도의 위/경도를 비교하여 카페에서 컵 사진을 업로드하여 미션을 완료할 수 있습니다
-- **일기**
-    - **일기 작성**
-        
-        ![일기 작성하기.gif](%EC%9D%BC%EA%B8%B0_%EC%9E%91%EC%84%B1%ED%95%98%EA%B8%B0.gif)
-        
-        - 일기를 작성하고, 일기 내용에 대한 **AI의 코멘트**를 확인할 수 있습니다.
-    - **일기 조회**
-        
-        ![일기 조회 및 상세보기.gif](%EC%9D%BC%EA%B8%B0_%EC%A1%B0%ED%9A%8C_%EB%B0%8F_%EC%83%81%EC%84%B8%EB%B3%B4%EA%B8%B0.gif)
-        
-        - 작성된 일기를 검색/정렬/북마크 추가 여부로 조회할 수 있습니다.
-- **일기 기반 감정 분석 리포트**
-    - **감정 분석 리포트 조회**
-        
-        ![감정리포트 조회.gif](%EA%B0%90%EC%A0%95%EB%A6%AC%ED%8F%AC%ED%8A%B8_%EC%A1%B0%ED%9A%8C.gif)
-        
-        - 마이페이지 화면에서 이번 주에 작성된 일기를 바탕으로, **감정을 분석**하고 감정에 따라 어떤 활동을 하면 좋을지 추천받을 수 있습니다.
-- **설문조사 진행**
-    
-    ![제목 없음.gif](%E1%84%8C%E1%85%A6%E1%84%86%E1%85%A9%E1%86%A8_%E1%84%8B%E1%85%A5%E1%86%B9%E1%84%8B%E1%85%B3%E1%86%B7%201.gif)
-    
-    - 고립/은둔 청년 자가척도 설문 조사를 통해 위험지수가 높은 청년들은 복지관 상담과 연계될 수 있습니다.
+<details>
+<summary>🎯 데일리 미션</summary>
 
-# 🛠️ 주요 기술
+- **데일리 미션 조회**  
+  <img src="readme_contents/홈_화면.gif" width="300"/>  
+  → 매일 새롭게 제공되는 데일리 미션을 확인할 수 있습니다.
 
----
+- **글쓰기 미션**  
+  <img src="readme_contents/글쓰기_미션.gif" width="300"/>  
+  → 해당 문항에 대한 짧은 답변을 입력하여 미션을 완료할 수 있습니다.
+
+- **노래 미션**  
+  <img src="readme_contents/노래_미션.gif" width="300"/>  
+  → 오늘 들었던 노래를 입력하여 미션을 완료할 수 있습니다.
+
+- **산책 미션**  
+  <img src="readme_contents/산책미션.gif" width="300"/>  
+  → 산책 과정을 기록해 경로를 저장할 수 있습니다.
+
+- **물체 인식 미션**  
+  <img src="readme_contents/카페_미션.gif" width="300"/>  
+  → 위/경도 기반 위치 비교 후 컵 사진 업로드로 미션 완료
+
+</details>
+
+<details>
+<summary>📘 일기</summary>
+
+- **일기 작성**  
+  <img src="readme_contents/일기_작성하기.gif" width="300"/>  
+  → 일기를 작성하고, AI의 코멘트를 확인할 수 있습니다.
+
+- **일기 조회**  
+  <img src="readme_contents/일기_조회_및_상세보기.gif" width="300"/>  
+  → 북마크/정렬/검색 기능을 활용한 일기 관리
+
+</details>
+
+<details>
+<summary>📊 감정 분석 리포트</summary>
+
+- **감정 분석 리포트 조회**  
+  <img src="readme_contents/감정리포트_조회.gif" width="300"/>  
+  → 최근 일기 내용을 바탕으로 감정 점수화 및 회복 미션 추천
+
+</details>
+
+<details>
+<summary>📝 설문조사 진행</summary>
+
+- **자가 척도 설문**  
+  <img src="readme_contents/설문조사.gif" width="300"/>  
+  → 고립/은둔 위험도 측정을 위한 설문 진행 후 상담 연계
+
+</details>
+
+
+
+## 🛠️ 주요 기술
+
 
 ### **Back-End**
 
 - **Spring Boot 3.4.5 (Java 21)**
     - RESTful API 서버 개발
     - Spring MVC 기반 계층 구조 설계 (Controller - Service - Repository)
-    - `디어리`와 `다시빛` 서비스를 **도메인 단위로 분리**하여, 각각의 컨트롤러/서비스/레포지토리를 독립적으로 관리.
-    - `@Transactional`을 활용한 트랜잭션 처리
+    - 디어리와 다시빛 서비스를 **도메인 단위로 분리**하여, 각각의 컨트롤러/서비스/레포지토리를 독립적으로 관리.
+    - @Transactional을 활용한 트랜잭션 처리
 - **Spring Data JPA**
     - PostgreSQL 기반 데이터 처리
     - Entity 매핑 및 복잡한 쿼리는 QueryDSL 또는 JPQL로 구현
-    - 페이징 처리 (`Pageable`) 및 동적 조건 검색 구현
+    - 페이징 처리 (Pageable) 및 동적 조건 검색 구현
 - **PostgreSQL**
     - 모든 핵심 데이터 저장: 유저, 상담 로그, 감정 리포트, 미션 상태 등
     - JPA 기반으로 엔티티 간 관계를 명확히 설계 → 무결성 유지
 - **데이터 업로드 처리**
-    - **Apache POI (XSSF)**: `.xlsx` , `.docx` 기반 행정청 데이터 업로드
-    - **OpenCSV**: `.csv` 형식 지원 → Spring에서 자동 파싱 후 DTO 매핑 및 정합성 검증
+    - **Apache POI (XSSF)**: .xlsx , .docx 기반 행정청 데이터 업로드
+    - **OpenCSV**: .csv 형식 지원 → Spring에서 자동 파싱 후 DTO 매핑 및 정합성 검증
 - **파일 업로드 (Multipart 처리)**
-    - 상담 음성, 활동 인증 이미지, 엑셀 리포트 등 **모든 미디어 업로드는 `MultipartResolver`를 통해 처리**.
+    - 상담 음성, 활동 인증 이미지, 엑셀 리포트 등 **모든 미디어 업로드는 MultipartResolver를 통해 처리**.
     - S3에 저장된 후 URL을 DB에 저장하여 접근 관리.
 - **Spring Security + JWT (jjwt)**
     - 로그인 유저 인증을 위한 JWT 기반 인증/인가 구현.
     - 사용자 ID 추출을 통해 요청자 정보 기반의 데이터 필터링
 - **Validation 및 예외 처리**
-    - Spring `@Valid`, `@Validated`를 활용한 입력값 검증
+    - Spring @Valid, @Validated를 활용한 입력값 검증
     - Global Exception Handler를 통해 통합 에러 응답 포맷 구성
 - **Flyway**
     - MySQL 마이그레이션 툴로 스키마 및 초기 데이터 관리
@@ -246,18 +242,18 @@
 - **Kafka 기반 분산 환경 데이터 전송 지원**
     - 앱에서 설문을 진행하고 전송을 하게 되면, 자동으로 이를 대시보드에 저장됨
 - **이미지 검증 서비스**
-    - `ImageVerifier` 인터페이스를 중심으로, **미션 유형별 검증 로직 구성**
-        - `FlowerImageVerifier`, `CafeImageVerifier`, `ParkImageVerifier`, `WalkImageVerifier` 등으로 분리
-    - `ImageVerificationService`에서 요청 이미지에 대해 YOLO 기반 객체 감지 수행
+    - ImageVerifier 인터페이스를 중심으로, **미션 유형별 검증 로직 구성**
+        - FlowerImageVerifier, CafeImageVerifier, ParkImageVerifier, WalkImageVerifier 등으로 분리
+    - ImageVerificationService에서 요청 이미지에 대해 YOLO 기반 객체 감지 수행
 - **위치 기반 장소 검증**
-    - `GeoSearchService` 구현을 통해 사용자 GPS 좌표 기반으로 카카오 지역 검색 API 호출
+    - GeoSearchService 구현을 통해 사용자 GPS 좌표 기반으로 카카오 지역 검색 API 호출
 
 ### **Front-End**
 
 - **Next.js 15 (with TypeScript)**
     - App Router 기반 프로젝트 구조
     - SSR 및 SSG 혼합으로 빠른 렌더링과 SEO 대응.
-    - `디어리`, `다시빛` 각기 다른 UI/UX 흐름을 라우팅 구조로 분리.
+    - 디어리, 다시빛 각기 다른 UI/UX 흐름을 라우팅 구조로 분리.
 - **Tailwind CSS + Radix UI**
     - 유틸리티 기반 CSS 프레임워크 사용
     - Radix UI를 활용해 모달, 알림창, 입력폼 등 고급 UI 컴포넌트를 일관되게 사용.
@@ -265,13 +261,13 @@
     - API 통신 라이브러리로 axios 사용
     - JWT 토큰을 자동으로 헤더에 포함시키는 interceptor 설정
     - **AccessToken 만료 시 자동 로그아웃 처리 및 로그인 페이지로 리디렉션**
-    - 서버로부터의 인증 실패(`401`) 응답 시 모달 또는 토스트 메시지로 사용자에게 안내
+    - 서버로부터의 인증 실패(401) 응답 시 모달 또는 토스트 메시지로 사용자에게 안내
 - **Responsive / Mobile UI**
     - 모바일 환경 최적화
     - 카카오톡 친구에게 선물 전송 등의 UX 흐름 고려
 - **이미지 최적화**
-    - `next/image`를 활용하여 자동 이미지 크기 조절 및 lazy loading 처리
-    - `blurDataURL` 및 placeholder를 통해 UX 향상
+    - next/image를 활용하여 자동 이미지 크기 조절 및 lazy loading 처리
+    - blurDataURL 및 placeholder를 통해 UX 향상
 - **에러 처리 및 사용자 피드백**
     - 요청 실패 시 토스트 / 모달을 통한 사용자 피드백 제공
     - 예외 상황에서도 앱이 중단되지 않도록 방어 로직 구현
@@ -312,7 +308,6 @@
 | **PostgreSQL (Docker)** | 애플리케이션 DB 구성 |
 | **Flyway** | 마이그레이션 자동화 (.sql 실행) |
 | **Mattermost** | CI/CD 알림 전달용 (Webhook) |
-- **구성요소**
 
 ### **협업 툴**
 
@@ -328,87 +323,65 @@
 - **Scrum (Agile)**
     - 1주 주기의 프로젝트 스프린트와 매일 5분의 스크럼미팅을 통한 통한 긴밀한 팀 협업과 소통
 
+
+
 # 📜프로젝트 산출물
 
----
 
 ### 1. 최종 발표 자료
 
 - [PPT링크](https://www.canva.com/design/DAGoCQK4exo/nVrqjsuwOsf6rZANc9aOHA/edit)
 
-### 2. 피그마 및 피그잼
+### 2. 와이어 프레임
 
-- **와이어 프레임**
-    - **다시 빛(대시보드)**
-        
-        ![image.png](image.png)
-        
-    - **디어리(미션/ 일기 기반 자기관리 서비스)**
-        
-        ![image.png](image%201.png)
-        
+- **다시 빛(대시보드)**  
+  <img src="readme_contents/image.png" width="1000"/>
 
-### 3. 아키텍처
+- **디어리(미션/ 일기 기반 자기관리 서비스)**  
+  <img src="readme_contents/image 1.png" width="1000"/>
 
-![아키텍처.png](%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98.png)
+---
+
+### 3. 아키텍처  
+<img src="readme_contents/아키텍처.png" width="1000"/>
+
+---
 
 ### 4. ERD
 
-- **다시 빛**
-    
-    ![image.png](image%202.png)
-    
-- **디어리**
-    
-    ![image.png](image%203.png)
-    
+- **다시 빛**  
+  <img src="readme_contents/image 2.png" width="1000"/>
+
+- **디어리**  
+  <img src="readme_contents/image 3.png" width="1000"/>
+
+---
 
 ### 5. API 명세서
 
-- **다시 빛**
-    
-    ![image.png](image%204.png)
-    
-    ![image.png](image%205.png)
-    
-    ![image.png](image%206.png)
-    
-    ![image.png](image%207.png)
-    
-    ![image.png](image%208.png)
-    
-    ![image.png](image%209.png)
-    
-    ![image.png](image%2010.png)
-    
-    ![image.png](image%2011.png)
-    
-    ![image.png](image%2012.png)
-    
-    ![image.png](image%2013.png)
-    
-    ![image.png](image%2014.png)
-    
-    ![image.png](image%2015.png)
-    
-    ![image.png](image%2016.png)
-    
-    ![image.png](image%2017.png)
-    
-- **디어리**
-    
-    ![image.png](image%2018.png)
-    
-    ![image.png](image%2019.png)
-    
-    ![image.png](image%2020.png)
-    
-    ![image.png](image%2021.png)
-    
-    ![image.png](image%2022.png)
-    
-    ![image.png](image%2023.png)
-    
-    ![image.png](image%2024.png)
-    
-    ![image.png](image%2025.png)
+- **다시 빛**  
+  <img src="readme_contents/image 4.png" width="1000"/>
+  <img src="readme_contents/image 5.png" width="1000"/>
+  <img src="readme_contents/image 6.png" width="1000"/>
+  <img src="readme_contents/image 7.png" width="1000"/>
+  <img src="readme_contents/image 8.png" width="1000"/>
+  <img src="readme_contents/image 9.png" width="1000"/>
+  <img src="readme_contents/image 10.png" width="1000"/>
+  <img src="readme_contents/image 11.png" width="1000"/>
+  <img src="readme_contents/image 12.png" width="1000"/>
+  <img src="readme_contents/image 13.png" width="1000"/>
+  <img src="readme_contents/image 14.png" width="1000"/>
+  <img src="readme_contents/image 15.png" width="1000"/>
+  <img src="readme_contents/image 16.png" width="1000"/>
+  <img src="readme_contents/image 17.png" width="1000"/>
+
+- **디어리**  
+  <img src="readme_contents/image 18.png" width="1000"/>
+  <img src="readme_contents/image 19.png" width="1000"/>
+  <img src="readme_contents/image 20.png" width="1000"/>
+  <img src="readme_contents/image 21.png" width="1000"/>
+  <img src="readme_contents/image 22.png" width="1000"/>
+  <img src="readme_contents/image 23.png" width="1000"/>
+  <img src="readme_contents/image 24.png" width="1000"/>
+  <img src="readme_contents/image 25.png" width="1000"/>
+
