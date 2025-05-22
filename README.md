@@ -296,7 +296,7 @@
 
 - **파이프 라인**
     - Pipeline(Nginx): 쉽게 nginx 컨테이너를 생성하고 관리하기 위해 파이프 라인을 사용했습니다.
-    - Pipeline(DB): 쉽게 DB(mongo, MySQL, ipfs) 컨테이너를 생성하고 관리하기 위해 파이프 라인을 사용했습니다.
+    - Pipeline(DB): 쉽게 DB(PostgreSQL, redis, kafka) 컨테이너를 생성하고 관리하기 위해 파이프 라인을 사용했습니다.
 
 | 구성 요소 | 설명 |
 | --- | --- |
