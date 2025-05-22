@@ -237,7 +237,7 @@
     - Spring @Valid, @Validated를 활용한 입력값 검증
     - Global Exception Handler를 통해 통합 에러 응답 포맷 구성
 - **Flyway**
-    - MySQL 마이그레이션 툴로 스키마 및 초기 데이터 관리
+    - PostgreSQL 마이그레이션 툴로 스키마 및 초기 데이터 관리
 - **Swagger (Springdoc OpenAPI)**
     - REST API 문서 자동 생성
     - 테스트 가능한 인터페이스 제공
@@ -266,7 +266,6 @@
     - 서버로부터의 인증 실패(401) 응답 시 모달 또는 토스트 메시지로 사용자에게 안내
 - **Responsive / Mobile UI**
     - 모바일 환경 최적화
-    - 카카오톡 친구에게 선물 전송 등의 UX 흐름 고려
 - **이미지 최적화**
     - next/image를 활용하여 자동 이미지 크기 조절 및 lazy loading 처리
     - blurDataURL 및 placeholder를 통해 UX 향상
@@ -303,8 +302,8 @@
 | **GitLab** | 소스코드 저장소 / Webhook으로 Jenkins 트리거 |
 | **Jenkins (Docker)** | Multi-branch pipeline CI/CD 관리 (브랜치 별 자동 빌드) |
 | **Nginx (Docker)** | 리버스 프록시, SSL 인증서 적용 (Let's Encrypt) |
-| **Backend-lightreborn (Spring Boot)** | Java 21 / Flyway 기반 마이그레이션 / MySQL 사용 |
-| **Backend-dearie (Spring Boot)** | Java 21 / Flyway 기반 마이그레이션 / MySQL 사용 |
+| **Backend-lightreborn (Spring Boot)** | Java 21 / Flyway 기반 마이그레이션 / PostgreSQL 사용 |
+| **Backend-dearie (Spring Boot)** | Java 21 / Flyway 기반 마이그레이션 / PostgreSQL 사용 |
 | **Frontend-lightreborn (Next.js)** | 프론트 서비스 (user-facing) |
 | **Frontend-lightreborn (Next.js)** | 프론트 서비스 (user-facing) |
 | **PostgreSQL (Docker)** | 애플리케이션 DB 구성 |
