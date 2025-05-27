@@ -1,5 +1,3 @@
-<img src="readme_contents/다시빛디어리로고.png" width="600"/>
-
 # 📌목차
 
 1. [서비스 소개](#서비스-소개)
@@ -81,15 +79,7 @@
 - 설문 데이터 연동
 - 음성을 통한 상담일지 자동 작성 기능
 
-<<<<<<< HEAD
-
 # **🚀주요 기능**
-
-=======
-
-# 🚀주요 기능
-
-> > > > > > > 4954341190e30b4eded8a1f7928383ea4b3e496b
 
 ### 🖥️ 다시 빛
 
@@ -201,15 +191,7 @@
 
 </details>
 
-<<<<<<< HEAD
-
 # **🛠️주요 기술**
-
-=======
-
-## 🛠️ 주요 기술
-
-> > > > > > > 4954341190e30b4eded8a1f7928383ea4b3e496b
 
 ### **Back-End**
 
@@ -238,7 +220,7 @@
   - Spring @Valid, @Validated를 활용한 입력값 검증
   - Global Exception Handler를 통해 통합 에러 응답 포맷 구성
 - **Flyway**
-  - PostgreSQL 마이그레이션 툴로 스키마 및 초기 데이터 관리
+  - MySQL 마이그레이션 툴로 스키마 및 초기 데이터 관리
 - **Swagger (Springdoc OpenAPI)**
   - REST API 문서 자동 생성
   - 테스트 가능한 인터페이스 제공
@@ -297,15 +279,15 @@
 
 - **파이프 라인**
   - Pipeline(Nginx): 쉽게 nginx 컨테이너를 생성하고 관리하기 위해 파이프 라인을 사용했습니다.
-  - Pipeline(DB): 쉽게 DB(PostgreSQL, redis, kafka) 컨테이너를 생성하고 관리하기 위해 파이프 라인을 사용했습니다.
+  - Pipeline(DB): 쉽게 DB(mongo, MySQL, ipfs) 컨테이너를 생성하고 관리하기 위해 파이프 라인을 사용했습니다.
 
 | 구성 요소                             | 설명                                                   |
 | ------------------------------------- | ------------------------------------------------------ |
 | **GitLab**                            | 소스코드 저장소 / Webhook으로 Jenkins 트리거           |
 | **Jenkins (Docker)**                  | Multi-branch pipeline CI/CD 관리 (브랜치 별 자동 빌드) |
 | **Nginx (Docker)**                    | 리버스 프록시, SSL 인증서 적용 (Let's Encrypt)         |
-| **Backend-lightreborn (Spring Boot)** | Java 21 / Flyway 기반 마이그레이션 / PostgreSQL 사용   |
-| **Backend-dearie (Spring Boot)**      | Java 21 / Flyway 기반 마이그레이션 / PostgreSQL 사용   |
+| **Backend-lightreborn (Spring Boot)** | Java 21 / Flyway 기반 마이그레이션 / MySQL 사용        |
+| **Backend-dearie (Spring Boot)**      | Java 21 / Flyway 기반 마이그레이션 / MySQL 사용        |
 | **Frontend-lightreborn (Next.js)**    | 프론트 서비스 (user-facing)                            |
 | **Frontend-lightreborn (Next.js)**    | 프론트 서비스 (user-facing)                            |
 | **PostgreSQL (Docker)**               | 애플리케이션 DB 구성                                   |
