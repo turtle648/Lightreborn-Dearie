@@ -1,3 +1,6 @@
+<img src="readme_contents/다시빛디어리로고.png" width="600"/>
+
+
 # 📌목차
 
 1. [서비스 소개](#서비스-소개)
