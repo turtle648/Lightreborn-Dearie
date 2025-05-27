@@ -6,3 +6,4 @@ cicd/
 .nginx/certbot/conf/archive/
 .nginx/certbot/conf/accounts/
 .nginx/certbot/conf/*.pem
+*.hprof
